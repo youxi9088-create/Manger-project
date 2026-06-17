@@ -1,0 +1,97 @@
+{
+  "$schema": "project-knowledge-base-v1",
+  "project": {
+    "id": "PI-20260513-001",
+    "external_id": "137372",
+    "name": "AI改编游戏",
+    "code": "EFS",
+    "status": "正常",
+    "phase": "筹备期",
+    "deadline": "2026-08-09",
+    "vp": "金伟华"
+  },
+  "summary": {
+    "overview": "面向非专业用户的AI游戏改编平台，基于横版闯关游戏模板 + 熟人社交场景",
+    "mvp_goal": "上线H5端MVP，实现自然语言改编主角/敌人形象、关卡场景、数值、BGM等",
+    "current_progress": "77.67%",
+    "delay_rate": "0%"
+  },
+  "stage_objectives": [
+    {
+      "name": "用户改编前端",
+      "target": "用户输入主题即可生成可玩游戏版本",
+      "progress": "100%",
+      "status": "已完成",
+      "version": "v1.0"
+    },
+    {
+      "name": "游戏模板完善",
+      "target": "复刻三国志/恐龙快打，完善横版闯关基础功能",
+      "progress": "33%",
+      "status": "进行中",
+      "version": "v1.0"
+    },
+    {
+      "name": "AI驱动改编流程",
+      "target": "AI调度整个改编流程（输入→理解→参数→调度→生产→拼装）",
+      "progress": "100%",
+      "status": "已完成",
+      "version": "v1.0"
+    }
+  ],
+  "weekly_versions": [
+    {
+      "week": "2026-06-01",
+      "plan": "设计三国志完整体验流程，评估模板能力不足",
+      "importance": "P0",
+      "progress": "0%",
+      "completion": ""
+    },
+    {
+      "week": "2026-05-25",
+      "plan": "平台部署到外网，运行体验和使用",
+      "importance": "P0",
+      "progress": "100%",
+      "completion": "已产出PC端版本，可完整体验改编流程；下一步Web平台部署"
+    }
+  ],
+  "stakeholders": [
+    {
+      "name": "金伟华",
+      "role": "分管VP/最终审批人",
+      "level": "P10",
+      "meeting_style": "必须预约，不超过30分钟，需提前准备材料发给助理钰茜",
+      "communication_notes": ["可以坦诚说'做不了'，但要给替代方案", "主动同步进度", "不要过度承诺"]
+    },
+    {
+      "name": "陈锐",
+      "role": "高级产品设计师",
+      "level": "P7",
+      "personality": ["火爆", "规范意识强", "质量要求高"],
+      "communication_notes": ["不要'通知'他，要'告知'", "必须有版本管理和周会", "技术Demo不等于产品"]
+    },
+    {
+      "name": "何松航",
+      "role": "研发主程序员",
+      "level": "P7",
+      "personality": ["懒散", "主动性不强", "拖延"],
+      "communication_notes": ["任务必须拆解到小步骤", "必须设deadline并持续跟进", "交付物需明确验收标准"]
+    }
+  ],
+  "risks": [
+    {
+      "level": "low",
+      "description": "暂无重大问题",
+      "mitigation": "正常推进"
+    }
+  ],
+  "budget": {
+    "q1_2026": { "budget": 0, "cost": 0, "rate": "0.00%" },
+    "q4_2025": { "budget": 0, "cost": 0, "rate": "0.00%" }
+  },
+  "metadata": {
+    "source": "project-management-system",
+    "sync_time": "2026-06-09T12:00:00+08:00",
+    "version": "1.0"
+  }
+}

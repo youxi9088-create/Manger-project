@@ -1,0 +1,236 @@
+
+=== 游浠 (2条) ===
+[2026-04-13T22:33:03.000+0800] <?xml version="1.0" encoding="utf-8"?>
+<file src="8c4023fa-202d-41b2-af9c-a0fe73c16a92" name="im-chat-analyzer.zip" size="480425890" md5="18c2a19dd72fd4bc1d8c106f66aff983"/>
+[2026-04-14T13:16:36.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好了&#x20;&#x20;基于会议助手的整体能力&#x20;你整理一个skill&#x20;用于后续如果这个工程搬到另一个地方&#x20;agent也可以基于这个skill提示</span></div>
+
+=== 陈明剑 (12条) ===
+[2026-01-04T22:09:11.000+0800] <img src="dentry://4d1dcef5-624f-41b1-a5bc-ea352e284df6" mime="png" width="3110" height="1832" size="558465" alt="" md5="bba408cf5e648561ca58e5e5f734d531" fullimage="true" />
+[2026-01-19T22:26:13.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我现在下单</span></div>
+[2026-01-19T22:35:40.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>下单了</span></div>
+[2026-01-26T22:40:01.000+0800] 哦哦哦，稍等
+
+=== 彭靖（PJ） (66条) ===
+[2026-04-08T17:32:01.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>可以</span></div>
+[2026-04-08T17:32:17.000+0800] <img src="ef4d2c7b-926f-4315-b16b-157abbc1ff82" size="19220" mime="png" width="1618" height="360" md5="03e76182c775805ffb6946c5b1c87f47" name="img.png" fullimage="true" />
+[2026-04-08T17:32:51.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>填写啥</span></div>
+[2026-04-08T17:32:56.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>啊</span></div>
+[2026-04-08T17:33:07.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>要几万块钱要分到产商？</span></div>
+[2026-04-08T17:33:23.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>你等等&#x20;&#x20;我问一下</span></div>
+[2026-04-08T17:33:26.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我觉得没必要把</span></div>
+[2026-04-08T17:33:35.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我去问一下</span></div>
+[2026-04-08T17:33:46.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>你延期一下&#x20;转给我被</span></div>
+[2026-04-08T17:36:10.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好</span></div>
+[2026-04-08T17:52:33.000+0800] <img src="17038984-39ee-4105-b39e-f0ba2fe49dea" size="8016" mime="png" width="314" height="227" md5="936cf27d919ae4645721d7b17685db24" name="img.png" fullimage="true" />
+[2026-04-08T17:52:52.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>明确了哈&#x20;&#x20;我们就大头的填1个</span></div>
+[2026-04-08T17:55:19.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好</span></div>
+[2026-04-09T15:53:24.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>可以</span></div>
+[2026-04-13T13:53:02.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>高秀明来找我说&#x20;学习目标的生产线要对接&#x20;&#x20;&#x20;教学方案的生产线，但是教学方案生产线&#x20;原来是素素做的，应该不属于伟胜那边维护的范围</span></div>
+[2026-04-13T13:53:17.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>所以这个对接&#x20;我原来和你聊的是说&#x20;问问高秀明那边愿不愿意接走</span></div>
+[2026-04-13T13:53:41.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>不然你就得先确认这个生产线现在归属哪个团队维护&#x20;&#x20;才知道要找谁处理</span></div>
+[2026-04-13T17:01:01.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好</span></div>
+[2026-04-14T12:26:34.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>https://qi7jmq9oclb.feishu.cn/sheets/BCIFs8bswhuLW0t7Q5ucECDpngh?from=from_copylink&#x0D;</span><img src="989bc0c5-028f-4216-9a60-1ec25df8b5ef" size="199499" mime="png" width="1569" height="922" md5="b19ccadcce04625f085063
+[2026-04-14T12:26:36.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>这个大家都填了</span></div>
+
+=== 周竑 (38条) ===
+[2026-01-23T10:20:49.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>https://pms.sdp.101.com/#/track/issue/detail/d58bc825-9e92-42a5-ba0a-cab85621afb4&#x0D;</span></div>
+[2026-01-23T10:20:55.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>这个bug帮忙看下</span></div>
+[2026-01-23T10:34:11.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>先ai器材吧&#x20;&#x20;这个事情&#x20;下周抽空查吧</span></div>
+[2026-01-23T10:34:13.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>可以吗</span></div>
+[2026-01-26T18:51:01.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>下了</span></div>
+[2026-01-29T10:05:47.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>光谱实验的今天能搞定吗&#x20;&#x20;</span></div>
+[2026-01-29T10:09:17.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>嗯嗯&#x20;&#x20;处理完&#x20;喊强强验收一下</span></div>
+[2026-02-05T11:12:38.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>https://pms.base.ndhy.com/#/track/issue/detail/677464d0-8f7f-44a2-a878-d7c5d8afcaa0</span></div>
+[2026-02-05T11:12:44.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>这个bug你这边看下&#x20;&#x20;能不能处理</span></div>
+[2026-02-05T11:16:42.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>嗯&#x20;你就判断下&#x20;&#x20;你能不能搞</span></div>
+[2026-02-05T20:31:36.000+0800] <img src="877aa612-acb5-45c8-a615-e4be8092c9fa" size="1618" mime="jpg" width="67" height="65" md5="fa1ffebbdd82128f65d54c08646e21eb" name="img.jpg" fullimage="true" />
+[2026-03-19T11:01:24.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>VLabStructSteps&#x09;github.com:ndhy-app-code/vlab-unreal-structsteps-plugin&#x0D;</span></div>
+[2026-03-19T11:01:28.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>这个颗粒在你的嘛</span></div>
+[2026-03-19T11:02:37.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>对&#x20;&#x20;</span></div>
+[2026-03-19T11:02:39.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>加一下胡彬</span></div>
+[2026-03-25T21:34:14.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>bug能解决完吗</span></div>
+[2026-03-25T21:34:15.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>今天</span></div>
+[2026-03-25T21:34:18.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>严重的</span></div>
+[2026-04-20T18:08:18.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>新下给你的单子&#x20;&#x20;2周哈&#x20;&#x20;&#x20;五一前再结单&#x0D;然后你的代码评审&#x20;要给少秦&#x0D;</span></div>
+[2026-04-29T20:39:23.000+0800] [sys:1002]
+
+=== 新学习目标库-实操实验颗粒生产的打通闭环 (36条) ===
+[2026-04-21T15:42:27.000+0800] Content-Type:text/plain
+Content-At:622588
+
+@周传财
+[2026-04-21T18:57:35.000+0800] 要对接的那个平台 链接地址能发一下吗
+[2026-04-21T18:58:01.000+0800] 还是说 就是这个？
+[2026-04-21T18:59:12.000+0800] 这个会议录音有吗？麻烦发群里下？
+[2026-04-23T09:39:45.000+0800] https://my.feishu.cn/wiki/EtgNwxr9Hi4KNXkwMXecGJttnDg
+[2026-04-23T09:39:49.000+0800] Content-Type:text/plain
+Content-At:622588
+
+@周传财
+[2026-04-23T09:40:20.000+0800] 财叔这是策划出的设计案
+[2026-04-23T15:57:45.000+0800] Content-Type:text/plain
+Content-At:260018,921226
+
+@彭靖（PJ） @郑博颖（镇得住） 这个文档里面没有明确写出 实验颗粒那个生产线要展示什么
+[2026-04-23T16:27:54.000+0800] 实操实验在ai课件可视化平台要展示什么，展示的内容从哪里获取，这个谁来给呀
+[2026-04-23T21:02:33.000+0800] Content-Type: rich/xml
+Content-At: 151010,592126
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈伟胜&#x20;@余少秦&#x20;基于前面的沟通，需要开发这边提供一下实操实验的过程产出有哪些&#x20;。看下谁来提供哈</span></div>
+[2026-04-29T17:23:30.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>按照刚刚会议的信息，接下去就是等&#x20;策划这边把上游执行确定一下&#x20;&#x20;然后明确执行完成时间&#x20;&#x20;然后财叔这边在开工</span></div>
+[2026-04-29T17:23:33.000+0800] <img src="a3610560-76aa-4949-a8cf-33d880aa1991" size="3246" mime="jpg" width="150" height="150" md5="48643493c343366f1ecf7a4bff7941a5" name="img.jpg" fullimage="true" />
+[2026-05-06T14:46:56.000+0800] Content-Type: rich/xml
+Content-At: 698765
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈铭&#x20;&#x20;有什么问题可以在这个群里问哈</span></div>
+[2026-05-06T15:02:45.000+0800] Content-Type: rich/xml
+Content-At: 519220
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@高秀明（小明）&#x20;开好了群里通知下</span></div>
+[2026-05-07T10:52:01.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我问一下哈</span></div>
+[2026-05-07T10:59:42.000+0800] Content-Type: rich/xml
+Content-At: 698765
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈铭&#x20;&#x20;&#x20;这个平台&#x20;&#x20;黄种志那边做的&#x20;&#x20;问一下吧</span></div>
+[2026-05-07T11:42:03.000+0800] Content-Type: rich/xml
+Content-At: 622588
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@周传财&#x20;财叔&#x20;&#x20;我问了下种志&#x20;&#x20;种志说现在都改成你这边统一调度了呀&#x20;</span></div>
+[2026-05-07T11:42:10.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>所以入口是不是你知道？</span></div>
+[2026-05-07T12:09:46.000+0800] Content-Type: rich/xml
+Content-At: 698765
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈铭&#x20;发起人应该是资源中心的&#x20;冯猛&#x20;&#x20;</span></div>
+[2026-05-18T11:18:28.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我是不是理解&#x20;&#x20;贵哥这边要的是一个&#x20;zip包？</span></div>
+
+=== 教育游戏化-日会 (62条) ===
+[2026-03-26T10:56:59.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：游浠&#x0D;#网龙会议：986916&#x0D;会议链接：https://nd-meeting.sdp.101.com/EfIZvi&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;4066</span></div>
+[2026-03-27T11:01:19.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>哦哦&#x20;&#x20;开始</span></div>
+[2026-03-27T11:01:21.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>开会开会</span></div>
+[2026-03-27T11:01:44.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：游浠&#x0D;#网龙会议：986916&#x0D;会议链接：https://nd-meeting.sdp.101.com/EfIZvi&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;4066</span></div>
+[2026-03-30T11:00:00.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：游浠&#x0D;#网龙会议：986916&#x0D;会议链接：https://nd-meeting.sdp.101.com/EfIZvi&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;4066</span></div>
+[2026-03-31T09:59:09.000+0800] Content-Type: rich/xml
+Content-At: all
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@all&#x20;&#x20;早上11点&#x20;&#x20;东门三楼会五</span></div>
+[2026-04-01T10:56:51.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>今天线上？</span></div>
+[2026-04-01T10:58:04.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：游浠&#x0D;#网龙会议：986916&#x0D;会议链接：https://nd-meeting.sdp.101.com/EfIZvi&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;4066</span></div>
+[2026-04-02T10:45:31.000+0800] <img src="ffc55841-8916-4d93-a494-675b6e20e633" size="134164" mime="png" width="1899" height="643" md5="210bb851b88d7efd63916989062db8cc" name="img.png" fullimage="true" />
+[2026-04-02T10:45:34.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>为啥这里都是成功的</span></div>
+[2026-04-02T10:54:54.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>显示成功&#x20;&#x20;但是视频都出不来</span></div>
+[2026-04-02T10:59:26.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：游浠&#x0D;#网龙会议：986916&#x0D;会议链接：https://nd-meeting.sdp.101.com/EfIZvi&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;4066</span></div>
+[2026-04-02T12:35:48.000+0800] <img src="949a1cf4-3a86-4613-bc14-f2628fa122fa" size="51042" mime="png" width="1168" height="561" md5="77e287b05d2784dfa87b5ae828a0bb03" name="img.png" fullimage="true" />
+[2026-04-02T12:35:55.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>如果要用api的话&#x20;&#x20;是按照token付费的&#x20;&#x20;不是按照包年</span></div>
+[2026-04-03T10:37:43.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>早上三楼没有会议室&#x20;&#x20;到四楼会十</span></div>
+[2026-04-03T10:37:47.000+0800] Content-Type: rich/xml
+Content-At: all
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@all&#x20;</span></div>
+[2026-04-03T10:59:35.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>大家可能可以到会六</span></div>
+[2026-04-03T10:59:36.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>~~~</span></div>
+[2026-04-03T10:59:51.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>彭靖和晏召都在会六</span></div>
+[2026-04-03T10:59:55.000+0800] [sys:1002]
+
+=== 结晶和沸腾-demo颗粒 (57条) ===
+[2026-04-13T10:21:53.000+0800] Content-Type: rich/xml
+Content-At: 121105
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈若雯&#x20;</span></div>
+[2026-04-20T10:16:30.000+0800] <file src="d6896f83-ff37-44ae-8a90-bb183436c269" name="金属的活泼型.mp4" size="189621826" compressed="" md5="216c348bbc20fb655ecb4ec74beb18ad" encryption="0" />
+[2026-04-20T10:16:31.000+0800] <file src="bad72477-929b-4206-becf-ca68553317d2" name="硝酸钾结晶.mp4" size="293708672" compressed="" md5="7bdc41ca90705a7480b725f1437ba73d" encryption="0" />
+[2026-04-20T10:18:25.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>各位大佬&#x20;&#x20;这个是目前的2个样例颗粒，开发这边已经把颗粒整个跑通了，接下去需要美术这边介入把表现调到最好</span></div>
+[2026-04-20T10:18:29.000+0800] Content-Type: rich/xml
+Content-At: all
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@all&#x20;&#x20;&#x20;</span></div>
+[2026-04-20T10:19:55.000+0800] <file src="e7515a6b-44a4-4fcb-9f47-09b05c7c2c8f" name="金属&#x20;Android.mp4" size="197072460" compressed="" md5="2ec1e00face66762936a12e243ccbb1a" encryption="0" />
+[2026-04-20T10:19:57.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>录屏是&#x20;分别是pc和安卓的效果</span></div>
+[2026-04-21T09:57:56.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>5.7</span></div>
+[2026-04-21T14:44:36.000+0800] Content-Type:text/plain
+Content-At:519166
+
+@葛岩 葛大，当前的表现，美术这边会安排一个同学来看看吗
+[2026-04-23T13:51:39.000+0800] 我今天远程，2点没有会议室了 3点东门会三A
+[2026-04-23T13:51:51.000+0800] Content-Type:text/plain
+Content-At:151010,519166
+
+@陈伟胜 @葛岩  你们可以吗
+[2026-04-23T13:55:04.000+0800] 嗯 那就是暂定3点  需要葛大确认下时间
+[2026-04-30T17:39:28.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好的</span></div>
+[2026-04-30T17:52:27.000+0800] Content-Type: rich/xml
+Content-At: 135591,519166
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@杨健&#x20;@葛岩&#x20;&#x20;杨哥&#x20;、葛大&#x20;&#x20;&#x20;文档已经放在群共享了&#x20;&#x20;辛苦二位批注一下吧~~~~</span></div>
+[2026-05-06T11:46:12.000+0800] Content-Type: rich/xml
+Content-At: 135591,519166
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@杨健&#x20;@葛岩&#x20;今天文档要批注一下</span></div>
+[2026-05-06T11:46:49.000+0800] Content-Type: rich/xml
+Content-At: all
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@all&#x20;&#x20;下午3点我们是否一起过一下&#x20;&#x20;梳理一下要改造的内容呀</span></div>
+[2026-05-06T13:49:50.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>s</span></div>
+[2026-05-06T14:49:38.000+0800] Content-Type: rich/xml
+Content-At: 121105,135591,151010,519166
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈伟胜&#x20;@陈若雯&#x20;@杨健&#x20;@葛岩&#x20;&#x0D;约好了哈&#x20;&#x20;&#x20;3点15分&#x20;&#x20;东门三楼会三A</span></div>
+[2026-05-06T16:13:18.000+0800] Content-Type: rich/xml
+Content-At: 121105,135591,151010,519166
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>待办：&#x0D;1、葛大这边和美术聊完后给出核心关键几幕的aigc图片给出来，给个时间&#x20;@葛岩&#x20;&#x0D;2、列出3D效果优化项&#x20;&#x20;@杨健&#x20;（5.7）&#x0D;3、列出交互优化项&#x20;&#x20;@陈若雯&#x20;（5.7）&#x0D;4、对当前
+[2026-05-06T20:25:36.000+0800] Content-Type:text/plain
+Content-At:519166
+
+@葛岩 葛大下午和秦俊聊完有进一步的时间吗
+
+=== Open Q - 教育元宇宙 (57条) ===
+[2026-03-18T20:16:09.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>海外：&#x0D;https://www.101.com/profile/en/&#x0D;&#x20;这个地址就是首页&#x20;</span></div>
+[2026-03-18T21:33:22.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>我在问宇辰了</span></div>
+[2026-03-18T21:39:06.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>明白</span></div>
+[2026-03-23T14:34:33.000+0800] Content-Type: rich/xml
+Content-At: 101231,123419,135995,651002,886066
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈蕾（点滴）&#x20;@王燕琼（冰奶茶）&#x20;@周强&#x20;@何松航&#x20;@陈锐（若恒）&#x20;&#x0D;今天周一&#x20;&#x20;下午4点开会哈~&#x0D;</span></div>
+[2026-03-23T15:51:18.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>那就是还是&#x20;4点哦</span></div>
+[2026-03-23T15:51:21.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>不变哦</span></div>
+[2026-03-23T15:52:30.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>游浠&#x20;邀请你参加网龙会议&#x0D;&#x0D;会议主题：openQ&#x0D;会议时间：2026年03月23日&#x20;(今天)&#x20;16:00-16:30&#x0D;#网龙会议：769&#x20;987&#x20;154&#x0D;会议链接：https://nd-meeting.sdp.101.com/U3m2au&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;301454&#x0D;</s
+[2026-03-23T16:01:35.000+0800] Content-Type: rich/xml
+Content-At: 509810
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@蔡小梅&#x20;</span></div>
+[2026-03-23T16:01:38.000+0800] Content-Type: rich/xml
+Content-At: 135995
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@周强&#x20;</span></div>
+[2026-03-24T15:28:26.000+0800] Content-Type: rich/xml
+Content-At: 651002
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈锐（若恒）&#x20;&#x20;&#x20;iOS包&#x20;&#x20;已经给运营那边&#x20;&#x20;上传审核了</span></div>
+[2026-03-24T21:43:56.000+0800] Content-Type: rich/xml
+Content-At: 651002
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈锐（若恒）&#x20;昨天说的多语言显示不出来的问题已经解决了，目前&#x20;中文、英文、中文繁体、韩文、日文&#x20;&#x20;均已正常显示。剩下几天QA会基于整体界面效果做个详细走查并输出问题清单</span></div>
+[2026-04-03T18:57:48.000+0800] Content-Type: rich/xml
+Content-At: 101231,123419,135995,1999,609710,886066
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>下周二下午两点吧&#x20;&#x20;&#x20;&#x0D;@陈蕾（点滴）&#x20;@王燕琼（冰奶茶）&#x20;@周强&#x20;@刘建辉&#x20;@何松航&#x20;@陈睿喆&#x20;</span></div>
+[2026-04-07T13:46:02.000+0800] Content-Type: rich/xml
+Content-At: 101231,123419,135995,1999,609710,886066
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈蕾（点滴）&#x20;@王燕琼（冰奶茶）&#x20;@周强&#x20;@刘建辉&#x20;@何松航&#x20;@陈睿喆&#x20;&#x0D;下午2点会议</span></div>
+[2026-04-07T13:46:20.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>会议主题：openQ&#x0D;会议时间：2026年04月07日&#x20;(今天)&#x20;14:00-14:30&#x0D;#网龙会议：402&#x20;139&#x20;374&#x0D;会议链接：https://nd-meeting.sdp.101.com/ZnIzam&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;422858</span></div>
+[2026-04-07T14:03:12.000+0800] Content-Type: rich/xml
+Content-At: 609710
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈睿喆&#x20;</span></div>
+[2026-04-13T14:00:40.000+0800] Content-Type: rich/xml
+Content-At: 101231,123419,135995,651002,886066
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@陈蕾（点滴）&#x20;@王燕琼（冰奶茶）&#x20;@陈锐（若恒）&#x20;@周强&#x20;@何松航&#x20;&#x0D;下午4点周例会哦</span></div>
+[2026-04-13T15:54:51.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>会议主题：openQ会议&#x0D;会议时间：2026年04月13日&#x20;(今天)&#x20;16:00-16:30&#x0D;#网龙会议：660&#x20;253&#x20;185&#x0D;会议链接：https://nd-meeting.sdp.101.com/26fq6f&#x0D;电话拨入：02031727331&#x20;邀请码:&#x20;953930</span></div>
+[2026-04-13T17:51:36.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>s</span></div>
+[2026-04-13T18:49:46.000+0800] Content-Type: rich/xml
+Content-At: 135995
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>@周强&#x20;&#x20;直播的场景图&#x20;&#x20;你记得找松航确认</span></div>
+[2026-04-13T18:51:20.000+0800] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#003366;"><span>好的&#x20;</span></div>

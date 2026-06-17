@@ -1,0 +1,76 @@
+--- a/dist/client/components/react-dev-overlay/ui/components/copy-button/index.js	1985-10-26 16:15:00.000000000 +0800
++++ b/dist/client/components/react-dev-overlay/ui/components/copy-button/index.js	2026-06-11 12:09:52.658532000 +0800
+@@ -58,14 +58,28 @@
+             return;
+         }
+         if (!navigator.clipboard) {
+-            dispatch({
+-                type: 'error',
+-                error: Object.defineProperty(new Error('Copy to clipboard is not supported in this browser'), "__NEXT_ERROR_CODE", {
+-                    value: "E376",
+-                    enumerable: false,
+-                    configurable: true
+-                })
+-            });
++            try {
++                const textarea = document.createElement('textarea');
++                textarea.value = content;
++                textarea.style.position = 'fixed';
++                textarea.style.left = '-9999px';
++                document.body.appendChild(textarea);
++                textarea.select();
++                document.execCommand('copy');
++                document.body.removeChild(textarea);
++                dispatch({
++                    type: 'copied'
++                });
++            } catch (e) {
++                dispatch({
++                    type: 'error',
++                    error: Object.defineProperty(new Error('Copy to clipboard is not supported in this browser'), "__NEXT_ERROR_CODE", {
++                        value: "E376",
++                        enumerable: false,
++                        configurable: true
++                    })
++                });
++            }
+         } else {
+             dispatch({
+                 type: 'copying'
+@@ -104,14 +118,28 @@
+         }
+         if (action === 'copy') {
+             if (!navigator.clipboard) {
+-                return {
+-                    state: 'error',
+-                    error: Object.defineProperty(new Error('Copy to clipboard is not supported in this browser'), "__NEXT_ERROR_CODE", {
+-                        value: "E376",
+-                        enumerable: false,
+-                        configurable: true
+-                    })
+-                };
++                try {
++                    const textarea = document.createElement('textarea');
++                    textarea.value = content;
++                    textarea.style.position = 'fixed';
++                    textarea.style.left = '-9999px';
++                    document.body.appendChild(textarea);
++                    textarea.select();
++                    document.execCommand('copy');
++                    document.body.removeChild(textarea);
++                    return {
++                        state: 'success'
++                    };
++                } catch (e) {
++                    return {
++                        state: 'error',
++                        error: Object.defineProperty(new Error('Copy to clipboard is not supported in this browser'), "__NEXT_ERROR_CODE", {
++                            value: "E376",
++                            enumerable: false,
++                            configurable: true
++                        })
++                    };
++                }
+             }
+             return navigator.clipboard.writeText(content).then(()=>{
+                 return {

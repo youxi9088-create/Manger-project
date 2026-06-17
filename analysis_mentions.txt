@@ -1,0 +1,350 @@
+=== 他人提及游浠的样本 ===
+[王永弟 in 王永弟] Content-Type:text/plain
+Blink-Code:1000
+
+游浠，今天来不及了，请假1天
+
+[王永弟 in 王永弟] Content-Type:text/plain
+Blink-Code:1000
+
+游浠，早上在装充电桩，还得晚到一个小时
+
+[葛财涛 in branch-video] Content-Type:text/plain
+Content-At:405198,986916
+
+@吴林金(ND) @游浠 早上带小孩去医院检查，今天申请晚班。
+
+[杨健 in 杨健] 游浠，志华有把液体的单据给到你么？
+
+[陈伟胜 in 【创新产品】-主程群] Content-Type: rich/xml
+Content-At: 130727,986916
+
+<div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#000000;"><span>@黄彬(Piggy)&#x20;SVIP7&#x20;@游浠&#x20;&#x0D;&#x0D;二次元美术给的方案。。&#x0D;先只做一个样例</span></div>
+
+[葛岩 in 葛岩] Content-Type:text/plain
+Blink-Code:1000
+
+游浠，我们液体更新了吗？？
+
+[杨健 in 杨健] 游浠。年前沟通的李兴这边的工作。单据要下到这周末。之前约定说这周处理你们在接入过程中遇到的问题
+
+[李辉煌 in 李辉煌] 游浠在吗，帮下一个UI渲染绿幕的单据。然后原来的单据是不是可以延一下，因为我的GIT没有提交数据，现在结单不了。
+
+[魏丹 in 美术史APP] Content-Type: text/plain
+Content-At: 101231,135995,886066,986916
+
+https://my.feishu.cn/base/RfQVb92TaanyY4sPvFKcDSknnzb?from=from_copylink时间可以直接更新在上面@周强 @陈蕾（点滴） @何松航 @游浠 
+
+[蔡小梅 in Open-Q业务UE5.7升级问题沟通] Content-Type: text/plain
+Content-At: 986916
+
+@游浠  刚和西风聊了下，他问这个升级需求是Open-Q提出来的吗？提供一个资源测试可以，后续其他批量的要求升级的团队需要用工具批量转换，不是用人工来处理。
+
+[冯猛 in 冯猛] 游浠，亚太环境的部署，有人在做么
+
+[陈若雯 in 二次元器材样例研发] Content-Type: text/plain
+Content-At: 986916
+
+@游浠   勾边统一的效果
+
+[何松航 in 【喵星人】新喵模型样例研发-移动端] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 排下版本哈
+
+[陈伟胜 in 实验颗粒开发团队] Content-Type:text/plain
+Content-At:986916
+Blink-Code:1000
+
+@游浠 晚半个小时
+
+[曹毅霞 in 【教育元宇宙】上架应用市场] Content-Type: rich/xml
+Content-At: 986916
+
+<div><span>@游浠&#x20;合规检查的是哪位同学哦，我看了下我这边写的是安卓的，他写的是ios受影响。</span><img src="53c91d6f-4230-4ebc-8f6c-f1291ce74e3d" size="56990" mime="png" width="986" height="703" md5="7a6f8dbc6d15350570fe478460b185b9" name="img.png" fullimage="true" /></div>
+
+[黄种志 in 黄种志] 游浠，帮忙给下面两个同学从下面的项目下单据<脑科学课程合作和应用>，下的周期，都是下到4.4伍惠剑，下到4.4，工时：112h，内容：【3.18 - 3.22】脑科学第一课分镜与互动体验优化 1. 针对调试阶段通过脚本临时处理的工作（如对话样式批量修改、节点互动拆分/合并等），进行系统性梳理；2. 结合 Flow Node Editor 现有能力，抽象对话节点的样式结构（角色层 / 容器层 / 文字层 / 自适应层）及互动类型（对话推进、分支选择、状态触发等），预留批量样式编辑与交互配置能力在交互编辑器内沉淀的可行性。【3.23 - 3.25】脑科学第一课效果调优 1. 基于原始脚本拆解资源清单进行课程所需美术资源的预生产，补全相关交互资源；2. 围绕课程涉及的核心互动类型（对话推进、分支选择、状态触发、节点切换等）进行效果联调与表现优化，提升整体体验一致性与流畅度【3
+
+[吴誌华 in 互动小队] Content-Type: text/plain
+Content-At: 121105,140913,578931,592126,986916
+
+二次元版本已测试70+实验，目前遗留未关闭bug37个3个严重阻塞bug：【蜡烛在不同条件下燃烧探究灭火原理实验】【安卓】无法点燃烧杯内的蜡烛阻塞流程（@洪彬 ）https://pms.sdp.101.com#/track/issue/detail/52728342-d21f-4cb8-a2d5-bc9ab04a7746【铁钉生锈的条件】【安卓】镊子无法夹取棉花阻塞实验（词彬，已解决待更新）https://pms.sdp.101.com#/track/issue/detail/b39e7f94-8871-4e4e-a080-9758a853c4e4【钢铁锈蚀的模拟与观察】【安卓】缺少镊子器材阻塞流程（@宋彪  镜头不对）htt
+
+[吴誌华 in 互动小队] Content-Type: text/plain
+Content-At: 121105,578931,592126,986916
+
+@余少秦 @宋彪 @陈若雯 @游浠 
+
+[余少秦 in 实验颗粒开发团队] Content-Type: text/plain
+Content-At: 986916
+
+@游浠  帮忙安排今天下午一起过一下3。0二次元版本的bug。
+
+[何松航 in UE播放器-发布通知] Content-Type: text/plain
+Content-At: 200512,986916
+
+@游浠 @郑坦  要看下，目前用统一播放器打ios包会报ARKit依赖问题无法上架，需要统一播放器这边给解决方案，是分支也好，配置也罢需要有个明确的答复。
+
+[蔡小梅 in 【喵星人】新喵模型样例研发-移动端] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 可根据表格中的内容安排配置到产品端
+
+[周宇威 in 互动小队] Content-Type: text/plain
+Content-At: 986916
+
+是 @游浠 
+
+[范敬萍 in 实操实验颗粒生产] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 游浠，目前振辉的那个生产线，有在生产央馆2.0实验颗粒吗
+
+[杨健 in 杨健] 游浠。现在立项还是2w块那个Ai审的流程吗？
+
+[魏丹 in 美术史APP-卡牌材质及光效优化] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 
+
+[吴誌华 in 互动小队] Content-Type: text/plain
+Content-At: 408001,592126,986916
+
+今日回归测试64个化学实验，新建严重阻断bug8个，具体见；https://w.101.com/If26bm今日测试5个物理实验，严重阻塞bug4个，具体见：https://w.101.com/jUzAvi二次元版本：化学实验3.0（未关闭78个）总bug链接：https://w.101.com/vA3QBj物理实验3.0（未关闭22个）总bug链接：https://w.101.com/yqeUFv@游浠 @余少秦 @周宇威 
+
+[吴誌华 in 互动小队] Content-Type: text/plain
+Content-At: 105016,408001,592126,830726,986916
+
+化学和物理3.0已提测实验已全部完成，阻塞实验如下：
+化学--@周宇威 @周竑 https://pms.sdp.101.com#/track/issue/detail/2a1217cf-d717-4962-9b77-baaa11a94f14https://pms.sdp.101.com#/track/issue/detail/9bc71bf4-a4b2-49bb-9731-7d07ee4e6477
+物理--@许宇辉 https://pms.sdp.101.com#/track/issue/detail/6eb7d9ae-9e39-48c5-b863-698af705fe8ahttps://pms.sdp.101.com#/tra
+
+[翁超 in 美术史APP] Content-Type: rich/xml
+Content-At: 986916
+
+<div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#477675;"><span>https://w.101.com/riUJRz&#x0D;首页UI好了哈。</span><img src="50e0f3d6-4210-444d-bbcc-fc0361cd9186" size="11300" mime="png" width="79" height="54" md5="8df9bd3522fcf13b5a45731a600ed674" name="img.png" fullimage="true" /><span>这个图标待更新，开发可以暂用&#x20;@游浠&#x20;</sp
+
+[周丽秋 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 109727,123419,182018,886066,986916
+
+@游浠 @何松航 @陈祎 @陈兴王 @王燕琼（冰奶茶） 美术史APP资源上云分支版本1-2轮测试100%（提测范围：仅针对资源上云提测，不含字体、掉卡、IP头像更换内容），测试不通过，新增19个bug，待处理bug16个，bug链接：https://w.101.com/eYjMZr主要问题概述如下：1、使用1.5H左右，系统出现卡顿现象：A、画作掉卡过程卡顿，需要40S左右B、图鉴页操作卡顿2、二轮测试过程中，频繁出现崩溃3、UI效果问题，列表页缩略图糊、课程详情页画作头像变形等情况
+
+[林晓翠-福州来噢 in 美术史APP] Content-Type:text/plain
+Content-At:986916
+
+视频播放页也好啦，同一个figma链接https://w.101.com/riUJRz@游浠
+
+[黄种志 in OpenQ教育元宇宙-生产工具AI化] Content-Type: text/plain
+Content-At: 986916
+
+恩，你好像说周二要是吧？成坛可以优先安排开发。@游浠 也看一下成坛手上有没安排其他事情，如果没有的话就优先配合一下杨帆的这个工作
+
+[陈书挺 in 互动小队] Content-Type: rich/xml
+Content-At: 986916
+
+<div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#a46676;font-weight:&#x20;bold;"><span>@游浠&#x20;我看看。</span></div>
+
+[黄彬 in 实验颗粒开发团队] Content-Type:text/plain
+Content-At:151010,986916
+Blink-Code:1000
+
+路上堵车 会晚到5分钟 @陈伟胜 @游浠 
+
+[陈伟胜 in 实验颗粒开发团队] Content-Type: rich/xml
+Content-At: 986916
+
+<div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#000000;"><span>@游浠&#x20;那晚20分钟吧</span></div>
+
+[杨小群 in 【教育元宇宙】上架应用市场] Content-Type: text/plain
+Content-At: 651002,986916
+
+@陈锐（若恒） @游浠 
+
+[何松航 in 逃离鸭科夫复刻] 插件可以找还游浠购买
+
+[吴誌华 in 互动小队] Content-Type: text/plain
+Content-At: 592126,986916
+
+https://gcdncs.101.com/v0.1/static/public_virtual_idols/ILabPlayer_Android/333e2ade-6366-4d89-a49e-ad56e662b024/2026033101/CharacterDemo-Android-Shipping-arm64.apk?serviceName=public_virtual_idols&attachment=true@余少秦 @游浠  二次元版本生产包，线上版本也同步全网发布
+
+[林晓翠-福州来噢 in 美术史APP] Content-Type: rich/xml
+Content-At: 986916
+
+<div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#000000;"><span>https://w.101.com/naYbUn@游浠&#x20;个人中心UI已完成</span></div>
+
+[周丽秋 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 109727,110736,123419,182018,613123,886066,986916
+
+@施玉斌 @陈祎 @江诗佺 @何松航 @游浠 @陈兴王 @王燕琼（冰奶茶） 美术史APP资源上云及界面文本优化，测试100%，测试不通过，当前待处理bug仍有16个，标红bug6个，bug链接：https://w.101.com/Vbua6v注：bug如果有修复的请及时修改bug状态
+
+[王永弟 in (private)] 游浠，明天早上的主程会，陈铭去参加吗？
+
+[徐映萍 in Open-Q业务UE5.7升级问题沟通] Content-Type:text/plain
+Content-At:509810,986916
+
+@蔡小梅 @游浠 open-q需要批刷的资源麻烦明天早上就提供过来
+
+[杨小群 in 【教育元宇宙】上架应用市场] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 
+
+[杨小群 in 【教育元宇宙】上架应用市场] Content-Type: text/plain
+Content-At: 986916
+
+ios的做了，@游浠 最新版有发给审核吗
+
+[徐映萍 in Open-Q业务UE5.7升级问题沟通] Content-Type: rich/xml
+Content-At: 986916
+
+<div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#800040;"><span>@游浠&#x20;这个麻烦你内部沟通一下吧</span></div>
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 695080
+
+@林城明  你发的内容整理一下放到这里好了说下，我们排下优先级，如果淘宝没有就让游浠那边申请购买https://wy75ubw5kb.feishu.cn/wiki/GGfDwwxJwiKD6pkyfoLcec55nme?fromScene=spaceOverview
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 986916
+
+@游浠  我们先确认做哪些，后面交付时间补上
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 986916
+
+https://wy75ubw5kb.feishu.cn/wiki/GGfDwwxJwiKD6pkyfoLcec55nme?fromScene=spaceOverview&sheet=c33357这些帮忙买一下，我们拿到插件，才知道快速集成难度  @游浠 
+
+[蔡小梅 in Open-Q业务UE5.7升级问题沟通] Content-Type: text/plain
+Content-At: 986916
+
+另外要强调一点，目前打包提供的是5.3版本，上次提供的5.7测试还没通过也没有做美术效果验收，如果程序批刷升级后到产品端使用有问题如何处理？谁来出成本，谁来处理呢？@游浠 
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 
+
+[蔡小梅 in Open-Q业务UE5.7升级问题沟通] Content-Type:text/plain
+Content-At:986916
+Blink-Code:1000
+
+@游浠 发外包就要项目这边去提原始需求走外包流程，然后外包部投放制作，回收后做验收
+
+[王永弟 in (private)] Content-Type:text/plain
+Blink-Code:1000
+
+游浠，早上我去医院，晚点到。
+
+[杨小群 in 【教育元宇宙】上架应用市场] Content-Type: text/plain
+Content-At: 651002,986916
+
+发现新问题@陈锐（若恒） @游浠 
+
+[林城明 in 逃离鸭科夫复刻] Content-Type: rich/xml
+Content-At: 886066,986916
+
+<div><img src="336b342c-5356-4080-bbc4-d2d7ee765c99" size="158257" mime="png" width="1923" height="593" md5="dcf7bcf29ce1ba43df67028b2d0fc569" name="img.png" fullimage="true" /><span>&#x0D;&#x0A;@何松航&#x20;@游浠&#x20;&#x0D;&#x0A;目前完成两个了，Ultimate&#x20;Multiplayer&#x20;Survival&#x20;Pack&#x20;V6这个要接入吗？</span></div>
+
+[林城明 in 逃离鸭科夫复刻] 游浠上周是说两个都接入，松航说相同的游戏重叠了，所以目前需要接入吗
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 886066,986916
+
+@游浠 @何松航 
+
+[林钊 in 逃离鸭科夫复刻] Content-Type: text/plain
+Content-At: 986916
+
+@游浠  你们这信息是在哪里同步的，我这边没看到，不问的话就是没有
+
+[周丽秋 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 109727,123419,161615,613123,886066,986916
+
+@陈智龙 @江诗佺 @陈兴王 @何松航 @游浠 @王燕琼（冰奶茶） 1、美术史APP首页改版-首页及播放器功能验证及bug修复验证，新增38个bug，尚有31个bug待修复：https://w.101.com/In6zEn2、美术史APP界面文本优化-掉卡特效尚未提测注：原计划4.8发布首页改版、界面优化内容，当前进度及bug质量来看，存在一定风险
+
+[张成坛 in 元宇宙服务端小分队] Content-Type: text/plain
+Content-At: 986916
+
+@游浠   这边是学习计划的  明天让QA帮忙走查下
+
+[郑烨 in AI器材生产线配置沟通] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 AI器材调用大模型接口，需要对接哪位同学，麻烦拉一下
+
+[林芊芊 in (private)] <div style="font-size:12pt;&#x20;font-family:微软雅黑;&#x20;color:#000000;"><span>游浠，OpenQ和美术史APP的Q2预算过了么</span></div>
+
+[范敬萍 in 【OpenQ】AI助理，快速研发] Content-Type: text/plain
+Content-At: 986916
+
+@游浠 openq产品端本周要上AI学伴，晚上有没有时间约一下，和开发讨论下可以上哪些内容
+
+[周丽秋 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 109727,123419,161615,613123,886066,986916
+
+@陈兴王 @陈智龙 @江诗佺 @何松航 @游浠 @王燕琼（冰奶茶） 美术史APP-首页优化的内容，因为掉卡的问题暂时没有发布，需要待白天修复掉卡及续播问题后发布。大家重点关注这两个问题哈
+
+[黄建峰 in 元宇宙服务端小分队] Content-Type: text/plain
+Content-At: 986916
+
+还有个未来实验室的，@游浠 这个项目还有在用吗
+
+[黄建峰 in 元宇宙服务端小分队] 游浠 说的这个是未来实验室的，不是这个空库的
+
+[王至立 in AI器材生产线配置沟通] Content-Type:text/plain
+Content-At:986916
+Blink-Code:1000
+
+@游浠 那可以加我们到git了
+
+[范敬萍 in 范敬萍（小米）] 游浠 产品端的课程资源库 目前是哪个同学负责管理的
+
+[王燕琼 in (private)] 游浠，你会知道PC的AI学伴是谁测试的吗
+
+[王燕琼 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 886066,986916
+
+@何松航 @游浠 
+
+[陈锐 in Open Q - 教育元宇宙] Content-Type: text/plain
+Content-At: 986916
+
+@游浠  明天可以安排半小时澄清会吧。
+
+[黄种志 in 黄种志] 游浠，覆盖成坛的外包预算单据，链接发我一下，或者帮忙导个pdf给我，芊芊在收集
+
+[钟金平 in 钟金平] <div><img src="28bea3be-b850-497f-865c-4ae3ccd84052" size="86174" mime="png" width="1438" height="995" md5="7b6fad0b7a0bed1af1b31a4152d20d8e" name="img.png" fullimage="true" /><span>&#x0D;美术史APP，周丽秋的3月测试服务费，付款单在项目负责人节点被驳回了，我看审批人是AI号？游浠你了解啥情况吗&#x0D;&#x0D;</span></div>
+
+[黄种志 in OpenQ教育元宇宙-生产工具AI化] Content-Type: text/plain
+Content-At: 986916
+
+代码可以迁移过来，不过要在什么时候之前迁移，迁移的优先级@游浠 安排吧
+
+[张成坛 in kafka升级] Content-Type: rich/xml
+Content-At: 986916
+
+<div><span>@游浠&#x20;&#x20;</span><img src="d56f9760-b7a8-4905-8fb8-1f6a80453e12" size="31731" mime="png" width="1781" height="178" md5="743bf6b428358fa360cb15b4b397aae3" name="img.png" fullimage="true" /><span>。&#x20;生产环境的kafka需要切到租户化的kafka====这个之前升级&#x20;然后没时间，说等Q2&#x20;&#x20;现在这个要处理了&#x20;&#x20;看下怎么处理，看下现在项目还有用吗</span></div>
+
+[王燕琼 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 110736,182018,886066,986916
+
+@陈祎 @施玉斌 @何松航 @游浠 UE5.7版本一轮测试完成新增bug*17（严重*1，一般*16）具体bug见https://w.101.com/rMviI3
+
+[王燕琼 in 王燕琼（冰奶茶）] 游浠，UE5.7的bug：https://w.101.com/rMviI3我看陈祎这周应该安排不过来。。那5.7这个版本进度。。。你看看？
+
+[林晏召 in 林晏召（大召）] 游浠明早会议林金不在我们停一天，我们周五再对一下本周进展
+
+[周丽秋 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 122133,123419,182018,886066,986916
+
+@苏文瑛 @陈祎 @何松航 @游浠 @王燕琼（冰奶茶） 美术史APP-UE5.7升级测试，一轮完成100%，新增14个bug，bug链接如下：https://w.101.com/MneEBb请及时查收，谢谢！
+
+[张德伟 in 教育游戏-开发联调沟通] Content-Type: text/plain
+Content-At: 886066,986916
+
+@游浠 @何松航 
+
+[黄种志 in 黄种志] 游浠帮我看一下，为什么这个项目在backlog看不到需求《AI生产线研发-教学设计节点所需教学核心素材库建设与应用》
+
+[徐映萍 in (private)] <div style="font-size:12pt;&#x20;font-family:Microsoft&#x20;YaHei&#x20;UI;&#x20;color:#800040;"><span>游浠，这边2个项目升级UE5.7的&#x20;需要帮忙确认一下&#x0D;&#x0D;1、美术史&#x20;有QA测试了吧？预计发布时间可以确定了吗？&#x0D;2、open-q的&#x20;我看bug一直在&#x20;17个，好像没去改的样子，然后角色资源重新打包我看也已经差不多了，现在整个的测试计划是怎么安排的，预计发布时间可以给出吗</span></div>
+

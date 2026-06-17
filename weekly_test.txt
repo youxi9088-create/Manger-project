@@ -1,0 +1,10 @@
+planIntroduction: 设计一个完整、效果好的三国志游戏的体验流程，基于此评估在游戏模版能力、体验上的不足
+importance: 重要度5
+---
+planIntroduction: 1、拿出整个改编业务的AI工作流设计；
+2、拿出各Agent节点的输出、输出规范与参数；
+importance: 重要度5
+---
+planIntroduction: 将平台部署到外网，运行体验和使用
+importance: 重要度5
+---

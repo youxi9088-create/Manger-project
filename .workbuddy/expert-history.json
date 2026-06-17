@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "sessions": {
+    "864eaa86a2374ef48fc84d9db52aee15": [
+      {
+        "expertId": "AiEngineer",
+        "name": "深网网",
+        "profession": "AI工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/AiEngineer/AiEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/AiEngineer/AiEngineer_zh.md",
+        "usedAt": 1776667781152,
+        "industryId": "02-Engineering"
+      }
+    ]
+  },
+  "lastUpdated": 1776667861220
+}

@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "error-diagnostics@codebuddy-plugins-official": true,
+    "meeting-insights-analyzer@codebuddy-plugins-official": true
+  }
+}

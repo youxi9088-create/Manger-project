@@ -1,0 +1,39 @@
+
+=== result__2026-04-08 17_24_44__2026-04-08 游浠 17_24-17_34.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-08 19_32_36__2026-04-08 游浠 19_32-19_41.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-10 11_00_49__2026-04-10 游浠 11_00-11_30.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-13 16_02_23__2026-04-13 openQ会议 16_02-16_39.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-14 10_32_56__2026-04-14 美术史会议 10_32-11_29.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-14 16_31_02__2026-04-14 游浠 16_31-17_20.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-15 14_30_57__2026-04-15 游浠 14_30-15_59.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-17 19_55_00__2026-04-17 游浠 19_54-20_19.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-04-20 15_01_40__2026-04-20 openQ会议 15_01-15_18.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-05-07 15_20_29__2026-05-07 游浠 15_20-16_17.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-05-09 17_18_31__2026-05-09 站会 17_18-18_00.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-05-11 14_02_10__2026-05-11 游浠 14_02-14_34.json ===
+Error: 'str' object has no attribute 'get'
+
+=== result__2026-05-19 16_07_07__2026-05-19 游浠的会议 16_07-17_01.json ===
+Error: 'str' object has no attribute 'get'

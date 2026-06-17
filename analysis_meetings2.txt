@@ -1,0 +1,190 @@
+
+=== result__2026-04-08 17_24_44__2026-04-08 游浠 17_24-17_34.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath']
+  key: 2026-04-08 17:24:44__2026-04-08 游浠 17:24-17:34
+  meetingId: meeting_1775712952790_1
+  title: 2026-04-08 游浠 17:24-17:34
+  startTime: 2026-04-08 17:24:44
+  updatedAt: 2026-04-09T05:37:04.507Z
+  transcript: 啊，我也同步叫他进来听一下，看有没有补充。然后是这样的啊，我把信息跟你同步一下，就是刚刚建强呢，因为建强之前在我那挂了个单据。就是关于这个。好，整个资源库分发。然后呢，都，然后这个单据呢，到期了，我觉得没通过，驳回了。啊，他所以说今天跟我开了个会，说一下目前的这个全流程的情况。然后他给了个全流程的图，然后告诉我说，哎，这里面还有哪些没有打通。比如说他说了几个问题，第一个问题是说第一，呃，叫做 AI
+  summary: 会议讨论了资源库分发流程中存在的问题，包括AI生产线资源结构不符合要求、SDK产品端未动以及新加坡环境的不确定性。会议中确认了杜老大不再负责推进此事，转由宇辰负责。会议决定三周内完成资源从生产中心到openq中国和新加坡的适配，并解决播放器SDK的需求。同时，会议强调了资源库标准结构的确认问题，需要与仲平开会讨论。会议最后决定不需要与建强开会，而是直接与AI课件的技术团队和仲廷开会确认方案。
+  todos[0] type: <class 'str'>
+  todos[0]: 与仲平开会讨论资源库标准结构问题（优先级:high）
+  audioPath: F:\个人\app\claw studio\data\meetings\meeting_1775712952790_1_audio.mp3
+
+=== result__2026-04-08 19_32_36__2026-04-08 游浠 19_32-19_41.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-08 19:32:36__2026-04-08 游浠 19:32-19:41
+  meetingId: meeting_1775731601335_0
+  title: 2026-04-08 游浠 19:32-19:41
+  startTime: 2026-04-08 19:32:36
+  updatedAt: 2026-04-09T10:48:56.164Z
+  transcript: 呃，是，背景是这样的，就是陈瑞他下午比较晚的时候跟我打电话说伟华这边要求他在产品端上把 AI 助理先上了，然后也要求一周发一个版本。然后今天已经周三了嘛，周五如果要发版本的话，呃，我觉得可能做不了太多事情，所以我简单罗列了一下比较重要的，然后这边开发可以评估一下，看一下我们大概能完成哪些内容。第一个就是说我们的主界面中要增加这个 AI 对话的一个入口。然后呃界面如果没有 UI 的话，是不是可以先用
+  summary: 会议讨论了产品端上AI助理的紧急上线需求，要求一周发一个版本。讨论了主界面增加AI对话入口、接入大模型、获取用户信息、语音输入输出和背诵助手接入等事项。确定了周五下班前需要完成版本，并讨论了可能的技术问题和解决方案。
+  todos[0] type: <class 'str'>
+  todos[0]: 评估并确定周五版本能完成的功能（优先级:high）
+  audioPath: F:\个人\app\claw studio\data\meetings\meeting_1775731601335_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-10 11_00_49__2026-04-10 游浠 11_00-11_30.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-10 11:00:49__2026-04-10 游浠 11:00-11:30
+  meetingId: meeting_1776163764818_3
+  title: 2026-04-10 游浠 11:00-11:30
+  startTime: 2026-04-10 11:00:49
+  updatedAt: 2026-04-14T10:50:25.108Z
+  transcript: 呃，是，背景是这样的，就是陈瑞他下午比较晚的时候跟我打电话说伟华这边要求他在产品端上把 AI 助理先上了，然后也要求一周发一个版本。然后今天已经周三了嘛，周五如果要发版本的话，呃，我觉得可能做不了太多事情，所以我简单罗列了一下比较重要的，然后这边开发可以评估一下，看一下我们大概能完成哪些内容。第一个就是说我们的主界面中要增加这个 AI 对话的一个入口。然后呃界面如果没有 UI 的话，是不是可以先用
+  summary: 会议讨论了伟华要求在产品端上尽快上线AI助理，并要求每周更新一个版本。讨论了AI助理的主要功能，包括主界面增加AI对话入口、用户信息获取、语音输入输出以及背诵助手接入。确定了优先级，并讨论了实现这些功能的可行性和时间安排。最终决定周五下班前发布版本，并在产品端体现AI助手的存在。
+  todos[0] type: <class 'str'>
+  todos[0]: 评估并确定AI对话入口的设计和实现（截止:2026-04-12）
+  audioPath: ..\..\data\meetings\meeting_1776163764818_3_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-13 16_02_23__2026-04-13 openQ会议 16_02-16_39.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-13 16:02:23__2026-04-13 openQ会议 16:02-16:39
+  meetingId: meeting_1776143223702_1
+  title: 2026-04-13 openQ会议 16:02-16:39
+  startTime: 2026-04-13 16:02:23
+  updatedAt: 2026-04-14T05:10:52.323Z
+  transcript: 那那那我们就不就程序的东西就说的少一点吧，好吧？啊，啊，啊，正常。嗯。对，等看他什么时候完了吧。因为程序主要是案子那边的，我待会再详细澄清嘛。然后我们还同步一下结项目标嘛，因为结项目标也批也也批过了，然后呃整个结项目标里面，我们还是在四月份到5月20号，我们围绕人运世界，呃，完成整个轮运世界。这是第一个目标，另外两个目标我没有写到版本里面来的，没有写到结项目标里面来的哈。第一个是 AI 助理的。这
+  summary: 本次会议主要讨论了项目进度和接下来的工作计划。首先，明确了项目目标是在4月到5月20日完成整个人运世界的工作，包括AI助理竞品推进、游戏玩法和主线设计。接着，讨论了本周计划，包括人运IP的推进、人艺剧场逻辑完善、人运直播和VIP用户信息展示等。还提到了新手环节的调整，增加游客模式，去掉阿瓦塔装扮环节，以及新增广告位等。最后，讨论了美术资源和UI资源的准备情况，以及直播间场景和VIP粉丝展示的问题。
+  todos[0] type: <class 'str'>
+  todos[0]: 详细澄清程序相关事宜（优先级:medium）
+  audioPath: F:\个人\app\claw studio\data\meetings\meeting_1776143223702_1_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-14 16_31_02__2026-04-14 游浠 16_31-17_20.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-14 16:31:02__2026-04-14 游浠 16:31-17:20
+  meetingId: meeting_1776330080780_1
+  title: 2026-04-14 游浠 16:31-17:20
+  startTime: 2026-04-14 16:31:02
+  updatedAt: 2026-04-16T09:05:22.117Z
+  transcript: 呃，来吧来吧。我又出了一个文档，然后因为呃最近要做的几个，包括直播间那边炒地皮的，还有呃要做的那个颗粒 loading 界面增加广告位的呃设计，它都跟草地皮的这个功能，就是核心的这个经济系统的功能有关系。所以说我这边首先先做一个，就是跟大家跟大家啊从策划角度说明一下，就是这个经济系统到底是什么东西，然后以及后续在功能实现上面。呃，我们看下是怎么去对它进行抽象跟划分。呃，这是第一个重要的，然后后续一
+  summary: 本次会议主要讨论了直播间炒地皮的经济系统功能、颗粒loading界面增加广告位的设计以及相关产权和功能实现。明确了炒地皮的经济系统规则，包括产权的拥有权和使用权，以及标的物的功能玩法。讨论了直播间席位的展示和购买流程，以及loading界面广告位的配置和播放逻辑。同时，也提到了App Store审核进度和下载速率显示问题，需要进一步确认和解决。
+  todos[0] type: <class 'str'>
+  todos[0]: 确认App Store审核进度和下载速率显示问题（负责人:宋涵，截止:2026-04-14，优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1776330080780_1_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-15 14_30_57__2026-04-15 游浠 14_30-15_59.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-15 14:30:57__2026-04-15 游浠 14:30-15:59
+  meetingId: meeting_1776255634211_0
+  title: 2026-04-15 游浠 14:30-15:59
+  startTime: 2026-04-15 14:30:57
+  updatedAt: 2026-04-15T12:26:39.296Z
+  transcript: 呃，我们先对一次吧。对对，我们自己内部先聊一下吧。嗯。然后，我因为我昨天看了一些他的一些方案。好，那个呢？他的方案昨天呃不然我来共享吧。他们那个方案，就是呢，他们这个方案呢，呃，从结构的角度上面也不是不可以。啊，但是它里面很多东西没有定义到底，比如说运营后台，所谓的上架后台到底是干什么，它只是很很粗泛地说了一些东西。啊，并且说需要一个什么，什么叫做呃什么运营管理后台，什么课程加功能模块，这边还有所
+  summary: 会议主要讨论了内部方案共享、运营后台定义、学习计划系统的角色和功能以及与NDR课程教材的关系。强调了运营后台的四种分类：用户运营、内容运营、活动运营和渠道运营，并讨论了学习计划系统在架构中的重要性。提出了对现有方案的疑问，包括课程的上下架管理、内容管理后台的角色以及个性化学习计划的实施。会议还涉及了技术方案的讨论，包括课程数据库结构的变化、分发机制的统一以及对学习计划系统可能产生的影响。
+  todos[0] type: <class 'str'>
+  todos[0]: 确认学习计划系统在架构中的作用和位置（负责人:宋涵，截止:尽快，优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1776255634211_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-17 19_55_00__2026-04-17 游浠 19_54-20_19.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-17 19:55:00__2026-04-17 游浠 19:54-20:19
+  meetingId: meeting_1776682287936_1
+  title: 2026-04-17 游浠 19:54-20:19
+  startTime: 2026-04-17 19:55:00
+  updatedAt: 2026-04-20T10:53:22.034Z
+  transcript: 他们还要重新登口，这个叫所以我们看到这个教会的建立，不是因为他们身上有哪些的行为，也不是因为他们跟彼得很熟。也不是因为他取得怎么样的成绩，不是一种数字的，也不是看的。我们看到彼得说，后来彼得是吃饼和饱，都走，但是彼得认识到耶稣有永生之道，是因为他的道有永生。所以我们可以看到，他们后，他们能够受洗，三千年，成为耶稣的门徒，是为了社会。洗牛哭。并且呢，他们要建立起这个信仰，就是要恒心遵守主使徒的教训，
+  summary: 本次会议主要讨论了信仰的建立和维护，强调了信仰不是基于个人行为或成绩，而是源于对耶稣永生之道的认识。讨论了信仰的个人责任，即每个人都需要主动建立和维护自己的信仰，以及信仰成长过程中的挑战和外部攻击的抵御。会议还提到了信仰的核心是真道，即圣经的教导，以及如何在末世中坚守信仰。最后，讨论了如何在基督的真道上造就自己，包括熟悉圣经、理解得救的智慧以及在信仰中成长。
+  todos[0] type: <class 'str'>
+  todos[0]: 熟悉圣经和得救的智慧（优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1776682287936_1_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-04-20 15_01_40__2026-04-20 openQ会议 15_01-15_18.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-04-20 15:01:40__2026-04-20 openQ会议 15:01-15:18
+  meetingId: meeting_1776743532130_0
+  title: 2026-04-20 openQ会议 15:01-15:18
+  startTime: 2026-04-20 15:01:40
+  updatedAt: 2026-04-21T03:53:36.091Z
+  transcript: 陈瑞开始吧。那我们要我们上次确认上周完成情况吧。我刚给大家看录屏了。啊，我们就直接拿这个来对吧。哎呀。呃，人艺学院的，人艺剧场的，这个都已经接了，好吧？然后 VIP 信息的展示位这边好像看录屏没有做完，因为他没有展示名望等级啊。没有展示名望等级。那是因为我那个账号是那个新的账号，它没，还没有，还没有达到那个名望，呃，对应的一个等级，所以它没显示，正常是有的有的。上次不是有说他用户进去会有一个。先空
+  summary: 会议主要回顾了上周的工作完成情况，并讨论了本周的工作计划。上周任务基本完成，但主界面场景增加广告位的需求尚未提出。本周计划包括处理游戏地图问题、人运直播接入、低级名外名声包装以及人鱼作品集模块。月底前需要给老板一个版本，因此资源替换工作需在本周完成。此外，教育游戏项目暂停，人运学院继续进行，后续元宇宙项目将转为游戏元宇宙。会议最后确定了与强哥的资源对接时间和未来会议安排。
+  todos[0] type: <class 'str'>
+  todos[0]: 确认上周工作完成情况（截止:2026-04-20）
+  audioPath: ..\..\data\meetings\meeting_1776743532130_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-05-07 15_20_29__2026-05-07 游浠 15_20-16_17.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-05-07 15:20:29__2026-05-07 游浠 15:20-16:17
+  meetingId: meeting_1778149858736_0
+  title: 2026-05-07 游浠 15:20-16:17
+  startTime: 2026-05-07 15:20:29
+  updatedAt: 2026-05-07T10:35:20.986Z
+  transcript: 啊啊啊，呃，那就博颖简单介绍一下背景。啊，那我说一下吧，这个背景。呃，那要不我投个屏？嗯，我来投个屏吧。好，看得到我屏幕哈。那我们的这个做这个事情的目标呢，就是把我们实操实验能够接到目前的这个三个平台，一个呢是这个。应该是这个应该是这个 AI 教材生产这么一个平台，然后第二个呢是这个，我们叫它教学活动设计嘛，这个平台。然后第三个呢就是 AI 课件生产的这个平台，要用这这三个平台来把呃实操实验的这个
+  summary: 会议讨论了实操实验颗粒生产的流程和平台使用问题。目标是将实操实验颗粒的生产与AI教材生产、教学活动设计和AI课件生产三个平台对接。讨论了实验颗粒的定义、教材的创建和拆解、学习目标的生产和同步问题。确定了需要进一步确认是否使用AI课件生产管理平台，并与相关负责人沟通以明确流程和数据同步细节。
+  todos[0] type: <class 'str'>
+  todos[0]: 确认是否使用AI课件生产管理平台（负责人:博颖，截止:尽快，优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1778149858736_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-05-09 17_18_31__2026-05-09 站会 17_18-18_00.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-05-09 17:18:31__2026-05-09 站会 17:18-18:00
+  meetingId: meeting_1778472618762_0
+  title: 2026-05-09 站会 17:18-18:00
+  startTime: 2026-05-09 17:18:31
+  updatedAt: 2026-05-11T04:13:47.392Z
+  transcript: 我我我没意见啊，我没意见，所以葛大你这个你帮忙推动一下呗，就是前置的这些，包括刚才讲跟秦俊这边对的这些东西，我觉得先定下来呗，先定下来嘛，然后包括那个，我我觉得是这样子的。就是我们这次其实定位是蛮明显的，就是想去做一些验证天花板的这些这些工作嘛。然后呃我们下次打算两周给金伟华，上次跟葛大也有，还有杨建也有商量过嘛，就是两周内我们能达到一个什么效果嘛。然后呃按这个目标去推动嘛，然后就想说，啊，比如说
+  summary: 会议讨论了项目进度和下一步工作重点，包括剧本的确认、分镜头的制作、素材库的准备、3D效果的实现和性能预算分配。强调了两周内要达到的效果，讨论了光照、液体、冰晶等效果的实现，并确定了需要与剧本结合的地方。提出了使用AI生成设计图和分镜头图的建议，讨论了3D游戏开发的概念图流程和素材库的使用。确定了项目组内对方案的对比和选择，以及根据场景训练AI出分镜图的计划。讨论了性能预算的分配和实验场景的设计，以
+  todos[0] type: <class 'str'>
+  todos[0]: 推动前置工作和与秦俊的对接（负责人:葛大，优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1778472618762_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-05-11 14_02_10__2026-05-11 游浠 14_02-14_34.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-05-11 14:02:10__2026-05-11 游浠 14:02-14:34
+  meetingId: meeting_1778481702212_0
+  title: 2026-05-11 游浠 14:02-14:34
+  startTime: 2026-05-11 14:02:10
+  updatedAt: 2026-05-11T06:45:02.482Z
+  transcript: 跟吴总讲，跟曾总华讲也可以，就是。但是我们至少先先把这个底嘛。如果我们一开始就降到成本去的话，我是觉得，这个不是我们的想法。那这个剧本有几个好处。一个好处是它引用了之前参考的那个。理解理解理解。空间站事故的一个一个呃题材，那么它既然就有这个开场的一个破坏效果，还有失踪状态。那么我们的这个光影啊，还有这个失重状态下的这些满地飞的器材和一些嗯小碎屑啊之类的东西，它的视觉效果比较强嘛。嗯，可以突出你UE
+  summary: 会议讨论了项目剧本的优势和视觉效果，强调了UE引擎的3A级别观赏效果和失败死亡结局的独立片段。提出了将剧本中的互动和3D模拟结合，以及对剧本的迭代和细化。讨论了竞品分析、资源需求和美术资源的更新。确定了需要制作流程图和白盒环境，以及器材模型的修改和优化。强调了项目进度和资源的高效利用，要求尽快完成流程图和白盒制作。
+  todos[0] type: <class 'str'>
+  todos[0]: 提供参考视频链接和截图（截止:2026-05-11）
+  audioPath: ..\..\data\meetings\meeting_1778481702212_0_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']
+
+=== result__2026-05-19 16_07_07__2026-05-19 游浠的会议 16_07-17_01.json ===
+Type: <class 'dict'>
+Keys: ['key', 'meetingId', 'title', 'startTime', 'updatedAt', 'transcript', 'summary', 'todos', 'audioPath', 'versions']
+  key: 2026-05-19 16:07:07__2026-05-19 游浠的会议 16:07-17:01
+  meetingId: meeting_1779697824180_2
+  title: 2026-05-19 游浠的会议 16:07-17:01
+  startTime: 2026-05-19 16:07:07
+  updatedAt: 2026-05-25T08:45:45.258Z
+  transcript: 呃，然后接着呃以复刻呃一两款游戏作为呃前提，作作为目标，去针对于这。复刻出来的，达成完整性、可玩性、体验好的角度，我们继续去看说，哎，过程中还需要做哪些，哪些做的还不够好，AI可能需要去提升，要么换引擎，要么换模型。要么换提示词，要么换能力，甚至是说我可能需要对 AI AI 生产出来东西做一做一做一点点的一些约束跟限制等等的。然后并且还有针对于一款游完整的角度来看的话，是复刻角度哈。呃，还有一些还
+  summary: 会议讨论了基于经典游戏如三国志和恐龙行动复刻的目标，探讨了AI在提升游戏完整性、可玩性和体验方面的作用。讨论了游戏中未实现的元素，如场景、道具、武器、坐骑等，并计划通过AI生成资源和设计清单来实现这些元素。同时，讨论了AI在游戏改编中的作用，包括动作、音效、UI样式等，并计划逐步增加新能力，如武器和商店元素。最终目标是利用AI技术改编出完成度高、个性化且品质高的游戏，并通过平台进行分发和上架。
+  todos[0] type: <class 'str'>
+  todos[0]: 完成网络框架开发，加入刷怪等功能（负责人:相关开发人员，截止:本周，优先级:high）
+  audioPath: ..\..\data\meetings\meeting_1779697824180_2_audio.mp3
+  versions[0] type: <class 'dict'>
+  versions[0] keys: ['versionId', 'createdAt', 'transcript', 'summary', 'todos']

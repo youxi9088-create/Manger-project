@@ -1,0 +1,33 @@
+{
+  "name": "openclaw",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm -F @openclaw/server dev\" \"pnpm -F @openclaw/web dev\"",
+    "dev:all": "concurrently \"pnpm -F @openclaw/server dev\" \"pnpm -F @openclaw/web dev\" \"pnpm -F @openclaw/im-analyzer dev\"",
+    "build": "pnpm -r build",
+    "start": "concurrently \"pnpm -F @openclaw/server start\" \"pnpm -F @openclaw/web start\"",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run ts-check || pnpm -r run typecheck",
+    "format": "prettier -w .",
+    "format:check": "prettier -c .",
+    "webhook": "node scripts/webhook-server.mjs",
+    "feishu:pull": "node scripts/feishu-doc-puller.mjs",
+    "feishu:poll": "node scripts/feishu-doc-puller.mjs --poll 60",
+    "feishu:sync": "node scripts/sync-to-knowledge.mjs --pull",
+    "feishu:sync-only": "node scripts/sync-to-knowledge.mjs",
+    "postinstall": "patch -p1 -d node_modules/next --forward --silent < patches/next@15.2.4.patch || true"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.6.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "pnpm": ">=9.0.0",
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

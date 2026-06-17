@@ -1,0 +1,98 @@
+[
+  {
+    "meeting_id": "2026-04-20 openQ会议 15:01-15:18",
+    "title": "2026-04-20 openQ会议 15:01-15:18",
+    "start_time": "2026-04-20 15:01:40",
+    "result": {
+      "decisions": [
+        {
+          "content": "人艺学院和人艺剧场已经完成接手，VIP信息展示位因账号等级问题未显示名望等级，后续将补充名字。",
+          "owner": "陈瑞",
+          "impact": "项目进度更新"
+        },
+        {
+          "content": "主界面场景增加广告位尚未完成，需求未给出，计划先不做。",
+          "owner": "陈瑞",
+          "impact": "项目进度调整"
+        },
+        {
+          "content": "游戏地图需要调整，将游戏名称直接标在地图上，而不是挂在右上角。",
+          "owner": "陈瑞",
+          "impact": "UI/UX设计调整"
+        },
+        {
+          "content": "人运直播将接入直播视频，若当日无直播则提供点播集，直播开始时进行提醒。",
+          "owner": "陈瑞",
+          "impact": "功能更新"
+        },
+        {
+          "content": "人运学院不停，后续元宇宙其他项目将转成游戏元宇宙。",
+          "owner": "陈瑞",
+          "impact": "项目方向调整"
+        },
+        {
+          "content": "使用卡通狮子的元素替换进UI，若能搭配则不进行大的UI改动。",
+          "owner": "陈瑞",
+          "impact": "UI设计决策"
+        }
+      ],
+      "action_items": [
+        {
+          "task": "完成人鱼作品集模块的开发",
+          "owner": "陈瑞",
+          "due": "月底",
+          "priority": "high"
+        },
+        {
+          "task": "提供人运学院和人运直播模块的资源",
+          "owner": "强哥",
+          "due": "明天",
+          "priority": "high"
+        },
+        {
+          "task": "画原型，完成直播视频点播功能",
+          "owner": "陈瑞",
+          "due": "本周",
+          "priority": "high"
+        },
+        {
+          "task": "安排会议确定游戏元宇宙的具体做法和迭代内容",
+          "owner": "陈瑞",
+          "due": "明天",
+          "priority": "high"
+        }
+      ],
+      "risks": [
+        {
+          "description": "产品越来越乱，增加广告位可能导致用户体验下降",
+          "severity": "medium",
+          "impact": "用户满意度降低",
+          "mitigation": "慎重考虑广告位的增加，确保不破坏用户体验"
+        },
+        {
+          "description": "直播推流问题，目前只能接受web页面形式",
+          "severity": "medium",
+          "impact": "直播体验受限",
+          "mitigation": "与老板沟通增加推流，或者寻找替代方案"
+        }
+      ],
+      "blockers": [
+        {
+          "description": "老板推流问题未解决，影响直播功能实现",
+          "owner": "陈瑞",
+          "suggestion": "与老板沟通解决推流问题"
+        }
+      ],
+      "key_topics": [
+        "项目进度更新",
+        "UI/UX设计调整",
+        "直播视频点播功能开发",
+        "资源提供和确认",
+        "项目方向调整"
+      ],
+      "sentiment": "mixed",
+      "follow_up_needed": true,
+      "next_meeting_suggestion": "讨论游戏元宇宙的具体做法和迭代内容，确认资源提供细节"
+    }
+  }
+]

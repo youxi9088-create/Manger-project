@@ -1,0 +1,9 @@
+{
+  "name": "auto-order",
+  "description": "自动下单技能 — 通过 Playwright 浏览器自动化，从飞书多维表格读取任务数据，自动填写到 OA 系统的需求子任务表单中。",
+  "version": "1.0.0",
+  "author": "OpenClaw",
+  "entry": "auto-order.md",
+  "tools": ["playwright", "express"],
+  "dependencies": ["packages/server/src/services/oa-automation.js"]
+}

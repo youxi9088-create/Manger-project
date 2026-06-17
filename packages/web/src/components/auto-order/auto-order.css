@@ -1,0 +1,38 @@
+/* 自动下单模块 - 可调整列宽的表格样式 */
+
+.resizable-table {
+  width: 100%;
+  min-width: var(--table-total-width, 1100px);
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.resizable-header-cell {
+  position: relative;
+  width: var(--col-width, 100px);
+  min-width: 40px;
+  user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background-color 0.15s;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background-color: rgba(59, 130, 246, 0.5);
+}
+
+.cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
