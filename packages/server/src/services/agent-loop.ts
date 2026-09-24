@@ -3,6 +3,7 @@
 
 import https from "https";
 import { getTool, getToolsForMoonshot } from "./agent-tools.js";
+import { waitForPermission, resolvePermission } from "./agent-permission.js";
 import type { AgentSSEEvent } from "@openclaw/shared/types/agent.js";
 
 export interface AttachmentInfo {
@@ -50,6 +51,8 @@ export interface AgentLoopOptions {
   overrideExecutor?: (args: OverrideExecutorArgs) => Promise<OverrideExecutorResult>;
   /** 用户消息附件列表（图片会转为多模态内容，文档会注入文本描述） */
   attachments?: AttachmentInfo[];
+  /** 当前 loop 的唯一标识，用于权限确认 */
+  loopId?: string;
 }
 
 /** 将文本 + 附件转换为 Moonshot API 支持的消息内容格式 */
@@ -145,6 +148,7 @@ export async function runAgentLoop(
     onEvent,
     overrideExecutor,
     attachments,
+    loopId,
   } = options;
 
   // 处理最后一条用户消息：如果有附件，转为多模态格式
@@ -255,8 +259,39 @@ export async function runAgentLoop(
       if (toolResult === null && !toolError) {
         const tool = getTool(toolName);
         if (tool) {
-          try { toolResult = await tool.execute(params); }
-          catch (err: unknown) { toolError = err instanceof Error ? err.message : "工具执行失败"; }
+          try {
+            // 2.1 高风险工具：先请求用户确认
+            if (tool.requireConfirm && loopId) {
+              const confirmReason = `工具 ${toolName} 可能修改系统数据，需要你的确认`;
+              onEvent?.({
+                type: "permission_request",
+                loop_id: loopId,
+                tool_call_id: toolCall.id,
+                name: toolName,
+                params,
+                reason: confirmReason,
+              });
+
+              const { approved, reason } = await waitForPermission(loopId, toolCall.id);
+              onEvent?.({
+                type: "permission_resolved",
+                loop_id: loopId,
+                tool_call_id: toolCall.id,
+                approved,
+              });
+
+              if (!approved) {
+                toolError = reason || "用户拒绝执行该操作";
+              }
+            }
+
+            // 2.2 执行工具（未被拒绝时）
+            if (!toolError) {
+              toolResult = await tool.execute(params);
+            }
+          } catch (err: unknown) {
+            toolError = err instanceof Error ? err.message : "工具执行失败";
+          }
         } else {
           toolError = `工具 ${toolName} 未注册`;
         }

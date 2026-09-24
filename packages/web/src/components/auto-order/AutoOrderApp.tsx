@@ -10,6 +10,9 @@ import TaskList from './TaskList';
 import TerminalOutput from './TerminalOutput';
 import MappingPanel from './MappingPanel';
 
+const API_BASE = process.env.NEXT_PUBLIC_SERVER_API
+  || (process.env.NODE_ENV === 'production' ? '/a/openclaw' : 'http://localhost:3001');
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tasks' | 'mapping' | 'config' | 'logs'>('dashboard');
   const [status, setStatus] = useState<AutomationStatus>(AutomationStatus.IDLE);
@@ -172,7 +175,7 @@ const App: React.FC = () => {
     addLog(`🔍 检索标识码 (UUID): ${targetUuid}`, "info");
 
     try {
-      const response = await fetch('http://localhost:3001/execute', {
+      const response = await fetch(`${API_BASE}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -274,7 +277,7 @@ const App: React.FC = () => {
       addLog(`🔍 检索标识码 (UUID): ${targetUuid}`, "info");
 
       try {
-        const response = await fetch('http://localhost:3001/execute', {
+        const response = await fetch(`${API_BASE}/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

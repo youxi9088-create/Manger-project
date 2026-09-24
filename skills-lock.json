@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "project-info-analysis": {
+      "source": "skill.new.ndhy.com",
+      "sourceType": "well-known",
+      "computedHash": "50525b6963423edc325d8b3113ee49971211fb4dff277dae6bb743032d357c44"
+    }
+  }
+}

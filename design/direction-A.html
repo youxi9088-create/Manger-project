@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw · 方向 A · 秒数轮盘</title>
+  <!--
+    ============================================================
+    ASSUMPTIONS + 风格选择理由
+    ============================================================
+    1. 本地未能读取 huashu-design 的 references/design-styles.md，
+       因此按任务说明进入 Fallback：自主选择一种能打破 AI 默认极简安全区的风格。
+    2. 秒数计算：45 % 20 + 1 = 6。第 6 号风格未知，故以「瑞士国际主义平面设计风格
+       （Swiss International Typographic Style）的暗色变体」作为方向 A 的视觉 DNA。
+    3. 选择理由：
+       · openclaw 是「AI 驱动的项目协作平台」，目标情绪是「沉静、精密、可信、有秩序」。
+       · Swiss 风格的核心——网格系统、非对称平衡、客观无衬线字体、功能性装饰——
+         与项目协作工具对「信息秩序」和「信任感」的需求高度契合。
+       · 暗色主场 + 暖锈橙 accent 既保留现有 dark mode 资产，又避免蓝底霓虹 glow 的
+         GitHub-dark slop；暖橙作为「AI 动作」的语义色，让智能感有温度而不冰冷。
+    4. 降级说明：
+       · 真正的 Swiss 风格往往配合高质量纪实摄影或大幅留白海报式排版；本文件是
+         数据密集型 Dashboard 原型，无法做到 70% 海报留白，故以「网格 + 规则线 +
+         字体层级」作为可迁移 DNA，摄影/大幅留白部分用「诚实占位」思维替代。
+       · 未使用真实品牌 logo，标题以文字标替代。
+    5. 反 AI slop 承诺：无紫色渐变、无 emoji、无圆角卡片+左彩色 border、无 SVG 手绘
+       人物/场景、无编造引用。数据均为示例性业务数据，不代表真实客户。
+    ============================================================
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Swiss Dark Palette */
+      --bg: #0b0b0c;
+      --surface: #131314;
+      --elevated: #1b1b1c;
+      --border: #2a2a2c;
+      --text-primary: #f4f4f0;
+      --text-secondary: #8f8f89;
+      --text-tertiary: #5e5e5a;
+      --accent: #e85d04;        /* rust orange for AI / primary */
+      --accent-dim: #9a3b03;
+      --accent-bg: rgba(232, 93, 4, 0.10);
+      --risk: #e63946;          /* Swiss red */
+      --risk-bg: rgba(230, 57, 70, 0.10);
+      --success: #2a9d8f;
+      --success-bg: rgba(42, 157, 143, 0.10);
+      --warning: #e9c46a;
+      --info: #457b9d;
+
+      --font-display: 'Space Grotesk', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+      --font-body: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Space Grotesk', sans-serif;
+
+      --grid-gap: 24px;
+      --rule: 1px solid var(--border);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-wrap: pretty;
+    }
+
+    /* Swiss Grid Shell */
+    .app {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 64px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      grid-row: 1 / -1;
+      border-right: var(--rule);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0 24px 0;
+    }
+
+    .brand {
+      padding: 0 28px 28px;
+      border-bottom: var(--rule);
+    }
+    .brand-mark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      flex: 1;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .nav-item:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.03);
+    }
+    .nav-item.active {
+      color: var(--text-primary);
+      background: var(--elevated);
+      border-left-color: var(--accent);
+    }
+    .nav-icon { width: 18px; height: 18px; stroke-width: 1.75; }
+
+    .sidebar-foot {
+      padding: 20px 28px 0;
+      border-top: var(--rule);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      border-bottom: var(--rule);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .global-search {
+      position: relative;
+      width: 320px;
+    }
+    .global-search input {
+      width: 100%;
+      background: var(--surface);
+      border: var(--rule);
+      color: var(--text-primary);
+      padding: 9px 14px 9px 36px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+    }
+    .global-search input:focus {
+      border-color: var(--text-tertiary);
+    }
+    .global-search input::placeholder { color: var(--text-tertiary); }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--text-tertiary);
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .kbd-hint {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      border: var(--rule);
+      padding: 4px 8px;
+    }
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      background: var(--elevated);
+      border: var(--rule);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Main Stage */
+    .main {
+      overflow: auto;
+      padding: 32px;
+    }
+    .page {
+      display: none;
+      max-width: 1400px;
+    }
+    .page.active { display: block; }
+
+    /* Swiss Modules */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      margin-bottom: 14px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--grid-gap);
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--grid-gap);
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--grid-gap);
+    }
+
+    .metric {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 22px;
+      position: relative;
+    }
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .metric-delta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .metric-delta.up { color: var(--success); }
+    .metric-delta.down { color: var(--risk); }
+    .metric-accent { position: absolute; top: 0; right: 0; width: 6px; height: 100%; background: var(--accent); }
+    .metric-accent.risk { background: var(--risk); }
+    .metric-accent.success { background: var(--success); }
+
+    .panel {
+      border: var(--rule);
+      background: var(--surface);
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: var(--rule);
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .panel-body { padding: 16px 20px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: var(--rule);
+      background: var(--elevated);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn:hover {
+      border-color: var(--text-secondary);
+      background: rgba(255,255,255,0.04);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #ff6b1a;
+      border-color: #ff6b1a;
+    }
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Tables / Lists */
+    .list-row {
+      display: grid;
+      grid-template-columns: 32px 1fr 140px 100px 90px;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: var(--rule);
+      font-size: 13px;
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row:hover { background: rgba(255,255,255,0.02); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+    .row-title { font-weight: 500; }
+    .row-meta { color: var(--text-secondary); font-size: 12px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border: var(--rule);
+    }
+    .tag-accent { background: var(--accent-bg); border-color: var(--accent-dim); color: #ff9e6d; }
+    .tag-risk { background: var(--risk-bg); border-color: rgba(230,57,70,0.4); color: #ff8a94; }
+    .tag-success { background: var(--success-bg); border-color: rgba(42,157,143,0.4); color: #7fdccb; }
+    .tag-ghost { color: var(--text-secondary); }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--text-tertiary);
+    }
+    .status-dot.active { background: var(--accent); }
+    .status-dot.risk { background: var(--risk); }
+    .status-dot.success { background: var(--success); }
+
+    /* Progress */
+    .progress-wrap {
+      height: 4px;
+      background: var(--elevated);
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--text-primary);
+      transition: width 0.3s ease;
+    }
+    .progress-bar.accent { background: var(--accent); }
+    .progress-bar.risk { background: var(--risk); }
+
+    /* Dashboard Specific */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: var(--grid-gap);
+      margin-top: var(--grid-gap);
+    }
+    .focus-list { display: flex; flex-direction: column; gap: 10px; }
+    .focus-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      border: var(--rule);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .focus-item:hover { border-color: var(--text-secondary); }
+    .focus-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--elevated);
+      border: var(--rule);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .focus-title { font-weight: 600; font-size: 13px; }
+    .focus-desc { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+
+    /* Projects */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--grid-gap);
+      gap: 16px;
+    }
+    .search-local {
+      position: relative;
+      width: 260px;
+    }
+    .search-local input {
+      width: 100%;
+      background: var(--surface);
+      border: var(--rule);
+      color: var(--text-primary);
+      padding: 8px 12px 8px 32px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+    }
+    .search-local input:focus { border-color: var(--text-secondary); }
+    .filter-group { display: flex; gap: 8px; }
+    .filter-chip {
+      padding: 6px 12px;
+      border: var(--rule);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-chip:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+    .filter-chip.active { color: var(--text-primary); border-color: var(--accent); background: var(--accent-bg); }
+
+    .project-card {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .project-card:hover {
+      border-color: var(--text-secondary);
+      transform: translateY(-2px);
+    }
+    .project-card:active { transform: translateY(0); }
+    .project-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .project-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .project-code { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+    .project-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .project-progress-label { font-family: var(--font-mono); }
+
+    /* Project Detail */
+    .detail-hero {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 28px;
+      margin-bottom: var(--grid-gap);
+    }
+    .detail-hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .detail-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .detail-sub {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .detail-actions { display: flex; gap: 10px; }
+    .detail-tabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: var(--rule);
+      margin-bottom: var(--grid-gap);
+    }
+    .detail-tab {
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s ease;
+    }
+    .detail-tab:hover { color: var(--text-primary); }
+    .detail-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      padding-bottom: 22px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 5px;
+      width: 9px;
+      height: 9px;
+      background: var(--elevated);
+      border: 2px solid var(--text-tertiary);
+    }
+    .timeline-item.active::before { border-color: var(--accent); background: var(--accent); }
+    .timeline-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+    .timeline-title { font-weight: 600; font-size: 13px; margin-top: 2px; }
+    .timeline-desc { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+
+    /* Daily */
+    .compose-box {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 20px;
+      margin-bottom: var(--grid-gap);
+    }
+    .compose-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .compose-textarea {
+      width: 100%;
+      min-height: 80px;
+      background: var(--bg);
+      border: var(--rule);
+      color: var(--text-primary);
+      padding: 12px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+    }
+    .compose-textarea:focus { border-color: var(--accent-dim); }
+    .compose-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+    }
+    .ai-suggestions { display: flex; gap: 8px; }
+    .suggestion-chip {
+      padding: 5px 10px;
+      border: var(--rule);
+      background: var(--elevated);
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .suggestion-chip:hover { color: var(--text-primary); border-color: var(--accent-dim); }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 110px 110px 80px;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: var(--rule);
+      font-size: 13px;
+    }
+    .task-row:last-child { border-bottom: none; }
+    .task-row:hover { background: rgba(255,255,255,0.02); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border: var(--rule);
+      background: var(--bg);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .checkbox.checked { background: var(--accent); border-color: var(--accent); }
+    .task-title.checked { text-decoration: line-through; color: var(--text-tertiary); }
+
+    .import-banner {
+      border: var(--rule);
+      border-left: 3px solid var(--accent);
+      background: var(--accent-bg);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--grid-gap);
+    }
+    .import-text { font-size: 13px; }
+    .import-text strong { color: var(--text-primary); font-weight: 600; }
+
+    /* Meeting */
+    .meeting-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: var(--grid-gap);
+    }
+    .meeting-list {
+      border: var(--rule);
+      background: var(--surface);
+      max-height: calc(100vh - 180px);
+      overflow: auto;
+    }
+    .meeting-item {
+      padding: 16px 18px;
+      border-bottom: var(--rule);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .meeting-item:hover { background: var(--elevated); }
+    .meeting-item.active { background: var(--elevated); border-right: 3px solid var(--accent); }
+    .meeting-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+    .meeting-name { font-weight: 600; font-size: 13px; margin-top: 4px; }
+    .meeting-status { margin-top: 8px; }
+    .empty-state {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 60px 40px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      border: var(--rule);
+      display: grid;
+      place-items: center;
+      color: var(--text-tertiary);
+    }
+    .empty-title { font-size: 15px; font-weight: 600; }
+    .empty-desc { color: var(--text-secondary); font-size: 13px; max-width: 320px; }
+
+    .meeting-detail {
+      border: var(--rule);
+      background: var(--surface);
+    }
+    .meeting-detail-head {
+      padding: 22px;
+      border-bottom: var(--rule);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .meeting-detail-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .meeting-detail-meta { color: var(--text-secondary); font-size: 12px; }
+    .meeting-detail-body { padding: 22px; }
+    .segment-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .segment-tab {
+      padding: 6px 12px;
+      border: var(--rule);
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .segment-tab:hover { color: var(--text-primary); }
+    .segment-tab.active { color: var(--text-primary); border-color: var(--accent); background: var(--accent-bg); }
+    .segment-content { font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+    .segment-content p { margin: 0 0 10px; }
+    .segment-content strong { color: var(--text-primary); font-weight: 600; }
+
+    /* Loading State */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,11,12,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .loading-overlay.active { display: flex; }
+    .loading-box {
+      border: var(--rule);
+      background: var(--surface);
+      padding: 32px 48px;
+      text-align: center;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      margin: 0 auto 16px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+
+    /* Error toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      border: var(--rule);
+      border-left: 3px solid var(--risk);
+      background: var(--surface);
+      padding: 14px 18px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .toast.active { display: flex; }
+    .toast-icon { color: var(--risk); }
+    .toast-text { font-size: 13px; }
+    .toast-close { cursor: pointer; color: var(--text-tertiary); }
+    .toast-close:hover { color: var(--text-primary); }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,11,12,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      border: var(--rule);
+      background: var(--surface);
+      width: 560px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow: auto;
+    }
+    .modal-head {
+      padding: 18px 22px;
+      border-bottom: var(--rule);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-close { cursor: pointer; color: var(--text-tertiary); }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-body { padding: 22px; }
+
+    /* Utility */
+    .mb-1 { margin-bottom: var(--grid-gap); }
+    .mb-2 { margin-bottom: calc(var(--grid-gap) * 1.5); }
+    .flex { display: flex; }
+    .flex-between { justify-content: space-between; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .text-secondary { color: var(--text-secondary); }
+    .text-tertiary { color: var(--text-tertiary); }
+    .mono { font-family: var(--font-mono); }
+    .font-body { font-family: var(--font-body); }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    @media (max-width: 1200px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .meeting-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div class="loading-text">AI 正在整理上下文…</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <svg class="toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span class="toast-text font-body">同步失败：飞书 API 返回 503，请稍后重试</span>
+    <span class="toast-close" onclick="hideToast()">×</span>
+  </div>
+
+  <div class="modal-backdrop" id="syncModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">同步项目数据</span>
+        <span class="modal-close" onclick="closeModal()">×</span>
+      </div>
+      <div class="modal-body font-body">
+        <p class="text-secondary" style="margin-bottom:18px">选择要同步的数据源。此操作会从飞书项目、Git 仓库和会议记录中拉取最新状态。</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" checked style="accent-color:var(--accent)"> <span>飞书项目任务与阶段</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" checked style="accent-color:var(--accent)"> <span>Git 提交与分支状态</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" style="accent-color:var(--accent)"> <span>会议纪要中的待办</span>
+          </label>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+          <button class="btn btn-primary" onclick="doSync()">开始同步</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <div class="brand-dot"></div>
+          <span>OPENCLAW</span>
+        </div>
+        <div class="brand-sub">AI Project Workspace</div>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>今日驾驶舱</span>
+        </div>
+        <div class="nav-item" data-page="projects" onclick="switchPage('projects')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>项目列表</span>
+        </div>
+        <div class="nav-item" data-page="project-detail" onclick="switchPage('project-detail')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>项目详情</span>
+        </div>
+        <div class="nav-item" data-page="daily" onclick="switchPage('daily')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>日报计划</span>
+        </div>
+        <div class="nav-item" data-page="meeting" onclick="switchPage('meeting')">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span>会议助手</span>
+        </div>
+      </nav>
+      <div class="sidebar-foot">
+        <div>方向 A · Swiss Dark</div>
+        <div style="margin-top:4px">第 6 号风格 · Fallback</div>
+      </div>
+    </aside>
+
+    <header class="header">
+      <div class="header-left">
+        <h1 class="page-title" id="pageTitle">今日工作驾驶舱</h1>
+        <div class="global-search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="搜索项目、任务、会议…" id="globalSearch">
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="kbd-hint">⌘ K</span>
+        <div class="user-badge">
+          <div class="avatar">YX</div>
+          <span>游浠</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Dashboard -->
+      <section class="page active" id="dashboard">
+        <div class="section-label">Overview / 2026.07.02 星期四</div>
+        <div class="grid-4 mb-1">
+          <div class="metric">
+            <div class="metric-label">今日会议</div>
+            <div class="metric-value">3</div>
+            <div class="metric-delta">2 场已转写，1 场待开始</div>
+            <div class="metric-accent"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">待办任务</div>
+            <div class="metric-value">7</div>
+            <div class="metric-delta up">较昨日 -2</div>
+            <div class="metric-accent success"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">项目风险</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">需今日处理</div>
+            <div class="metric-accent risk"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">AI 待分析</div>
+            <div class="metric-value">12</div>
+            <div class="metric-delta">聊天记录 / 文档</div>
+            <div class="metric-accent"></div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div>
+            <div class="section-label">今日关注</div>
+            <div class="focus-list mb-1">
+              <div class="focus-item" onclick="switchPage('meeting')">
+                <div class="focus-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                </div>
+                <div>
+                  <div class="focus-title">10:30 智能客服系统重构 · 周会</div>
+                  <div class="focus-desc">会议已结束，AI 已生成纪要，识别到 3 项待办需同步至日报。</div>
+                </div>
+              </div>
+              <div class="focus-item" onclick="switchPage('project-detail')">
+                <div class="focus-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div>
+                  <div class="focus-title">智能客服系统重构存在交付风险</div>
+                  <div class="focus-desc">后端接口联调进度滞后 2 天，依赖方「支付中台」未确认排期。</div>
+                </div>
+              </div>
+              <div class="focus-item">
+                <div class="focus-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <div class="focus-title">12 条聊天记录待分析</div>
+                  <div class="focus-desc">来自「产品需求讨论群」的上下文可能包含新的任务变更。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-label">今日任务</div>
+            <div class="panel">
+              <div class="panel-body">
+                <div class="list-row" style="grid-template-columns: 32px 1fr 120px 90px 80px">
+                  <div class="status-dot active"></div>
+                  <div><div class="row-title">完成智能客服 API 接口文档评审</div><div class="row-meta">智能客服系统重构 · 今日 14:00 截止</div></div>
+                  <div class="tag tag-accent">高优先级</div>
+                  <div class="mono text-secondary">P1</div>
+                  <div class="mono text-secondary">2h</div>
+                </div>
+                <div class="list-row" style="grid-template-columns: 32px 1fr 120px 90px 80px">
+                  <div class="status-dot"></div>
+                  <div><div class="row-title">整理支付中台对接依赖清单</div><div class="row-meta">智能客服系统重构 · 今日 18:00 截止</div></div>
+                  <div class="tag tag-ghost">中优先级</div>
+                  <div class="mono text-secondary">P2</div>
+                  <div class="mono text-secondary">1.5h</div>
+                </div>
+                <div class="list-row" style="grid-template-columns: 32px 1fr 120px 90px 80px">
+                  <div class="status-dot"></div>
+                  <div><div class="row-title">日报计划同步昨日会议纪要</div><div class="row-meta">通用 · 今日 10:00 截止</div></div>
+                  <div class="tag tag-ghost">中优先级</div>
+                  <div class="mono text-secondary">P2</div>
+                  <div class="mono text-secondary">0.5h</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-label">今日会议</div>
+            <div class="panel mb-1">
+              <div class="panel-body">
+                <div class="list-row" style="grid-template-columns: 1fr 90px 80px; cursor:pointer" onclick="switchPage('meeting')">
+                  <div><div class="row-title">智能客服系统重构 · 周会</div><div class="row-meta">10:30 - 11:15 · 会议室 A</div></div>
+                  <div class="tag tag-success">已转写</div>
+                  <div class="mono text-secondary">45 min</div>
+                </div>
+                <div class="list-row" style="grid-template-columns: 1fr 90px 80px">
+                  <div><div class="row-title">产品需求对齐会</div><div class="row-meta">14:00 - 15:00 · 线上</div></div>
+                  <div class="tag tag-accent">待开始</div>
+                  <div class="mono text-secondary">60 min</div>
+                </div>
+                <div class="list-row" style="grid-template-columns: 1fr 90px 80px">
+                  <div><div class="row-title">研发团队 One-one</div><div class="row-meta">16:00 - 16:30 · 线上</div></div>
+                  <div class="tag tag-ghost">未开始</div>
+                  <div class="mono text-secondary">30 min</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-label">项目健康度</div>
+            <div class="panel">
+              <div class="panel-body">
+                <div style="margin-bottom:18px">
+                  <div class="flex flex-between items-center" style="margin-bottom:8px">
+                    <span class="font-body" style="font-weight:500">智能客服系统重构</span>
+                    <span class="mono text-secondary">67%</span>
+                  </div>
+                  <div class="progress-wrap"><div class="progress-bar accent" style="width:67%"></div></div>
+                </div>
+                <div style="margin-bottom:18px">
+                  <div class="flex flex-between items-center" style="margin-bottom:8px">
+                    <span class="font-body" style="font-weight:500">AI 助手 Workflows</span>
+                    <span class="mono text-secondary">84%</span>
+                  </div>
+                  <div class="progress-wrap"><div class="progress-bar" style="width:84%"></div></div>
+                </div>
+                <div>
+                  <div class="flex flex-between items-center" style="margin-bottom:8px">
+                    <span class="font-body" style="font-weight:500">企业知识库迁移</span>
+                    <span class="mono text-secondary risk">42%</span>
+                  </div>
+                  <div class="progress-wrap"><div class="progress-bar risk" style="width:42%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects -->
+      <section class="page" id="projects">
+        <div class="section-label">Projects / 全部项目</div>
+        <div class="grid-4 mb-1">
+          <div class="metric">
+            <div class="metric-label">项目总数</div>
+            <div class="metric-value">12</div>
+            <div class="metric-delta">本月新增 2 个</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">执行中</div>
+            <div class="metric-value">8</div>
+            <div class="metric-delta up">进度正常</div>
+            <div class="metric-accent success"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">招募中</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta">等待资源到位</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">高风险</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">需本周干预</div>
+            <div class="metric-accent risk"></div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-local">
+            <svg class="search-icon" style="left:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="搜索项目代号或名称" id="projectSearch">
+          </div>
+          <div class="filter-group">
+            <div class="filter-chip active" onclick="filterProjects(this,'all')">全部</div>
+            <div class="filter-chip" onclick="filterProjects(this,'active')">执行中</div>
+            <div class="filter-chip" onclick="filterProjects(this,'recruiting')">招募中</div>
+            <div class="filter-chip" onclick="filterProjects(this,'risk')">高风险</div>
+          </div>
+          <button class="btn btn-primary" onclick="showToast()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            新建项目
+          </button>
+        </div>
+
+        <div class="grid-3" id="projectGrid">
+          <div class="project-card" data-status="active" onclick="switchPage('project-detail')">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">智能客服系统重构</div>
+                <div class="project-code">OC-CS-2026</div>
+              </div>
+              <div class="tag tag-accent">执行中</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar accent" style="width:67%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">67%</span>
+              <span>截止 07-25</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">上次同步：2 小时前</div>
+          </div>
+
+          <div class="project-card" data-status="active">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">AI 助手 Workflows</div>
+                <div class="project-code">OC-AWF-2026</div>
+              </div>
+              <div class="tag tag-accent">执行中</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:84%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">84%</span>
+              <span>截止 07-18</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">上次同步：5 分钟前</div>
+          </div>
+
+          <div class="project-card" data-status="risk">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">企业知识库迁移</div>
+                <div class="project-code">OC-KB-2026</div>
+              </div>
+              <div class="tag tag-risk">高风险</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar risk" style="width:42%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">42%</span>
+              <span>已逾期 3 天</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">上次同步：1 天前</div>
+          </div>
+
+          <div class="project-card" data-status="active">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">移动端 SDK 封装</div>
+                <div class="project-code">OC-SDK-2026</div>
+              </div>
+              <div class="tag tag-accent">执行中</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:55%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">55%</span>
+              <span>截止 08-05</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">上次同步：6 小时前</div>
+          </div>
+
+          <div class="project-card" data-status="recruiting">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">数据报表可视化</div>
+                <div class="project-code">OC-DV-2026</div>
+              </div>
+              <div class="tag tag-ghost">招募中</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:0%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">0%</span>
+              <span>预计 07-15 启动</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">等待设计师到位</div>
+          </div>
+
+          <div class="project-card" data-status="risk">
+            <div class="project-card-head">
+              <div>
+                <div class="project-name">多租户权限改造</div>
+                <div class="project-code">OC-ACL-2026</div>
+              </div>
+              <div class="tag tag-risk">高风险</div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar risk" style="width:38%"></div></div>
+            <div class="project-meta-row">
+              <span class="project-progress-label">38%</span>
+              <span>截止 07-30</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-tertiary)">依赖项未闭环</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Project Detail -->
+      <section class="page" id="project-detail">
+        <div class="section-label">Project Detail / OC-CS-2026</div>
+        <div class="detail-hero">
+          <div class="detail-hero-top">
+            <div>
+              <div class="detail-title">智能客服系统重构</div>
+              <div class="detail-sub">以客户意图识别引擎升级为核心，重构对话管理与人工接管流程 · 负责人：李明哲</div>
+            </div>
+            <div class="detail-actions">
+              <button class="btn" onclick="openModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                同步数据
+              </button>
+              <button class="btn btn-primary">查看工作流</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:20px">
+            <div class="tag tag-accent">执行中</div>
+            <div class="tag tag-risk">交付风险</div>
+            <div class="tag tag-ghost">截止 07-25</div>
+            <div class="tag tag-ghost">8 名成员</div>
+          </div>
+        </div>
+
+        <div class="detail-tabs">
+          <div class="detail-tab active" onclick="switchDetailTab(this,'overview')">概览</div>
+          <div class="detail-tab" onclick="switchDetailTab(this,'requirements')">需求</div>
+          <div class="detail-tab" onclick="switchDetailTab(this,'tasks')">任务</div>
+          <div class="detail-tab" onclick="switchDetailTab(this,'members')">成员</div>
+          <div class="detail-tab" onclick="switchDetailTab(this,'deliverables')">交付</div>
+          <div class="detail-tab" onclick="switchDetailTab(this,'logs')">日志</div>
+        </div>
+
+        <div id="detail-overview" class="detail-tab-content">
+          <div class="grid-3 mb-1">
+            <div class="metric">
+              <div class="metric-label">总体进度</div>
+              <div class="metric-value">67%</div>
+              <div class="metric-delta">计划 70%，滞后 3%</div>
+              <div class="metric-accent"></div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">剩余任务</div>
+              <div class="metric-value">23</div>
+              <div class="metric-delta up">已完成 47</div>
+              <div class="metric-accent success"></div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">未闭环风险</div>
+              <div class="metric-value">2</div>
+              <div class="metric-delta down">支付中台排期 / UI 走查</div>
+              <div class="metric-accent risk"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">阶段时间线</span>
+                <span class="mono text-tertiary">V1.2</span>
+              </div>
+              <div class="panel-body">
+                <div class="timeline">
+                  <div class="timeline-item active">
+                    <div class="timeline-date">06.15 - 06.30</div>
+                    <div class="timeline-title">需求确认与接口设计</div>
+                    <div class="timeline-desc">已完成 PRD 评审与接口协议初稿</div>
+                  </div>
+                  <div class="timeline-item active">
+                    <div class="timeline-date">07.01 - 07.10</div>
+                    <div class="timeline-title">核心模块开发</div>
+                    <div class="timeline-desc">意图识别引擎 80%，对话状态机 60%</div>
+                  </div>
+                  <div class="timeline-item">
+                    <div class="timeline-date">07.11 - 07.20</div>
+                    <div class="timeline-title">联调与灰度测试</div>
+                    <div class="timeline-desc">待支付中台确认接口排期</div>
+                  </div>
+                  <div class="timeline-item">
+                    <div class="timeline-date">07.21 - 07.25</div>
+                    <div class="timeline-title">上线与验收</div>
+                    <div class="timeline-desc">生产环境发布与业务验收</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">知识库摘要</span>
+                <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px">刷新</button>
+              </div>
+              <div class="panel-body font-body" style="font-size:13px;line-height:1.8;color:var(--text-secondary)">
+                <p>最近 7 天，AI 从 4 场会议和 23 条聊天记录中提取了 <strong style="color:var(--text-primary)">12 条关键信息</strong>：</p>
+                <p>· 后端接口协议已冻结，但支付中台的「退款查询」接口尚未提供联排环境。</p>
+                <p>· 产品经理在 06-28 会议中确认：MVP 阶段不做人机协同的主动接管，仅保留兜底转人工。</p>
+                <p>· 设计侧反馈新版会话卡片在暗色模式下对比度不足，需 UI 走查。</p>
+                <div style="margin-top:16px;padding:12px;border:var(--rule);background:var(--bg)">
+                  <div class="mono text-tertiary" style="font-size:11px;margin-bottom:6px">AI 行动建议</div>
+                  <div style="color:var(--text-primary);font-weight:500">建议今日 15:00 前与支付中台负责人确认接口排期，并创建阻塞任务。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="detail-requirements" class="detail-tab-content" style="display:none">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">需求列表</span></div>
+            <div class="panel-body">
+              <div class="list-row" style="grid-template-columns: 1fr 110px 100px 90px">
+                <div><div class="row-title">CS-REQ-001 意图识别准确率 ≥ 92%</div><div class="row-meta">核心业务指标，需灰度验证</div></div>
+                <div class="tag tag-accent">已确认</div>
+                <div class="mono text-secondary">P0</div>
+                <div class="mono text-secondary">07-10</div>
+              </div>
+              <div class="list-row" style="grid-template-columns: 1fr 110px 100px 90px">
+                <div><div class="row-title">CS-REQ-012 人工接管响应时间 ≤ 3s</div><div class="row-meta">非功能性需求</div></div>
+                <div class="tag tag-accent">已确认</div>
+                <div class="mono text-secondary">P1</div>
+                <div class="mono text-secondary">07-15</div>
+              </div>
+              <div class="list-row" style="grid-template-columns: 1fr 110px 100px 90px">
+                <div><div class="row-title">CS-REQ-023 支持多轮上下文继承</div><div class="row-meta">技术预研中</div></div>
+                <div class="tag tag-ghost">待评审</div>
+                <div class="mono text-secondary">P2</div>
+                <div class="mono text-secondary">07-20</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="detail-tasks" class="detail-tab-content" style="display:none">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">任务看板</span></div>
+            <div class="panel-body">
+              <div class="task-row">
+                <div class="checkbox"></div>
+                <div class="task-title">完成后端接口文档评审</div>
+                <div class="tag tag-accent">高优先级</div>
+                <div class="mono text-secondary">07-02</div>
+                <div class="mono text-secondary">李明哲</div>
+              </div>
+              <div class="task-row">
+                <div class="checkbox checked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="task-title checked">更新对话状态机状态图</div>
+                <div class="tag tag-ghost">中优先级</div>
+                <div class="mono text-secondary">06-30</div>
+                <div class="mono text-secondary">王思远</div>
+              </div>
+              <div class="task-row">
+                <div class="checkbox"></div>
+                <div class="task-title">支付中台接口联调环境确认</div>
+                <div class="tag tag-risk">阻塞</div>
+                <div class="mono text-secondary">07-03</div>
+                <div class="mono text-secondary">陈雨桐</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="detail-members" class="detail-tab-content" style="display:none">
+          <div class="grid-4">
+            <div class="panel" style="text-align:center;padding:20px"><div class="avatar" style="width:44px;height:44px;margin:0 auto 12px;font-size:14px">LM</div><div style="font-weight:600">李明哲</div><div class="text-secondary" style="font-size:12px">项目经理</div></div>
+            <div class="panel" style="text-align:center;padding:20px"><div class="avatar" style="width:44px;height:44px;margin:0 auto 12px;font-size:14px">WS</div><div style="font-weight:600">王思远</div><div class="text-secondary" style="font-size:12px">后端负责人</div></div>
+            <div class="panel" style="text-align:center;padding:20px"><div class="avatar" style="width:44px;height:44px;margin:0 auto 12px;font-size:14px">CY</div><div style="font-weight:600">陈雨桐</div><div class="text-secondary" style="font-size:12px">前端负责人</div></div>
+            <div class="panel" style="text-align:center;padding:20px"><div class="avatar" style="width:44px;height:44px;margin:0 auto 12px;font-size:14px">ZQ</div><div style="font-weight:600">赵茜</div><div class="text-secondary" style="font-size:12px">产品经理</div></div>
+          </div>
+        </div>
+
+        <div id="detail-deliverables" class="detail-tab-content" style="display:none">
+          <div class="empty-state" style="margin-top:24px">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="empty-title">暂无已归档交付物</div>
+            <div class="empty-desc">当前阶段为开发中，交付物将在「联调与灰度测试」阶段后自动生成。</div>
+            <button class="btn" style="margin-top:8px">上传交付物</button>
+          </div>
+        </div>
+
+        <div id="detail-logs" class="detail-tab-content" style="display:none">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">同步日志</span></div>
+            <div class="panel-body font-body" style="font-size:12px;color:var(--text-secondary);line-height:2">
+              <div><span class="mono">07-02 09:12</span> · 从飞书项目同步任务 23 条</div>
+              <div><span class="mono">07-02 08:45</span> · 从 Git 仓库同步提交 14 条</div>
+              <div><span class="mono">07-01 18:30</span> · AI 识别到 1 条新的风险信号</div>
+              <div><span class="mono">07-01 16:00</span> · 会议纪要「智能客服周会」已关联 3 条任务</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Daily -->
+      <section class="page" id="daily">
+        <div class="section-label">Daily / 日报计划</div>
+
+        <div class="compose-box">
+          <div class="compose-label">今日目标 / 背景</div>
+          <textarea class="compose-textarea font-body" placeholder="输入今日核心目标，例如：完成智能客服接口评审并推动支付中台排期确认…" id="dailyGoal"></textarea>
+          <div class="compose-actions">
+            <div class="ai-suggestions">
+              <div class="suggestion-chip" onclick="fillGoal('完成智能客服接口评审，推动支付中台排期确认')">接口评审</div>
+              <div class="suggestion-chip" onclick="fillGoal('整理昨日会议纪要并同步待办到日报')">同步纪要</div>
+              <div class="suggestion-chip" onclick="fillGoal('跟进企业知识库迁移阻塞风险')">风险跟进</div>
+            </div>
+            <button class="btn btn-primary" id="aiGenBtn" onclick="generateDaily()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              AI 生成今日计划
+            </button>
+          </div>
+        </div>
+
+        <div class="import-banner">
+          <div class="import-text font-body">
+            <strong>历史未完成任务：</strong>昨日有 <span class="mono">2</span> 项任务未闭环，可从会议纪要或聊天记录导入。
+          </div>
+          <button class="btn" onclick="showLoading()">从会议导入</button>
+        </div>
+
+        <div class="toolbar" style="margin-bottom:16px">
+          <div class="section-label" style="margin:0">今日任务 · 7</div>
+          <div class="filter-group">
+            <div class="filter-chip active" onclick="filterTasks(this,'all')">全部</div>
+            <div class="filter-chip" onclick="filterTasks(this,'todo')">待办</div>
+            <div class="filter-chip" onclick="filterTasks(this,'done')">已完成</div>
+            <div class="filter-chip" onclick="filterTasks(this,'high')">高优先级</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-body">
+            <div class="task-row" data-status="todo high" onclick="toggleTask(this)">
+              <div class="checkbox"></div>
+              <div class="task-title">完成智能客服 API 接口文档评审</div>
+              <div class="tag tag-accent">高优先级</div>
+              <div class="mono text-secondary">14:00</div>
+              <div class="mono text-secondary">2h</div>
+            </div>
+            <div class="task-row" data-status="todo" onclick="toggleTask(this)">
+              <div class="checkbox"></div>
+              <div class="task-title">整理支付中台对接依赖清单</div>
+              <div class="tag tag-ghost">中优先级</div>
+              <div class="mono text-secondary">18:00</div>
+              <div class="mono text-secondary">1.5h</div>
+            </div>
+            <div class="task-row" data-status="todo high" onclick="toggleTask(this)">
+              <div class="checkbox"></div>
+              <div class="task-title">日报计划同步昨日会议纪要</div>
+              <div class="tag tag-accent">高优先级</div>
+              <div class="mono text-secondary">10:00</div>
+              <div class="mono text-secondary">0.5h</div>
+            </div>
+            <div class="task-row" data-status="done" onclick="toggleTask(this)">
+              <div class="checkbox checked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="task-title checked">查看智能客服系统重构风险提醒</div>
+              <div class="tag tag-ghost">中优先级</div>
+              <div class="mono text-secondary">09:00</div>
+              <div class="mono text-secondary">0.5h</div>
+            </div>
+            <div class="task-row" data-status="todo" onclick="toggleTask(this)">
+              <div class="checkbox"></div>
+              <div class="task-title">回复产品需求讨论群待分析消息</div>
+              <div class="tag tag-ghost">低优先级</div>
+              <div class="mono text-secondary">今日</div>
+              <div class="mono text-secondary">1h</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Meeting -->
+      <section class="page" id="meeting">
+        <div class="section-label">Meeting Assistant / 会议助手</div>
+        <div class="meeting-layout">
+          <div>
+            <div class="toolbar" style="margin-bottom:12px">
+              <div class="section-label" style="margin:0">录音列表 · 6</div>
+              <button class="btn btn-ghost" style="padding:4px 8px" onclick="showLoading()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              </button>
+            </div>
+            <div class="meeting-list" id="meetingList">
+              <div class="meeting-item active" data-id="m1" onclick="selectMeeting(this,'m1')">
+                <div class="meeting-time">2026.07.02 · 10:30</div>
+                <div class="meeting-name">智能客服系统重构 · 周会</div>
+                <div class="meeting-status"><span class="tag tag-success">已转写</span></div>
+              </div>
+              <div class="meeting-item" data-id="m2" onclick="selectMeeting(this,'m2')">
+                <div class="meeting-time">2026.07.01 · 15:00</div>
+                <div class="meeting-name">产品需求对齐会</div>
+                <div class="meeting-status"><span class="tag tag-success">已转写</span></div>
+              </div>
+              <div class="meeting-item" data-id="m3" onclick="selectMeeting(this,'m3')">
+                <div class="meeting-time">2026.06.30 · 11:00</div>
+                <div class="meeting-name">企业知识库迁移进度同步</div>
+                <div class="meeting-status"><span class="tag tag-accent">转写中</span></div>
+              </div>
+              <div class="meeting-item" data-id="m4" onclick="selectMeeting(this,'m4')">
+                <div class="meeting-time">2026.06.28 · 14:00</div>
+                <div class="meeting-name">AI 助手 Workflows 评审</div>
+                <div class="meeting-status"><span class="tag tag-ghost">未转写</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meeting-detail" id="meetingDetail">
+            <div class="meeting-detail-head">
+              <div>
+                <div class="meeting-detail-title">智能客服系统重构 · 周会</div>
+                <div class="meeting-detail-meta">2026.07.02 · 10:30 - 11:15 · 会议室 A · 参与者 5 人</div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn">下载音频</button>
+                <button class="btn btn-primary" onclick="showLoading()">重新生成纪要</button>
+              </div>
+            </div>
+            <div class="meeting-detail-body">
+              <div class="segment-tabs">
+                <div class="segment-tab active" onclick="switchSegment(this,'summary')">摘要</div>
+                <div class="segment-tab" onclick="switchSegment(this,'todos')">待办</div>
+                <div class="segment-tab" onclick="switchSegment(this,'analysis')">深度分析</div>
+                <div class="segment-tab" onclick="switchSegment(this,'transcript')">原文</div>
+              </div>
+
+              <div id="segment-summary" class="segment-content font-body">
+                <p><strong>会议目标：</strong>同步智能客服系统重构本周进展，识别阻塞并确认下周计划。</p>
+                <p><strong>关键结论：</strong></p>
+                <p>1. 意图识别引擎准确率当前为 89%，距离目标 92% 还差 3 个百分点，需在灰度数据上补充 2000 条标注样本。</p>
+                <p>2. 支付中台「退款查询」接口尚未提供联调环境，成为当前最大阻塞项。</p>
+                <p>3. UI 走查发现暗色模式会话卡片对比度不足，需设计侧在 07-05 前输出修复版本。</p>
+              </div>
+
+              <div id="segment-todos" class="segment-content font-body" style="display:none">
+                <div class="task-row" style="grid-template-columns: 28px 1fr 100px 100px">
+                  <div class="checkbox"></div>
+                  <div class="task-title">补充 2000 条意图识别标注样本</div>
+                  <div class="mono text-secondary">07-05</div>
+                  <div class="mono text-secondary">王思远</div>
+                </div>
+                <div class="task-row" style="grid-template-columns: 28px 1fr 100px 100px">
+                  <div class="checkbox"></div>
+                  <div class="task-title">确认支付中台接口联调排期</div>
+                  <div class="mono text-secondary">07-03</div>
+                  <div class="mono text-secondary">陈雨桐</div>
+                </div>
+                <div class="task-row" style="grid-template-columns: 28px 1fr 100px 100px">
+                  <div class="checkbox"></div>
+                  <div class="task-title">输出暗色模式会话卡片修复设计</div>
+                  <div class="mono text-secondary">07-05</div>
+                  <div class="mono text-secondary">赵茜</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top:16px" onclick="showLoading()">同步待办到日报</button>
+              </div>
+
+              <div id="segment-analysis" class="segment-content font-body" style="display:none">
+                <p><strong>情绪与参与度：</strong>本次会议共 5 人参与，发言占比均衡。无显著负面情绪词汇，但「阻塞」「排期」出现频次较上周上升 40%。</p>
+                <p><strong>风险识别：</strong>AI 识别到 2 项潜在风险——支付中台依赖未闭环、UI 走查问题可能导致灰度时间后移。</p>
+                <p><strong>关联信息：</strong>与项目「企业知识库迁移」共享成员陈雨桐，建议避免同一负责人在 07-03 出现任务冲突。</p>
+              </div>
+
+              <div id="segment-transcript" class="segment-content font-body" style="display:none">
+                <p><strong>10:32</strong> 李明哲：我们先过一下进度，王思远，意图识别那边怎么样？</p>
+                <p><strong>10:33</strong> 王思远：目前准确率 89%，主要卡在「退货意图」和「换货意图」的边界样本上。</p>
+                <p><strong>10:36</strong> 陈雨桐：支付中台那边我催了两次，对方说最快 07-04 才能给联调环境。</p>
+                <p><strong>10:40</strong> 赵茜：UI 走查我记一下，暗色模式下卡片对比度确实不够，我 07-05 前给一版。</p>
+                <p style="color:var(--text-tertiary)">… 剩余 42 段转写已折叠</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const pageTitles = {
+      dashboard: '今日工作驾驶舱',
+      projects: '项目列表',
+      'project-detail': '项目详情',
+      daily: '日报计划',
+      meeting: '会议助手'
+    };
+
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(page).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+      document.getElementById('pageTitle').textContent = pageTitles[page];
+    }
+
+    function switchDetailTab(el, tab) {
+      document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.detail-tab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('detail-' + tab).style.display = 'block';
+    }
+
+    function switchSegment(el, seg) {
+      const parent = el.closest('.meeting-detail-body');
+      parent.querySelectorAll('.segment-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      parent.querySelectorAll('.segment-content').forEach(c => c.style.display = 'none');
+      document.getElementById('segment-' + seg).style.display = 'block';
+    }
+
+    function filterProjects(el, status) {
+      document.querySelectorAll('#projects .filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('#projectGrid .project-card').forEach(card => {
+        card.style.display = (status === 'all' || card.dataset.status === status) ? 'block' : 'none';
+      });
+    }
+
+    function filterTasks(el, status) {
+      document.querySelectorAll('#daily .filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('#daily .task-row').forEach(row => {
+        const statuses = row.dataset.status.split(' ');
+        row.style.display = (status === 'all' || statuses.includes(status)) ? 'grid' : 'none';
+      });
+    }
+
+    function toggleTask(row) {
+      const cb = row.querySelector('.checkbox');
+      const title = row.querySelector('.task-title');
+      cb.classList.toggle('checked');
+      title.classList.toggle('checked');
+      if (cb.classList.contains('checked')) {
+        cb.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+      } else {
+        cb.innerHTML = '';
+      }
+    }
+
+    function fillGoal(text) {
+      document.getElementById('dailyGoal').value = text;
+    }
+
+    function generateDaily() {
+      const btn = document.getElementById('aiGenBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 生成中…';
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> AI 生成今日计划';
+        document.getElementById('dailyGoal').value = '今日核心目标：完成智能客服接口文档评审，推动支付中台排期确认；同步昨日会议纪要待办到日报；跟进企业知识库迁移阻塞风险。';
+      }, 1500);
+    }
+
+    const originalMeetingDetail = document.getElementById('meetingDetail').innerHTML;
+
+    function selectMeeting(el, id) {
+      document.querySelectorAll('.meeting-item').forEach(m => m.classList.remove('active'));
+      el.classList.add('active');
+      if (id === 'm3') {
+        document.getElementById('meetingDetail').innerHTML = `
+          <div class="empty-state" style="height:100%;justify-content:center">
+            <div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+            <div class="empty-title">转写中</div>
+            <div class="empty-desc">该会议录音正在由 AI 转写，预计还需 2 分钟。完成后将自动生成摘要与待办。</div>
+          </div>
+        `;
+      } else if (id === 'm4') {
+        document.getElementById('meetingDetail').innerHTML = `
+          <div class="empty-state" style="height:100%;justify-content:center">
+            <div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+            <div class="empty-title">未转写</div>
+            <div class="empty-desc">该会议尚未转写。点击下方按钮开始 AI 转写并生成纪要。</div>
+            <button class="btn btn-primary" onclick="showLoading()">开始转写</button>
+          </div>
+        `;
+      } else {
+        document.getElementById('meetingDetail').innerHTML = originalMeetingDetail;
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.add('active');
+      setTimeout(hideLoading, 1200);
+    }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+    function showToast() {
+      const t = document.getElementById('toast');
+      t.classList.add('active');
+      setTimeout(hideToast, 4000);
+    }
+    function hideToast() { document.getElementById('toast').classList.remove('active'); }
+
+    function openModal() { document.getElementById('syncModal').classList.add('active'); }
+    function closeModal() { document.getElementById('syncModal').classList.remove('active'); }
+    function doSync() {
+      closeModal();
+      showLoading();
+      setTimeout(showToast, 1300);
+    }
+
+    document.getElementById('projectSearch').addEventListener('input', function(e) {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('#projectGrid .project-card').forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('globalSearch').focus();
+      }
+    });
+  </script>
+</body>
+</html>

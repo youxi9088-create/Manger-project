@@ -6,9 +6,72 @@ import {
   updateDailyPlanTask,
   deleteDailyPlanTask,
   getUnfinishedDailyTasks,
+  getAnalysisReportByDate,
 } from '../services/db.js';
+import type { DbDailyPlanTask } from '../services/db.js';
 
 const router = Router();
+
+type AnalysisPendingTask = string | {
+  task?: string;
+  title?: string;
+  priority?: string;
+  deadline?: string;
+  group?: string;
+  owner?: string;
+};
+
+function parseTaskList(value: string | null): AnalysisPendingTask[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizePriority(value?: string): DbDailyPlanTask['priority'] {
+  if (!value) return 'medium';
+  if (value.includes('高') || /^P?0$/i.test(value)) return 'high';
+  if (value.includes('低') || /^P?2$/i.test(value)) return 'low';
+  return 'medium';
+}
+
+function mapAnalysisTasks(date: string): DbDailyPlanTask[] {
+  const report = getAnalysisReportByDate(date);
+  if (!report) return [];
+
+  const timestamp = report.created_at || new Date().toISOString();
+  return parseTaskList(report.pending_tasks).flatMap((item, index) => {
+    const task = typeof item === 'string' ? item.trim() : (item.task || item.title || '').trim();
+    if (!task) return [];
+
+    const metadata = typeof item === 'string' ? {} : item;
+    const notes = [
+      '来自聊天分析报告',
+      metadata.group,
+      metadata.deadline ? `截止：${metadata.deadline}` : undefined,
+    ].filter(Boolean).join(' · ');
+
+    return [{
+      id: `analysis-${date}-${index + 1}`,
+      plan_date: date,
+      title: task,
+      status: 'pending',
+      priority: normalizePriority(metadata.priority),
+      assignee: metadata.owner || null,
+      estimate_minutes: null,
+      notes: notes || null,
+      completed_at: null,
+      expected_completion_at: null,
+      source_date: report.report_date,
+      sort_order: index,
+      created_at: timestamp,
+      updated_at: timestamp,
+    }];
+  });
+}
 
 // 获取某日计划
 router.get('/api/daily-plans/:date', (req, res) => {
@@ -19,8 +82,17 @@ router.get('/api/daily-plans/:date', (req, res) => {
       return;
     }
     const result = getDailyPlan(date);
+    // The daily-plan table is optional. Surface the same day's persisted chat analysis
+    // when no explicit plan has been created, without writing generated rows back to it.
+    const tasks = result.tasks.length > 0 ? result.tasks : mapAnalysisTasks(date);
     const unfinished = getUnfinishedDailyTasks(date);
-    res.json({ success: true, ...result, unfinishedTasks: unfinished });
+    res.json({
+      success: true,
+      ...result,
+      tasks,
+      taskSource: result.tasks.length > 0 ? 'daily_plan' : tasks.length > 0 ? 'analysis_report' : 'none',
+      unfinishedTasks: unfinished,
+    });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || '获取每日计划失败' });
   }

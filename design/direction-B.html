@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenClaw · 方向 B · 现实参照</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* =========================================================
+       方向 B · 现实参照 / 标杆迁移
+       ---------------------------------------------------------
+       参照产品：Linear（https://linear.app）
+       核实方式：WebSearch 检索 "Linear app project management design language 2025 2026"
+       为什么选它：
+         - Linear 是项目管理/研发协同领域公认的设计标杆，与 openclaw 的
+           「AI 驱动项目协作平台」定位最贴近；
+         - 其暗色界面以「沉静、精密、高效」著称，与 spec 中的情感基调一致；
+         - 2026 年 3 月 Linear 刚完成新一轮 UI refresh，设计语言可考、新鲜。
+       迁移的设计语言（非抄袭具体 UI）：
+         1. 配色：从冷蓝灰转向「暖灰暗底 + 低饱和靛青 accent」，呼应 Linear 2026
+            refresh 中「warmer gray、less saturated、LCH 色彩空间」的方向；
+         2. 字体：英文/数字使用 Inter + JetBrains Mono，中文使用系统字体栈，
+            标题与数据拉开层级；
+         3. 布局：左侧窄边栏 + 主内容区，大量留白、1px 细边框、几乎无阴影，
+            信息密度高但不拥挤；
+         4. 组件：极简按钮、胶囊状态标签、细进度条、键盘快捷键提示；
+         5. 交互：hover 时背景色微妙上浮，active/selected 用 accent 底条而非
+            左侧彩色粗边；
+         6. 反 slop：无紫渐变、无 emoji、无圆角卡片+左彩色 border、无 SVG 手绘。
+       Assumptions：
+         - 默认暗色模式，不实现 light mode；
+         - 这是一个可点击切换的可交互原型，非生产代码；
+         - 内容基于 openclaw 现有页面（Dashboard / Projects / Project Detail /
+           Daily / Meeting Assistant）的真实字段与数据类型构造；
+         - 未使用真实后端，所有状态由前端 JS 模拟。
+       ========================================================= */
+
+    :root {
+      --bg: #0c0c0d;
+      --surface: #141415;
+      --surface-2: #1a1a1b;
+      --surface-3: #202022;
+      --border: #27272a;
+      --border-hover: #3f3f46;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --text-subtle: #71717a;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-soft: rgba(99, 102, 241, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #38bdf8;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 基础元素 */
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+
+    input, textarea, select {
+      font-family: inherit;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      background: var(--surface-3);
+    }
+    textarea { resize: vertical; min-height: 72px; }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* 图标 */
+    .icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke: currentColor;
+    }
+    .icon-sm { width: 14px; height: 14px; }
+    .icon-lg { width: 18px; height: 18px; }
+
+    /* 布局 */
+    .app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 侧边栏 */
+    .sidebar {
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 18px 14px;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      padding: 0 6px;
+    }
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .nav-group { display: flex; flex-direction: column; gap: 2px; }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0 8px;
+      margin-bottom: 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.12s, color 0.12s;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 0 2px 2px 0;
+    }
+    .nav-kbd {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-subtle);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    /* 主内容 */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg);
+    }
+    .topbar {
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .breadcrumb strong { color: var(--text); font-weight: 600; }
+    .global-actions { display: flex; align-items: center; gap: 8px; }
+    .search-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      color: var(--text-subtle);
+      font-size: 12px;
+      transition: border-color 0.15s, background 0.15s;
+      min-width: 220px;
+    }
+    .search-pill:hover { border-color: var(--border-hover); background: var(--surface-2); }
+    .search-pill kbd {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-subtle);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding: 28px 32px 48px;
+    }
+    .page { display: none; animation: fadeIn 0.18s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 0 0 4px;
+    }
+    .page-subtitle { color: var(--text-muted); font-size: 13px; margin: 0; }
+
+    /* 按钮 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-hover); }
+    .btn-ghost { color: var(--text-muted); }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+    .btn-danger { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+    .btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
+    .btn-sm { padding: 5px 9px; font-size: 12px; }
+
+    /* 卡片 */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      min-height: 48px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    .card-body { padding: 16px; }
+
+    /* 列表/行 */
+    .list-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      transition: background 0.12s;
+    }
+    .list-row:hover { background: var(--surface-2); }
+    .list-row + .list-row { margin-top: 2px; }
+
+    /* 标签 */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .tag-accent { background: var(--accent-soft); color: var(--accent); border-color: rgba(99, 102, 241, 0.22); }
+    .tag-success { background: rgba(34, 197, 94, 0.12); color: var(--success); border-color: rgba(34, 197, 94, 0.22); }
+    .tag-warning { background: rgba(245, 158, 11, 0.12); color: var(--warning); border-color: rgba(245, 158, 11, 0.22); }
+    .tag-danger { background: rgba(239, 68, 68, 0.12); color: var(--danger); border-color: rgba(239, 68, 68, 0.22); }
+    .tag-subtle { background: var(--surface-2); color: var(--text-muted); border-color: var(--border); }
+
+    /* 状态点 */
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-success { background: var(--success); }
+    .dot-warning { background: var(--warning); }
+    .dot-danger { background: var(--danger); }
+    .dot-info { background: var(--info); }
+    .dot-muted { background: var(--text-subtle); }
+
+    /* 进度条 */
+    .progress {
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    .progress-fill.success { background: var(--success); }
+    .progress-fill.warning { background: var(--warning); }
+    .progress-fill.danger { background: var(--danger); }
+
+    /* 表格 */
+    .table-wrap { overflow: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; font-size: 12px; }
+    th {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td { border-bottom: 1px solid var(--border); color: var(--text); }
+    tbody tr:hover td { background: var(--surface-2); }
+    tbody tr:last-child td { border-bottom: none; }
+    .mono { font-family: var(--font-mono); }
+
+    /* 工具类 */
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 16px; }
+    .ml-auto { margin-left: auto; }
+    .text-muted { color: var(--text-muted); }
+    .text-subtle { color: var(--text-subtle); }
+    .text-accent { color: var(--accent); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger { color: var(--danger); }
+    .text-sm { font-size: 12px; }
+    .text-xs { font-size: 11px; }
+    .font-mono { font-family: var(--font-mono); }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .w-full { width: 100%; }
+    .flex-1 { flex: 1; min-width: 0; }
+    .shrink-0 { flex-shrink: 0; }
+    .space-y > * + * { margin-top: 8px; }
+    .space-y-2 > * + * { margin-top: 12px; }
+    .space-y-3 > * + * { margin-top: 16px; }
+    .hidden { display: none !important; }
+
+    /* 空态 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      color: var(--text-subtle);
+      text-align: center;
+    }
+    .empty-state .icon { stroke: var(--text-subtle); margin-bottom: 12px; }
+
+    /* 错误态提示 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--danger);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      animation: slideIn 0.2s ease;
+    }
+    .toast.success { border-left-color: var(--success); }
+    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* Loading spinner */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 任务 checkbox */
+    .task-check {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--border-hover);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: border-color 0.12s, background 0.12s;
+      cursor: pointer;
+    }
+    .task-check:hover { border-color: var(--accent); }
+    .task-check .icon { width: 10px; height: 10px; stroke: transparent; transition: stroke 0.12s; }
+    .task-check.done { background: var(--success); border-color: var(--success); }
+    .task-check.done .icon { stroke: #fff; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+      padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 760px;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalIn 0.18s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-body { padding: 16px; overflow: auto; }
+
+    /* Tabs */
+    .tabs {
+      display: inline-flex;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+    .tab {
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: background 0.12s, color 0.12s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { background: var(--surface-2); color: var(--text); }
+
+    /* 响应式 */
+    @media (max-width: 1100px) {
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* 选中态高亮 */
+    .selected-ring { outline: 1px solid var(--accent); outline-offset: -1px; background: var(--accent-soft); }
+
+    /* 骨架屏 loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">OC</div>
+        <span>OpenClaw</span>
+      </div>
+
+      <nav class="nav-group">
+        <div class="nav-label">工作区</div>
+        <button class="nav-item active" data-page="dashboard">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          今日驾驶舱
+          <kbd class="nav-kbd">⌘1</kbd>
+        </button>
+        <button class="nav-item" data-page="daily">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          日报计划
+          <kbd class="nav-kbd">⌘2</kbd>
+        </button>
+        <button class="nav-item" data-page="projects">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          项目列表
+          <kbd class="nav-kbd">⌘3</kbd>
+        </button>
+        <button class="nav-item" data-page="meetings">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          会议助手
+          <kbd class="nav-kbd">⌘4</kbd>
+        </button>
+      </nav>
+
+      <nav class="nav-group">
+        <div class="nav-label">智能体</div>
+        <button class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Hermes Chat
+        </button>
+        <button class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          快速搜索
+        </button>
+      </nav>
+
+      <div style="margin-top: auto;">
+        <button class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          设置
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span id="crumb-workspace">OpenClaw</span>
+          <span class="text-subtle">/</span>
+          <strong id="crumb-page">今日驾驶舱</strong>
+        </div>
+        <div class="global-actions">
+          <button class="search-pill" id="global-search">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            搜索项目、任务、会议...
+            <kbd>⌘K</kbd>
+          </button>
+          <button class="btn btn-secondary btn-sm">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </button>
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-size: 10px; font-weight: 700;">HX</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- ==================== Dashboard ==================== -->
+        <section class="page active" id="page-dashboard">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">今日工作驾驶舱</h1>
+              <p class="page-subtitle">7月2日 星期三 · 早上好，项目进展尽在掌握</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-secondary btn-sm" onclick="switchPage('daily')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                今日任务
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="switchPage('meetings')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                会议助手
+              </button>
+            </div>
+          </div>
+
+          <!-- 今日关注 -->
+          <div class="card mb-4" id="concerns-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="dot dot-warning"></span>
+                今日关注（2 项）
+              </h2>
+              <span class="text-xs text-muted">需要优先处理</span>
+            </div>
+            <div class="card-body space-y">
+              <div class="list-row" style="cursor: pointer;" onclick="switchPage('meetings')">
+                <svg class="icon text-warning" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                <span class="flex-1">1 场会议纪要待确认</span>
+                <span class="text-xs text-muted">产品周会 · 10:00</span>
+                <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="list-row" style="cursor: pointer;" onclick="switchPage('daily')">
+                <svg class="icon text-danger" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="flex-1">2 个任务已逾期</span>
+                <span class="text-xs text-muted">来自日报计划</span>
+                <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2 mb-4">
+            <!-- 今日会议 -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  今日会议（2 场）
+                </h2>
+                <button class="btn btn-ghost btn-sm" onclick="switchPage('meetings')">查看全部</button>
+              </div>
+              <div class="card-body space-y">
+                <div class="list-row">
+                  <span class="dot dot-info"></span>
+                  <div class="flex-1">
+                    <div class="font-medium">产品周会</div>
+                    <div class="text-xs text-muted">今天 10:00 · 45 分钟</div>
+                  </div>
+                  <span class="tag tag-subtle">待确认</span>
+                </div>
+                <div class="list-row">
+                  <span class="dot dot-muted"></span>
+                  <div class="flex-1">
+                    <div class="font-medium" style="opacity:.7;">技术评审 · API 网关改造</div>
+                    <div class="text-xs text-muted">今天 14:00 · 60 分钟</div>
+                  </div>
+                  <span class="tag tag-subtle">未开始</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 今日任务 -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  今日任务（3 / 7）
+                </h2>
+                <span class="text-xs text-muted">已完成 3 项</span>
+              </div>
+              <div class="card-body space-y">
+                <div class="list-row" style="cursor:pointer;" onclick="toggleDashboardTask(this)">
+                  <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span class="flex-1 truncate">完成 quick-search 联调</span>
+                  <span class="tag tag-danger">高优</span>
+                </div>
+                <div class="list-row" style="cursor:pointer;" onclick="toggleDashboardTask(this)">
+                  <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span class="flex-1 truncate">修复日报页面空态显示</span>
+                  <span class="tag tag-warning">逾期</span>
+                </div>
+                <div class="list-row" style="cursor:pointer;" onclick="toggleDashboardTask(this)">
+                  <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span class="flex-1 truncate">整理项目风险清单</span>
+                  <span class="tag tag-subtle">中</span>
+                </div>
+                <div class="list-row" style="cursor:pointer; opacity:.6;" onclick="toggleDashboardTask(this)">
+                  <div class="task-check done"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span class="flex-1 truncate" style="text-decoration: line-through;">晨会同步今日重点</span>
+                  <span class="tag tag-success">已完成</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 项目健康度 -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2 class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                项目健康度
+              </h2>
+              <button class="btn btn-ghost btn-sm" onclick="switchPage('projects')">全部项目</button>
+            </div>
+            <div class="card-body">
+              <div class="grid grid-3">
+                <div class="card" style="background: var(--surface-2); cursor: pointer;" onclick="switchPage('project-detail')">
+                  <div class="card-body">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium truncate">AI 客服助手重构</span>
+                      <svg class="icon icon-sm text-danger" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                      <span class="tag tag-subtle">执行中</span>
+                      <span class="text-xs text-muted">剩 2 天</span>
+                    </div>
+                    <div class="progress"><div class="progress-fill danger" style="width: 62%"></div></div>
+                    <div class="flex justify-between text-xs mt-1"><span class="text-muted">进度</span><span>62%</span></div>
+                  </div>
+                </div>
+                <div class="card" style="background: var(--surface-2); cursor: pointer;" onclick="switchPage('project-detail')">
+                  <div class="card-body">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium truncate">Quick Search 2.0</span>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                      <span class="tag tag-accent">招募中</span>
+                      <span class="text-xs text-muted">剩 14 天</span>
+                    </div>
+                    <div class="progress"><div class="progress-fill" style="width: 28%"></div></div>
+                    <div class="flex justify-between text-xs mt-1"><span class="text-muted">进度</span><span>28%</span></div>
+                  </div>
+                </div>
+                <div class="card" style="background: var(--surface-2); cursor: pointer;" onclick="switchPage('project-detail')">
+                  <div class="card-body">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="font-medium truncate">会议助手转写优化</span>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                      <span class="tag tag-subtle">交付中</span>
+                      <span class="text-xs text-muted">剩 5 天</span>
+                    </div>
+                    <div class="progress"><div class="progress-fill success" style="width: 88%"></div></div>
+                    <div class="flex justify-between text-xs mt-1"><span class="text-muted">进度</span><span>88%</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 一键处理 -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                一键处理
+              </h2>
+            </div>
+            <div class="card-body flex gap-2 flex-wrap">
+              <button class="btn btn-secondary" onclick="switchPage('daily')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                规划今日任务
+              </button>
+              <button class="btn btn-secondary" onclick="switchPage('meetings')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                处理会议纪要
+              </button>
+              <button class="btn btn-secondary">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                查看聊天情报
+              </button>
+              <button class="btn btn-secondary" onclick="switchPage('projects')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                查看项目进展
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== Projects ==================== -->
+        <section class="page" id="page-projects">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">项目列表</h1>
+              <p class="page-subtitle">管理项目进度、阶段与风险</p>
+            </div>
+            <button class="btn btn-primary">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              新建项目
+            </button>
+          </div>
+
+          <!-- 统计 -->
+          <div class="grid grid-4 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">全部项目</div>
+                <div class="text-2xl font-semibold" style="font-family: var(--font-mono); font-size: 26px;">12</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">执行中</div>
+                <div class="text-2xl font-semibold text-accent" style="font-family: var(--font-mono); font-size: 26px;">5</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">招募中</div>
+                <div class="text-2xl font-semibold text-warning" style="font-family: var(--font-mono); font-size: 26px;">2</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">高风险</div>
+                <div class="text-2xl font-semibold text-danger" style="font-family: var(--font-mono); font-size: 26px;">1</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 筛选 -->
+          <div class="card mb-4">
+            <div class="card-body flex items-center gap-3 flex-wrap">
+              <div class="flex items-center gap-2 flex-1" style="min-width: 220px; max-width: 360px;">
+                <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="搜索项目..." style="flex:1;" id="project-search" oninput="filterProjects()" />
+              </div>
+              <select id="phase-filter" onchange="filterProjects()">
+                <option value="all">所有阶段</option>
+                <option value="executing">执行中</option>
+                <option value="recruiting">招募中</option>
+                <option value="planning">规划中</option>
+                <option value="delivering">交付中</option>
+                <option value="accepted">已完成</option>
+              </select>
+              <button class="btn btn-secondary btn-sm ml-auto" id="sync-all-btn" onclick="syncAllProjects()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                同步全部状态
+              </button>
+            </div>
+          </div>
+
+          <!-- 项目网格 -->
+          <div class="grid grid-3" id="projects-grid">
+            <div class="card project-card" data-title="AI 客服助手重构" data-phase="executing">
+              <div class="card-body">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="font-medium truncate">AI 客服助手重构</span>
+                  <svg class="icon icon-sm text-danger" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0042</div>
+                <div class="progress mb-2"><div class="progress-fill danger" style="width: 62%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>62%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-accent">执行中</span>
+                  <span class="text-xs text-muted">3 / 5 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-danger">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  延期 1 天
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  今日 09:12 同步
+                </div>
+              </div>
+            </div>
+
+            <div class="card project-card" data-title="Quick Search 2.0" data-phase="recruiting">
+              <div class="card-body">
+                <div class="font-medium truncate mb-2">Quick Search 2.0</div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0051</div>
+                <div class="progress mb-2"><div class="progress-fill" style="width: 28%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>28%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-warning">招募中</span>
+                  <span class="text-xs text-muted">1 / 4 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  还剩 14 天
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  昨天同步
+                </div>
+              </div>
+            </div>
+
+            <div class="card project-card" data-title="会议助手转写优化" data-phase="delivering">
+              <div class="card-body">
+                <div class="font-medium truncate mb-2">会议助手转写优化</div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0038</div>
+                <div class="progress mb-2"><div class="progress-fill success" style="width: 88%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>88%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-subtle">交付中</span>
+                  <span class="text-xs text-muted">4 / 4 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  还剩 5 天
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  今日 08:45 同步
+                </div>
+              </div>
+            </div>
+
+            <div class="card project-card" data-title="日报计划智能生成" data-phase="planning">
+              <div class="card-body">
+                <div class="font-medium truncate mb-2">日报计划智能生成</div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0060</div>
+                <div class="progress mb-2"><div class="progress-fill" style="width: 15%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>15%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-subtle">规划中</span>
+                  <span class="text-xs text-muted">2 / 3 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  还剩 21 天
+                </div>
+                <div class="flex items-center gap-1 text-xs text-warning mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  3 天前同步
+                </div>
+              </div>
+            </div>
+
+            <div class="card project-card" data-title="Workflow AIHub 接入" data-phase="executing">
+              <div class="card-body">
+                <div class="font-medium truncate mb-2">Workflow AIHub 接入</div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0049</div>
+                <div class="progress mb-2"><div class="progress-fill" style="width: 54%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>54%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-accent">执行中</span>
+                  <span class="text-xs text-muted">3 / 3 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  还剩 9 天
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  今日 10:03 同步
+                </div>
+              </div>
+            </div>
+
+            <div class="card project-card" data-title="知识库自动摘要" data-phase="accepted">
+              <div class="card-body">
+                <div class="font-medium truncate mb-2">知识库自动摘要</div>
+                <div class="text-xs text-muted mb-3">ID: PJ-2025-0033</div>
+                <div class="progress mb-2"><div class="progress-fill success" style="width: 100%"></div></div>
+                <div class="flex justify-between text-xs mb-3"><span class="text-muted">整体进度</span><span>100%</span></div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-success">已完成</span>
+                  <span class="text-xs text-muted">4 / 4 人</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  6月28日交付
+                </div>
+                <div class="flex items-center gap-1 text-xs text-muted mt-2">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  已归档
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== Project Detail ==================== -->
+        <section class="page" id="page-project-detail">
+          <div class="page-header">
+            <div class="flex items-center gap-3">
+              <button class="btn btn-ghost btn-sm" onclick="switchPage('projects')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </button>
+              <div>
+                <div class="flex items-center gap-3 mb-1">
+                  <h1 class="page-title" style="margin:0;">AI 客服助手重构</h1>
+                  <span class="tag tag-subtle font-mono">PJ-2025-0042</span>
+                  <span class="tag tag-danger">高风险</span>
+                </div>
+                <p class="page-subtitle">
+                  预立项转正式 · ID: proj_8x2k9m · VP: 林薇 · 已关联知识库 · 截止 2025-07-04
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-secondary btn-sm">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                项目信息同步
+              </button>
+              <button class="btn btn-secondary btn-sm">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                同步状态
+              </button>
+              <span class="tag tag-accent">执行中</span>
+            </div>
+          </div>
+
+          <!-- 下一步操作 -->
+          <div class="card mb-4" style="border-color: rgba(99,102,241,.25);">
+            <div class="card-body flex items-center gap-2 flex-wrap">
+              <span class="text-sm text-muted">下一步操作：</span>
+              <button class="btn btn-primary btn-sm">提交交付</button>
+              <button class="btn btn-secondary btn-sm">调整排期</button>
+              <span class="text-xs text-muted ml-auto">上次同步：今日 09:12</span>
+            </div>
+          </div>
+
+          <!-- 统计 -->
+          <div class="grid grid-4 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">整体进度</div>
+                <div class="text-2xl font-semibold" style="font-family: var(--font-mono);">62%</div>
+                <div class="progress mt-2"><div class="progress-fill danger" style="width: 62%"></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">阶段目标</div>
+                <div class="text-2xl font-semibold" style="font-family: var(--font-mono);">4<span class="text-sm text-muted">/7</span></div>
+                <div class="text-xs text-muted mt-1">当前进度 62%</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">截止倒计时</div>
+                <div class="text-2xl font-semibold text-danger" style="font-family: var(--font-mono);">已过期 1 天</div>
+                <div class="text-xs text-muted mt-1">原定 2025-07-04</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">团队规模</div>
+                <div class="text-2xl font-semibold" style="font-family: var(--font-mono);">3<span class="text-sm text-muted">/5</span></div>
+                <div class="text-xs text-muted mt-1">当前/需求</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 标签页 -->
+          <div class="tabs mb-4">
+            <button class="tab active" data-pdtab="overview">概览</button>
+            <button class="tab" data-pdtab="requirements">需求</button>
+            <button class="tab" data-pdtab="tasks">任务</button>
+            <button class="tab" data-pdtab="members">成员</button>
+            <button class="tab" data-pdtab="delivery">交付</button>
+            <button class="tab" data-pdtab="logs">日志</button>
+          </div>
+
+          <div id="pd-overview" class="pd-panel">
+            <!-- 阶段进度 -->
+            <div class="card mb-4">
+              <div class="card-header"><h2 class="card-title">阶段进度</h2></div>
+              <div class="card-body">
+                <div style="display:flex; justify-content:space-between; position:relative; padding-top: 8px;">
+                  <div style="position:absolute; top: 20px; left: 0; right: 0; height: 2px; background: var(--surface-2); z-index: 0;"></div>
+                  <div class="phase-node" style="z-index:1; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="text-xs text-muted mt-2">立项</span>
+                  </div>
+                  <div class="phase-node" style="z-index:1; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="text-xs text-muted mt-2">需求</span>
+                  </div>
+                  <div class="phase-node" style="z-index:1; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="text-xs text-muted mt-2">计划</span>
+                  </div>
+                  <div class="phase-node" style="z-index:1; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; opacity: .85;">4</div>
+                    <span class="text-xs text-muted mt-2">执行</span>
+                  </div>
+                  <div class="phase-node" style="z-index:1; display:flex; flex-direction:column; align-items:center;">
+                    <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); display: grid; place-items: center; font-size: 11px;">5</div>
+                    <span class="text-xs text-muted mt-2">交付</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-2 mb-4">
+              <!-- 项目画像 -->
+              <div class="card">
+                <div class="card-header"><h2 class="card-title">项目画像</h2></div>
+                <div class="card-body">
+                  <div class="grid grid-2" style="gap: 14px;">
+                    <div>
+                      <div class="text-xs text-muted">项目代号</div>
+                      <div class="font-medium">AI-CUST-V3</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-muted">项目健康度</div>
+                      <div class="font-medium text-danger">延期预警</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-muted">生命周期</div>
+                      <div class="font-medium">执行期</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-muted">重要度</div>
+                      <div class="font-medium">P0</div>
+                    </div>
+                  </div>
+                  <div style="border-top: 1px solid var(--border); margin-top: 14px; padding-top: 14px;">
+                    <div class="text-xs text-muted mb-1">项目概述</div>
+                    <p class="text-sm text-muted" style="line-height: 1.6;">基于大模型重构现有客服助手，提升多轮对话理解能力与工单自动分发准确率，目标将人工介入率降低 30%。</p>
+                  </div>
+                  <div style="border-top: 1px solid var(--border); margin-top: 14px; padding-top: 14px;">
+                    <div class="text-xs text-muted mb-1">MVP 目标</div>
+                    <p class="text-sm text-muted" style="line-height: 1.6;">7 月 4 日前完成核心意图识别模块上线，覆盖 80% 高频问题。</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 最近周计划 -->
+              <div class="card">
+                <div class="card-header"><h2 class="card-title">最近周计划</h2></div>
+                <div class="card-body space-y-2">
+                  <div class="flex gap-3">
+                    <div style="display:flex; flex-direction:column; align-items:center; margin-top: 4px;">
+                      <span class="dot dot-danger"></span>
+                      <div style="width: 1.5px; height: 28px; background: var(--border); margin-top: 4px;"></div>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex gap-2 items-center mb-1">
+                        <span class="font-medium text-sm">6月30日 - 7月4日</span>
+                        <span class="tag tag-danger">高风险</span>
+                        <span class="tag tag-subtle">62%</span>
+                      </div>
+                      <p class="text-xs text-muted">完成意图识别模型微调与接口联调</p>
+                    </div>
+                  </div>
+                  <div class="flex gap-3">
+                    <div style="display:flex; flex-direction:column; align-items:center; margin-top: 4px;">
+                      <span class="dot dot-warning"></span>
+                      <div style="width: 1.5px; height: 28px; background: var(--border); margin-top: 4px;"></div>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex gap-2 items-center mb-1">
+                        <span class="font-medium text-sm">6月23日 - 6月27日</span>
+                        <span class="tag tag-subtle">78%</span>
+                      </div>
+                      <p class="text-xs text-muted">数据标注与基线模型训练</p>
+                    </div>
+                  </div>
+                  <div class="flex gap-3">
+                    <div style="display:flex; flex-direction:column; align-items:center; margin-top: 4px;">
+                      <span class="dot dot-success"></span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex gap-2 items-center mb-1">
+                        <span class="font-medium text-sm">6月16日 - 6月20日</span>
+                        <span class="tag tag-success">100%</span>
+                      </div>
+                      <p class="text-xs text-muted">需求评审与技术方案确定</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 行动建议 -->
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">
+                <svg class="icon icon-sm text-warning" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                下一步行动建议
+              </h2></div>
+              <div class="card-body">
+                <p class="text-sm">项目已延期 1 天，建议立即召开 15 分钟对齐会，确认剩余阻塞项责任人，并评估是否调整 MVP 范围或申请资源支援。</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="pd-requirements" class="pd-panel hidden">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">需求列表</h2><button class="btn btn-primary btn-sm">新增需求</button></div>
+              <div class="card-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>编号</th><th>需求名称</th><th>优先级</th><th>状态</th><th>负责人</th></tr></thead>
+                    <tbody>
+                      <tr><td class="mono">REQ-001</td><td>多轮对话上下文保持</td><td><span class="tag tag-danger">P0</span></td><td><span class="tag tag-accent">已实现</span></td><td>王磊</td></tr>
+                      <tr><td class="mono">REQ-002</td><td>意图识别准确率 ≥ 85%</td><td><span class="tag tag-danger">P0</span></td><td><span class="tag tag-warning">测试中</span></td><td>李婷</td></tr>
+                      <tr><td class="mono">REQ-003</td><td>工单自动分类与分发</td><td><span class="tag tag-warning">P1</span></td><td><span class="tag tag-subtle">开发中</span></td><td>陈刚</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="pd-tasks" class="pd-panel hidden">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">任务列表</h2><button class="btn btn-primary btn-sm">新建任务</button></div>
+              <div class="card-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>任务</th><th>状态</th><th>优先级</th><th>负责人</th><th>截止</th></tr></thead>
+                    <tbody>
+                      <tr><td>模型微调实验</td><td><span class="tag tag-accent">进行中</span></td><td><span class="tag tag-danger">高</span></td><td>王磊</td><td>7月3日</td></tr>
+                      <tr><td>接口联调</td><td><span class="tag tag-subtle">待办</span></td><td><span class="tag tag-danger">高</span></td><td>陈刚</td><td>7月4日</td></tr>
+                      <tr><td>测试用例补充</td><td><span class="tag tag-subtle">待办</span></td><td><span class="tag tag-warning">中</span></td><td>李婷</td><td>7月5日</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="pd-members" class="pd-panel hidden">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">项目成员</h2></div>
+              <div class="card-body">
+                <div class="grid grid-3">
+                  <div class="flex items-center gap-3 p-3" style="background: var(--surface-2); border-radius: var(--radius-sm);">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; font-size: 11px; font-weight: 700;">WL</div>
+                    <div><div class="font-medium">王磊</div><div class="text-xs text-muted">技术负责人</div></div>
+                  </div>
+                  <div class="flex items-center gap-3 p-3" style="background: var(--surface-2); border-radius: var(--radius-sm);">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--warning); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #000;">LT</div>
+                    <div><div class="font-medium">李婷</div><div class="text-xs text-muted">产品经理</div></div>
+                  </div>
+                  <div class="flex items-center gap-3 p-3" style="background: var(--surface-2); border-radius: var(--radius-sm);">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); display: grid; place-items: center; font-size: 11px; font-weight: 700;">CG</div>
+                    <div><div class="font-medium">陈刚</div><div class="text-xs text-muted">后端开发</div></div>
+                  </div>
+                </div>
+                <div class="empty-state" style="padding: 32px;">
+                  <span class="text-sm text-muted">还差 2 人达到计划规模：算法工程师 × 1、测试工程师 × 1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="pd-delivery" class="pd-panel hidden">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">交付物</h2></div>
+              <div class="card-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>交付物</th><th>版本</th><th>状态</th><th>更新时间</th></tr></thead>
+                    <tbody>
+                      <tr><td>技术方案文档</td><td class="mono">v1.2</td><td><span class="tag tag-success">已归档</span></td><td>6月20日</td></tr>
+                      <tr><td>模型训练报告</td><td class="mono">v0.9</td><td><span class="tag tag-warning">评审中</span></td><td>6月28日</td></tr>
+                      <tr><td>API 接口文档</td><td class="mono">v0.5</td><td><span class="tag tag-subtle">编写中</span></td><td>6月30日</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="pd-logs" class="pd-panel hidden">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">阶段流转记录</h2></div>
+              <div class="card-body space-y">
+                <div class="list-row">
+                  <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <span class="text-muted">规划中</span>
+                  <span class="text-subtle">→</span>
+                  <span>执行中</span>
+                  <span class="text-xs text-muted ml-auto">6月23日 10:22 · 林薇</span>
+                </div>
+                <div class="list-row">
+                  <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <span class="text-muted">计划锁定</span>
+                  <span class="text-subtle">→</span>
+                  <span>规划中</span>
+                  <span class="text-xs text-muted ml-auto">6月16日 16:05 · 系统</span>
+                </div>
+                <div class="list-row">
+                  <svg class="icon icon-sm text-subtle" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <span class="text-muted">已批准</span>
+                  <span class="text-subtle">→</span>
+                  <span>计划锁定</span>
+                  <span class="text-xs text-muted ml-auto">6月10日 09:41 · 林薇</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== Daily ==================== -->
+        <section class="page" id="page-daily">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">每日工作安排</h1>
+              <p class="page-subtitle">2025-07-02 的任务清单</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-secondary btn-sm" onclick="addDailyTask()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                新建任务
+              </button>
+              <button class="btn btn-secondary btn-sm">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                从会议导入
+              </button>
+              <button class="btn btn-secondary btn-sm">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                从聊天导入
+              </button>
+              <button class="btn btn-primary" id="ai-generate-btn" onclick="generateDailyTasks()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                AI 生成
+              </button>
+            </div>
+          </div>
+
+          <!-- 历史未完成任务 -->
+          <div class="card mb-4" style="border-color: rgba(245,158,11,.25);">
+            <div class="card-header">
+              <h2 class="card-title">
+                <svg class="icon icon-sm text-warning" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                历史未完成任务（2 项）
+              </h2>
+              <button class="btn btn-secondary btn-sm" onclick="carryOverAll()">全部继承到今天</button>
+            </div>
+            <div class="card-body space-y">
+              <div class="list-row">
+                <span class="tag tag-subtle">2025-06-30</span>
+                <span class="flex-1 truncate">整理会议助手错误样例</span>
+                <span class="text-xs text-muted">李婷</span>
+                <span class="tag tag-subtle">待办</span>
+                <button class="btn btn-ghost btn-sm" onclick="carryOver(this)">继承</button>
+              </div>
+              <div class="list-row">
+                <span class="tag tag-subtle">2025-07-01</span>
+                <span class="flex-1 truncate">核对 quick-search 测试集</span>
+                <span class="text-xs text-muted">陈刚</span>
+                <span class="tag tag-warning">进行中</span>
+                <button class="btn btn-ghost btn-sm" onclick="carryOver(this)">继承</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 目标 -->
+          <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">今日目标 / 背景（可选）</h2></div>
+            <div class="card-body">
+              <textarea class="w-full" placeholder="例如：今天要完成 quick-search 联调、修复 daily 页面并写一份简短周报...">完成客服助手模型联调，推动延期风险项闭环。</textarea>
+              <div id="daily-error" class="hidden text-xs text-danger mt-2">生成失败，请稍后重试。</div>
+            </div>
+          </div>
+
+          <!-- 统计筛选 -->
+          <div class="grid grid-4 mb-4" id="daily-stats">
+            <div class="card" style="cursor:pointer;" onclick="filterDaily('all')">
+              <div class="card-body flex justify-between items-center">
+                <span class="text-xs text-muted">全部</span>
+                <span class="text-xl font-semibold" style="font-family: var(--font-mono);">7</span>
+              </div>
+            </div>
+            <div class="card" style="cursor:pointer;" onclick="filterDaily('pending')">
+              <div class="card-body flex justify-between items-center">
+                <span class="text-xs text-muted">待办</span>
+                <span class="text-xl font-semibold text-accent" style="font-family: var(--font-mono);">3</span>
+              </div>
+            </div>
+            <div class="card" style="cursor:pointer;" onclick="filterDaily('in_progress')">
+              <div class="card-body flex justify-between items-center">
+                <span class="text-xs text-muted">进行中</span>
+                <span class="text-xl font-semibold text-warning" style="font-family: var(--font-mono);">2</span>
+              </div>
+            </div>
+            <div class="card selected-ring" style="cursor:pointer;" onclick="filterDaily('completed')">
+              <div class="card-body flex justify-between items-center">
+                <span class="text-xs text-muted">已完成</span>
+                <span class="text-xl font-semibold text-success" style="font-family: var(--font-mono);">2</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 任务列表 -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">任务列表</h2>
+              <span class="text-xs text-muted">当前筛选：已完成</span>
+            </div>
+            <div class="card-body space-y-2" id="daily-task-list">
+              <div class="list-row daily-task" data-status="completed" style="cursor:pointer;" onclick="toggleDailyTask(this)">
+                <div class="task-check done"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <span class="flex-1 truncate" style="text-decoration:line-through; opacity:.7;">晨会同步今日重点</span>
+                <span class="tag tag-success">已完成</span>
+              </div>
+              <div class="list-row daily-task" data-status="completed" style="cursor:pointer;" onclick="toggleDailyTask(this)">
+                <div class="task-check done"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <span class="flex-1 truncate" style="text-decoration:line-through; opacity:.7;">回复客户关于知识库的咨询</span>
+                <span class="tag tag-success">已完成</span>
+              </div>
+            </div>
+            <!-- 空态 -->
+            <div class="empty-state hidden" id="daily-empty">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div class="text-sm">该筛选下暂无任务</div>
+              <div class="text-xs text-muted mt-1">点击「AI 生成」或手动添加</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== Meeting Assistant ==================== -->
+        <section class="page" id="page-meetings">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">会议助手</h1>
+              <p class="page-subtitle">会议录制管理 & 智能纪要生成</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="refresh-meetings" onclick="refreshMeetings()">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              刷新列表
+            </button>
+          </div>
+
+          <!-- 统计 -->
+          <div class="grid grid-3 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">会议总数</div>
+                <div class="text-2xl font-semibold" style="font-family: var(--font-mono); font-size: 26px;">8</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">已转录</div>
+                <div class="text-2xl font-semibold text-success" style="font-family: var(--font-mono); font-size: 26px;">5</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="text-xs text-muted mb-1">待处理</div>
+                <div class="text-2xl font-semibold text-warning" style="font-family: var(--font-mono); font-size: 26px;">3</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 会议列表 -->
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">会议录制列表</h2></div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>会议号</th><th>主题</th><th>开始时间</th><th>录制人</th><th>时长</th><th>大小</th><th>状态</th><th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="meetings-tbody">
+                    <tr>
+                      <td class="mono">M250702001</td>
+                      <td class="font-medium">产品周会</td>
+                      <td class="text-muted">今天 10:00</td>
+                      <td>张敏</td>
+                      <td class="text-muted">45:12</td>
+                      <td class="text-muted">28 MB</td>
+                      <td><span class="tag tag-warning">待确认</span></td>
+                      <td><button class="btn btn-primary btn-sm" onclick="openMeetingModal('M250702001', '产品周会')">转录</button></td>
+                    </tr>
+                    <tr>
+                      <td class="mono">M250701008</td>
+                      <td class="font-medium">AI 客服助手风险对齐会</td>
+                      <td class="text-muted">昨天 16:30</td>
+                      <td>林薇</td>
+                      <td class="text-muted">32:05</td>
+                      <td class="text-muted">19 MB</td>
+                      <td><span class="tag tag-accent">转录中</span></td>
+                      <td><span class="text-xs text-muted">处理中...</span></td>
+                    </tr>
+                    <tr>
+                      <td class="mono">M250701005</td>
+                      <td class="font-medium">技术评审 · API 网关改造</td>
+                      <td class="text-muted">昨天 14:00</td>
+                      <td>王磊</td>
+                      <td class="text-muted">58:33</td>
+                      <td class="text-muted">41 MB</td>
+                      <td><span class="tag tag-success">已转录</span></td>
+                      <td><button class="btn btn-secondary btn-sm" onclick="openMeetingModal('M250701005', '技术评审 · API 网关改造')">查看纪要</button></td>
+                    </tr>
+                    <tr>
+                      <td class="mono">M250630012</td>
+                      <td class="font-medium">Quick Search 2.0 立项会</td>
+                      <td class="text-muted">6月30日 09:30</td>
+                      <td>李婷</td>
+                      <td class="text-muted">40:18</td>
+                      <td class="text-muted">25 MB</td>
+                      <td><span class="tag tag-success">已转录</span></td>
+                      <td><button class="btn btn-secondary btn-sm" onclick="openMeetingModal('M250630012', 'Quick Search 2.0 立项会')">查看纪要</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Meeting Modal -->
+  <div class="modal-backdrop" id="meeting-modal" onclick="closeMeetingModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2 style="margin:0; font-size: 16px; font-weight: 700;">产品周会</h2>
+          <div class="flex gap-2 mt-1">
+            <span class="tag tag-subtle">今天 10:00</span>
+            <span class="tag tag-subtle">45 分钟</span>
+            <span class="tag tag-subtle">张敏</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeMeetingModal()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card mb-3" style="background: var(--surface-2);">
+          <div class="card-header"><h2 class="card-title">
+            <svg class="icon icon-sm text-accent" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            AI 深度分析
+          </h2></div>
+          <div class="card-body space-y-2">
+            <div>
+              <div class="text-xs text-muted mb-1">关键决策</div>
+              <p class="text-sm">确定 7 月 4 日为客服助手重构 MVP 上线日，逾期即触发延期预警。</p>
+            </div>
+            <div class="grid grid-2">
+              <div>
+                <div class="text-xs text-muted mb-1">行动项（3）</div>
+                <div class="text-sm">王磊：完成模型微调</div>
+                <div class="text-sm">陈刚：接口联调</div>
+                <div class="text-sm">李婷：补充测试用例</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted mb-1">风险评估</div>
+                <div class="text-sm text-danger">高风险：算力资源不足可能导致微调延迟。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card mb-3">
+          <div class="card-header"><h2 class="card-title">会议总结</h2></div>
+          <div class="card-body">
+            <p class="text-sm text-muted" style="line-height: 1.7;">本次会议确认了 AI 客服助手重构的上线窗口，讨论了当前算力瓶颈与测试覆盖不足的问题。各方同意优先保障核心意图识别链路，非核心功能延后至下一迭代。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">待办事项</h2></div>
+          <div class="card-body space-y-2">
+            <div class="list-row">
+              <input type="checkbox" class="shrink-0" />
+              <span class="flex-1 text-sm">完成模型微调实验</span>
+              <span class="tag tag-danger">高</span>
+              <span class="tag tag-subtle">王磊</span>
+            </div>
+            <div class="list-row">
+              <input type="checkbox" class="shrink-0" />
+              <span class="flex-1 text-sm">接口联调与异常场景覆盖</span>
+              <span class="tag tag-warning">中</span>
+              <span class="tag tag-subtle">陈刚</span>
+            </div>
+            <div class="list-row">
+              <input type="checkbox" class="shrink-0" />
+              <span class="flex-1 text-sm">补充回归测试用例</span>
+              <span class="tag tag-subtle">低</span>
+              <span class="tag tag-subtle">李婷</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-end mt-3">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('已重新生成纪要', 'success')">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            重新生成纪要
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="showToast('已同步 3 个待办到 Daily Plan', 'success')">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            同步待办到 Daily Plan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden">
+    <svg class="icon icon-sm" id="toast-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span id="toast-msg">操作失败</span>
+  </div>
+
+  <script>
+    // 页面切换
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+
+      const target = document.getElementById('page-' + pageId);
+      if (target) target.classList.add('active');
+
+      const nav = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+      if (nav) nav.classList.add('active');
+
+      // 面包屑
+      const titles = {
+        dashboard: '今日驾驶舱',
+        projects: '项目列表',
+        'project-detail': '项目详情',
+        daily: '日报计划',
+        meetings: '会议助手'
+      };
+      document.getElementById('crumb-page').textContent = titles[pageId] || pageId;
+    }
+
+    document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => switchPage(btn.dataset.page));
+    });
+
+    // Dashboard 任务勾选
+    function toggleDashboardTask(row) {
+      const check = row.querySelector('.task-check');
+      const text = row.querySelector('.flex-1');
+      const tag = row.querySelector('.tag');
+      check.classList.toggle('done');
+      if (check.classList.contains('done')) {
+        text.style.textDecoration = 'line-through';
+        text.style.opacity = '0.7';
+        if (tag) { tag.className = 'tag tag-success'; tag.textContent = '已完成'; }
+      } else {
+        text.style.textDecoration = 'none';
+        text.style.opacity = '1';
+        if (tag) { tag.className = 'tag tag-subtle'; tag.textContent = '中'; }
+      }
+    }
+
+    // 项目筛选
+    function filterProjects() {
+      const q = document.getElementById('project-search').value.toLowerCase();
+      const phase = document.getElementById('phase-filter').value;
+      document.querySelectorAll('.project-card').forEach(card => {
+        const title = card.dataset.title.toLowerCase();
+        const cardPhase = card.dataset.phase;
+        const matchText = title.includes(q);
+        const matchPhase = phase === 'all' || cardPhase === phase;
+        card.style.display = matchText && matchPhase ? 'block' : 'none';
+      });
+    }
+
+    function syncAllProjects() {
+      const btn = document.getElementById('sync-all-btn');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 同步中...';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        showToast('已同步 6 个项目状态', 'success');
+      }, 1500);
+    }
+
+    // Project Detail Tabs
+    document.querySelectorAll('[data-pdtab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('[data-pdtab]').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const key = tab.dataset.pdtab;
+        document.querySelectorAll('.pd-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById('pd-' + key).classList.remove('hidden');
+      });
+    });
+
+    // Daily
+    function toggleDailyTask(row) {
+      const check = row.querySelector('.task-check');
+      const text = row.querySelector('.flex-1');
+      const tag = row.querySelector('.tag');
+      check.classList.toggle('done');
+      if (check.classList.contains('done')) {
+        row.dataset.status = 'completed';
+        text.style.textDecoration = 'line-through';
+        text.style.opacity = '0.7';
+        if (tag) { tag.className = 'tag tag-success'; tag.textContent = '已完成'; }
+      } else {
+        row.dataset.status = 'pending';
+        text.style.textDecoration = 'none';
+        text.style.opacity = '1';
+        if (tag) { tag.className = 'tag tag-accent'; tag.textContent = '待办'; }
+      }
+    }
+
+    let currentDailyFilter = 'completed';
+    function filterDaily(status) {
+      currentDailyFilter = status;
+      document.querySelectorAll('#daily-stats .card').forEach(c => c.classList.remove('selected-ring'));
+      const statCards = document.querySelectorAll('#daily-stats .card');
+      const map = { all: 0, pending: 1, in_progress: 2, completed: 3 };
+      statCards[map[status]].classList.add('selected-ring');
+
+      const tasks = document.querySelectorAll('.daily-task');
+      let visible = 0;
+      tasks.forEach(t => {
+        const match = status === 'all' || t.dataset.status === status;
+        t.style.display = match ? 'flex' : 'none';
+        if (match) visible++;
+      });
+      document.getElementById('daily-empty').classList.toggle('hidden', visible > 0);
+    }
+
+    function generateDailyTasks() {
+      const btn = document.getElementById('ai-generate-btn');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 生成中...';
+      btn.disabled = true;
+      document.getElementById('daily-error').classList.add('hidden');
+
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        // 50% 模拟 success / error
+        if (Math.random() > 0.85) {
+          document.getElementById('daily-error').classList.remove('hidden');
+          showToast('AI 生成失败，请重试');
+        } else {
+          const list = document.getElementById('daily-task-list');
+          const item = document.createElement('div');
+          item.className = 'list-row daily-task';
+          item.dataset.status = 'pending';
+          item.style.cursor = 'pointer';
+          item.setAttribute('onclick', 'toggleDailyTask(this)');
+          item.innerHTML = `
+            <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="flex-1 truncate">AI 生成：同步项目风险到日报</span>
+            <span class="tag tag-accent">待办</span>
+          `;
+          list.insertBefore(item, list.firstChild);
+          filterDaily(currentDailyFilter);
+          showToast('AI 已生成 1 个新任务', 'success');
+        }
+      }, 1200);
+    }
+
+    function addDailyTask() {
+      const list = document.getElementById('daily-task-list');
+      const item = document.createElement('div');
+      item.className = 'list-row daily-task';
+      item.dataset.status = 'pending';
+      item.style.cursor = 'pointer';
+      item.setAttribute('onclick', 'toggleDailyTask(this)');
+      item.innerHTML = `
+        <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <span class="flex-1 truncate">新任务</span>
+        <span class="tag tag-accent">待办</span>
+      `;
+      list.insertBefore(item, list.firstChild);
+      filterDaily(currentDailyFilter);
+    }
+
+    function carryOver(btn) {
+      const row = btn.closest('.list-row');
+      const text = row.querySelector('.flex-1').textContent;
+      const list = document.getElementById('daily-task-list');
+      const item = document.createElement('div');
+      item.className = 'list-row daily-task';
+      item.dataset.status = 'pending';
+      item.style.cursor = 'pointer';
+      item.setAttribute('onclick', 'toggleDailyTask(this)');
+      item.innerHTML = `
+        <div class="task-check"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <span class="flex-1 truncate">${text}</span>
+        <span class="tag tag-warning">继承</span>
+      `;
+      list.insertBefore(item, list.firstChild);
+      row.style.opacity = '0.5';
+      btn.disabled = true;
+      btn.textContent = '已继承';
+      filterDaily(currentDailyFilter);
+      showToast('已继承历史任务到今天', 'success');
+    }
+
+    function carryOverAll() {
+      document.querySelectorAll('#page-daily .list-row button').forEach(btn => carryOver(btn));
+    }
+
+    // Meetings
+    function refreshMeetings() {
+      const btn = document.getElementById('refresh-meetings');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> 刷新中...';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        showToast('会议列表已刷新', 'success');
+      }, 1200);
+    }
+
+    function openMeetingModal(id, title) {
+      const modal = document.getElementById('meeting-modal');
+      modal.querySelector('h2').textContent = title;
+      // 从当前行提取时间/时长/录制人，让弹窗信息更接近真实
+      const rows = Array.from(document.querySelectorAll('#meetings-tbody tr'));
+      const row = rows.find(r => r.querySelector('td.mono')?.textContent === id);
+      if (row) {
+        const cells = row.querySelectorAll('td');
+        const tags = modal.querySelectorAll('.modal-header .tag');
+        if (tags[0] && cells[2]) tags[0].textContent = cells[2].textContent.trim();
+        if (tags[1] && cells[4]) tags[1].textContent = cells[4].textContent.trim();
+        if (tags[2] && cells[3]) tags[2].textContent = cells[3].textContent.trim();
+      }
+      modal.classList.add('open');
+    }
+
+    function closeMeetingModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('meeting-modal').classList.remove('open');
+    }
+
+    // Toast
+    function showToast(msg, type) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.className = 'toast ' + (type || '');
+      if (type === 'success') {
+        icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      } else {
+        icon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+      }
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // 键盘快捷键
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey) {
+        const map = { '1': 'dashboard', '2': 'daily', '3': 'projects', '4': 'meetings' };
+        if (map[e.key]) {
+          e.preventDefault();
+          switchPage(map[e.key]);
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('global-search').classList.add('selected-ring');
+        setTimeout(() => document.getElementById('global-search').classList.remove('selected-ring'), 400);
+      }
+    });
+  </script>
+</body>
+</html>

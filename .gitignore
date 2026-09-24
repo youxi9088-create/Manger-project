@@ -11,12 +11,28 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
+
+# FN generated deployment bundle and production secrets
+deploy/**/.env*
+deploy/**/data/
+deploy/**/api/_data/
+deploy/**/dist/
+deploy/**/site-check*.png
+deploy/**/fn-deploy*.log
 
 # Data (keep structure, ignore content)
 data/chat.db
 data/meetings/*.mp3
 data/auth/*.json
 data/uploads/
+data/feishu-docs/*.json
+data/meetings/*.json
+data/*.json
+data/server-config.json
+all_chat_records.json
+youxi_chat_records.json
 
 # IDE
 .vscode/
@@ -32,3 +48,5 @@ Thumbs.db
 # Temp
 *.tmp
 temp-*
+.frames/
+packages/server/data/

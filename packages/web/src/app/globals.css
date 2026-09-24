@@ -42,85 +42,102 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --font-sans:
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
-    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-    'Courier New', monospace;
-  --font-serif:
-    'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria,
-    'Times New Roman', Times, serif;
+  --font-sans: var(--font-dm-sans), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --font-serif: 'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-display: var(--font-dm-sans), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #fafafa;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a3a3a3;
+  --chart-1: #c9a86c;
+  --chart-2: #6a9e7f;
+  --chart-3: #7a9fc9;
+  --chart-4: #c9a35c;
+  --chart-5: #c97b6d;
+  --sidebar: #f5f5f5;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #e5e5e5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #a3a3a3;
+
+  /* OpenClaw design system tokens */
+  --oc-bg-root: #0d0d0f;
+  --oc-bg-surface: #131316;
+  --oc-bg-elevated: #1a1a1e;
+  --oc-bg-hover: #212125;
+  --oc-bg-active: #2a2a2f;
+  --oc-border-subtle: #242429;
+  --oc-border-strong: #33333a;
+  --oc-text-primary: #f2f2f5;
+  --oc-text-secondary: #9b9ba3;
+  --oc-text-tertiary: #6b6b74;
+  --oc-accent: #c9a86c;
+  --oc-accent-hover: #d9bc86;
+  --oc-accent-soft: rgba(201, 168, 108, 0.12);
+  --oc-success: #6a9e7f;
+  --oc-success-soft: rgba(106, 158, 127, 0.12);
+  --oc-warning: #c9a35c;
+  --oc-warning-soft: rgba(201, 163, 92, 0.12);
+  --oc-error: #c97b6d;
+  --oc-error-soft: rgba(201, 123, 109, 0.12);
+  --oc-info: #7a9fc9;
+  --oc-info-soft: rgba(122, 159, 201, 0.12);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0d0d0f;
+  --foreground: #f2f2f5;
+  --card: #131316;
+  --card-foreground: #f2f2f5;
+  --popover: #1a1a1e;
+  --popover-foreground: #f2f2f5;
+  --primary: #c9a86c;
+  --primary-foreground: #0d0d0f;
+  --secondary: #1a1a1e;
+  --secondary-foreground: #f2f2f5;
+  --muted: #1a1a1e;
+  --muted-foreground: #9b9ba3;
+  --accent: rgba(201, 168, 108, 0.12);
+  --accent-foreground: #c9a86c;
+  --destructive: #c97b6d;
+  --border: #242429;
+  --input: #242429;
+  --ring: #c9a86c;
+  --chart-1: #c9a86c;
+  --chart-2: #6a9e7f;
+  --chart-3: #7a9fc9;
+  --chart-4: #c9a35c;
+  --chart-5: #c97b6d;
+  --sidebar: #131316;
+  --sidebar-foreground: #f2f2f5;
+  --sidebar-primary: #c9a86c;
+  --sidebar-primary-foreground: #0d0d0f;
+  --sidebar-accent: #1a1a1e;
+  --sidebar-accent-foreground: #f2f2f5;
+  --sidebar-border: #242429;
+  --sidebar-ring: #c9a86c;
 }
 
 @layer base {
@@ -134,4 +151,21 @@
 
 body {
   @apply font-sans;
+}
+
+/* Custom utility classes for OpenClaw design system */
+@layer utilities {
+  .text-oc-primary { color: var(--oc-text-primary); }
+  .text-oc-secondary { color: var(--oc-text-secondary); }
+  .text-oc-tertiary { color: var(--oc-text-tertiary); }
+  .bg-oc-root { background-color: var(--oc-bg-root); }
+  .bg-oc-surface { background-color: var(--oc-bg-surface); }
+  .bg-oc-elevated { background-color: var(--oc-bg-elevated); }
+  .bg-oc-hover { background-color: var(--oc-bg-hover); }
+  .bg-oc-active { background-color: var(--oc-bg-active); }
+  .border-oc-subtle { border-color: var(--oc-border-subtle); }
+  .border-oc-strong { border-color: var(--oc-border-strong); }
+  .text-oc-accent { color: var(--oc-accent); }
+  .bg-oc-accent { background-color: var(--oc-accent); }
+  .bg-oc-accent-soft { background-color: var(--oc-accent-soft); }
 }

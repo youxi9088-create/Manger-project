@@ -5,11 +5,12 @@ export interface VolcASRUploadOptions {
     apiKey: string;
     appId?: string;
     uid?: string;
+    audioUrl?: string;
 }
 
 /**
- * 火山引擎语音识别 - 文件上传方式（适用于本地音频文件）
- * 使用 v3 bigmodel API，将本地文件 base64 编码后通过 JSON body 提交
+ * 火山引擎语音识别。优先让服务端直接读取可访问的音频 URL，
+ * 仅在没有 URL 时回退到本地文件的 base64 提交。
  * API文档: https://www.volcengine.com/docs/6561/80818
  */
 export async function volcUploadAndRecognize(
@@ -20,31 +21,50 @@ export async function volcUploadAndRecognize(
     const queryUrl = process.env.VOLC_ASR_QUERY_URL || 'https://openspeech.bytedance.com/api/v3/auc/bigmodel/query';
     const resourceId = process.env.VOLC_ASR_RESOURCE_ID || 'volc.seedasr.auc';
 
-    const requestId = crypto.randomUUID();
+    const audioUrl = opts.audioUrl?.trim();
+    const useRemoteUrl = Boolean(audioUrl && /^https?:\/\//i.test(audioUrl));
+    if (audioUrl && !useRemoteUrl) throw new Error('会议音频地址不是有效的 HTTP(S) URL');
 
-    console.log(`🎤 使用火山引擎文件上传方式识别: ${filePath}`);
+    console.log(`🎤 使用火山引擎识别: ${useRemoteUrl ? '远程音频地址' : filePath}`);
 
-    // 读取本地文件并 base64 编码
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`音频文件不存在: ${filePath}`);
+    let audioBase64 = '';
+    if (!useRemoteUrl) {
+        if (!fs.existsSync(filePath)) {
+            throw new Error(`音频文件不存在: ${filePath}`);
+        }
+        const fileBuffer = fs.readFileSync(filePath);
+        const fileSizeMB = (fileBuffer.length / 1024 / 1024).toFixed(2);
+        console.log(`  本地文件大小: ${fileSizeMB} MB`);
+        audioBase64 = fileBuffer.toString('base64');
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const fileSizeMB = (fileBuffer.length / 1024 / 1024).toFixed(2);
-    console.log(`  文件大小: ${fileSizeMB} MB`);
-
-    const audioBase64 = fileBuffer.toString('base64');
-
-    // 根据文件扩展名推断格式
-    const ext = filePath.toLowerCase().split('.').pop() || 'mp3';
+    // 优先依据已下载文件的实际扩展名。会议平台的直链通常没有扩展名，
+    // 远程 URL 提交时通过 HEAD 的 Content-Type 判断真实格式（mp3_url 返回 audio/mpeg）。
+    const sourceName = filePath || (useRemoteUrl ? audioUrl!.split('?')[0] : '');
+    const ext = sourceName.toLowerCase().split('.').pop() || 'mp3';
     const formatMap: Record<string, string> = { mp3: 'mp3', wav: 'wav', m4a: 'mp3', mp4: 'mp3', ogg: 'ogg' };
-    const audioFormat = formatMap[ext] || 'mp3';
+    let audioFormat = formatMap[ext] || 'mp3';
+    if (useRemoteUrl) {
+        audioFormat = 'mp4';
+        try {
+            const head = await fetch(audioUrl!, { method: 'HEAD' });
+            const contentType = (head.headers.get('content-type') || '').toLowerCase();
+            if (contentType.includes('mpeg') || contentType.includes('mp3')) audioFormat = 'mp3';
+            else if (contentType.includes('wav')) audioFormat = 'wav';
+            else if (contentType.includes('ogg')) audioFormat = 'ogg';
+            else if (contentType.includes('mp4') || contentType.includes('video')) audioFormat = 'mp4';
+        } catch {
+            // HEAD 失败时保持默认 mp4
+        }
+    }
+
+    const requestId = crypto.randomUUID();
 
     // 1) 提交识别任务（v3 bigmodel API，JSON body）
     const submitBody = {
         user: { uid: opts.uid || process.env.VOLC_ASR_UID || 'meeting-assistant' },
         audio: {
-            data: audioBase64,
+            ...(useRemoteUrl ? { url: audioUrl } : { data: audioBase64 }),
             format: audioFormat,
             codec: audioFormat === 'mp3' ? 'mp3' : audioFormat,
             rate: 16000,
@@ -64,7 +84,7 @@ export async function volcUploadAndRecognize(
 
     console.log(`📤 提交任务到: ${submitUrl}`);
 
-    const submitRes = await fetch(submitUrl, {
+    const submitRes = await fetchVolcAsrWithRetry('提交', submitUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -104,7 +124,7 @@ export async function volcUploadAndRecognize(
 
         await sleep(intervalMs);
 
-        const queryRes = await fetch(queryUrl, {
+        const queryRes = await fetchVolcAsrWithRetry('查询', queryUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -152,6 +172,51 @@ export async function volcUploadAndRecognize(
             `火山引擎识别失败: statusCode=${statusCode}, message=${msg}, logId=${logId}, body=${text.slice(0, 500)}`
         );
     }
+}
+
+async function fetchVolcAsr(url: string, init: RequestInit) {
+    const timeoutMs = Number(process.env.VOLC_ASR_REQUEST_TIMEOUT_MS || '90000');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+        if (controller.signal.aborted) {
+            throw new Error(`火山引擎请求超时（${timeoutMs}ms）`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function fetchVolcAsrWithRetry(label: string, url: string, init: RequestInit) {
+    const maxAttempts = Math.max(1, Number(process.env.VOLC_ASR_RETRY_ATTEMPTS || '3'));
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            const response = await fetchVolcAsr(url, init);
+            if (!isTransientResponse(response.status) || attempt === maxAttempts) return response;
+
+            console.warn(`火山引擎${label}暂时失败: http=${response.status}，将在 ${attempt} / ${maxAttempts} 次后重试`);
+            await response.body?.cancel().catch(() => undefined);
+        } catch (error) {
+            lastError = error;
+            if (attempt === maxAttempts) break;
+            console.warn(`火山引擎${label}请求异常，将在 ${attempt} / ${maxAttempts} 次后重试`);
+        }
+
+        await sleep(1000 * attempt);
+    }
+
+    const detail = lastError instanceof Error ? lastError.message : String(lastError || '未知网络错误');
+    throw new Error(`火山引擎${label}请求失败，已重试 ${maxAttempts} 次: ${detail}`);
+}
+
+function isTransientResponse(status: number) {
+    return status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
 }
 
 function sleep(ms: number) {

@@ -876,3 +876,86 @@ if (evt.type === "tool_result") {
 - `exec-agent.ts` — 将 `buildExecAgentPrompt` 替换为 `buildExecAgentPromptWithSkills`
 
 **设计原则**：Skill 本质是按需注入执行 Agent system prompt 的领域知识文档，不是 MCP Server，不需要引入 Hermes 框架本体。只增强执行 Agent（多轮迭代，值得注入），不增强主 Agent（轮次浅，加了浪费 Token）。
+
+
+---
+
+## 附录：后续待改造清单（记录于 2026-06-24）
+
+> 以下改造待整个系统完善后再统一实施，当前先记录，不立即改动代码。
+
+### 1. 完全解耦 CodeBuddy 依赖
+
+**现状**：PM Agent（`/api/agent/chat`）已切换为自研 Moonshot Function Calling Loop，不再调用 CodeBuddy SDK。但以下模块仍依赖 `@tencent-ai/agent-sdk`：
+
+- `packages/server/src/routes/chat.ts`：通用 AI 对话 `/api/chat` 仍走 CodeBuddy SDK
+- `packages/server/src/routes/auth.ts` + `packages/server/src/utils/agent-sdk.ts`：`/api/check-login`、环境配置保存仍以 CodeBuddy 认证为核心
+
+**可选方案**：
+
+- **方案 A（最小解耦）**：把 `/api/chat` 切到自研 Loop 做纯 Moonshot 聊天；`/api/check-login` 改为校验 `MOONSHOT_API_KEY` / `OPENAI_API_KEY`；删除 `utils/agent-sdk.ts` 并将 `@tencent-ai/agent-sdk` 从 server 依赖移除。代价：失去 CodeBuddy 原生的文件/终端/搜索工具。
+- **方案 B（彻底替换 + 补齐工具）**：在自研 Loop 中实现 `read_file` / `write_file` / `bash` / `grep` / `web_search` 等通用工具，再迁移 `/api/chat`，实现完全自研。
+- **方案 C（保持现状）**：PM Agent 已解耦，仅保留 `/api/chat` 作为 CodeBuddy 通用对话入口。
+
+**建议**：系统整体完善后按 **方案 A 或 B** 执行，彻底去掉外部 SDK 依赖。
+
+### 2. Agent 自然语言动作识别调优
+
+**现状**：明确说出工具名或动作词（如“调用 create_project”）时稳定；部分自然语言指令（如“创建一个项目立项”）模型会先查询列表，而不是直接执行写操作。
+
+**后续方向**：
+
+- 继续优化 `agent-prompts.ts` 的 system prompt，加入更多 few-shot 示例
+- 必要时在路由层做轻量意图识别，直接路由到对应工具
+- 根据实际使用数据迭代工具描述和示例
+
+### 3. 前端每日计划完全单一事实源
+
+**现状**：已改为“后端优先 + localStorage 一次性迁移”，但自动保存仍为双写（localStorage + 后端）。
+
+**后续方向**：当确认用户不再需要本地离线兜底后，移除 localStorage 双写，让后端成为唯一数据源。
+
+
+### 4. Hermes Agent 接入 OpenClaw（已完成）
+
+**方案**：OpenClaw 后端作为 MCP Server，通过 SSE 暴露查询/写入工具；Hermes 作为 MCP Client 进行高层决策与工具编排。Web 对话入口已完全切换为 Hermes 驱动。
+
+**已实现**：
+
+- 安装 `@modelcontextprotocol/sdk`。
+- 新增 `packages/server/src/mcp/create-mcp-server.ts` 与 `packages/server/src/mcp/mcp-sse-route.ts`。
+- 在 `packages/server/src/index.ts` 中提前挂载 `/mcp/sse` 与 `/mcp/messages` 路由。
+- 新增 `packages/server/src/services/hermes-service.ts`：调用本地 Hermes、维护会话历史。
+- 默认暴露 24 个工具：12 个只读查询 + 12 个写入/管理（`create_project`、`transition_project_phase`、`assign_employee`、`upsert_daily_plan` 等）。
+- 删除类工具（`delete_requirement`、`delete_dev_task`、`delete_daily_plan_task`）默认不暴露，需设置 `OPENCLAW_MCP_ALLOW_DELETE=1` 才启用。
+- 可通过 `OPENCLAW_MCP_MODE=readonly` 切回只读模式。
+- `packages/server/src/routes/agent-main.ts`：`/api/agent/chat` 已改为 Hermes JSON 入口，不再走自研 Moonshot Loop；删除 `/api/agent/permission-response`。
+- 重写 `packages/web/src/app/tools/agent/page.tsx`：改为 Hermes 对话页（左侧会话列表 + 右侧聊天）。
+- `packages/web/src/components/app-sidebar.tsx`：「AI Agent」改为「Hermes Agent」。
+- 修复 `routes/schedules.ts` 定时任务重复注册问题，并清理 `data/chat.db` 中重复的 `scheduled_tasks` 记录。
+- 在 `~/.hermes/config.yaml` 中配置 `mcp_servers.openclaw`。
+- 已验证：
+  - `hermes mcp test openclaw` → 24 tools discovered
+  - `hermes -z "...查询..." --toolsets openclaw` → 正常返回数据
+  - `hermes -z "创建一个项目立项..." --toolsets openclaw` → 成功创建立项
+  - `hermes -z "把立项 PI-20260624-002 提交审批" --toolsets openclaw` → 阶段成功流转
+  - `POST /api/agent/chat` + Web 页面 → Hermes 正常返回并执行工具
+
+**配置片段**：
+
+```yaml
+mcp_servers:
+  openclaw:
+    url: http://localhost:3001/mcp/sse
+    transport: sse
+    timeout: 120
+    connect_timeout: 30
+    supports_parallel_tool_calls: false
+```
+
+**后续**：
+
+- 若需要 Hermes 调用删除工具，按需设置 `OPENCLAW_MCP_ALLOW_DELETE=1`。
+- 若对外暴露，需为 MCP 路由增加鉴权。
+
+详细文档见 `docs/hermes-integration.md`。

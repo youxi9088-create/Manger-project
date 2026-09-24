@@ -119,7 +119,7 @@ router.get("/api/models", async (req, res) => {
       }
     }
     res.json({
-      models: cachedModels.length > 0 ? cachedModels : [{ modelId: "claude-sonnet-4", name: "Claude Sonnet 4" }],
+      models: cachedModels.length > 0 ? cachedModels : [],
       defaultModel
     });
   } catch (error: any) {

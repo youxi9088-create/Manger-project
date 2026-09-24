@@ -10,7 +10,10 @@ const __dirname = dirname(__filename);
 export const envFilePath = path.resolve(__dirname, '..', '..', '..', '..', '.env');
 
 // 运行时配置 JSON 文件路径（data 目录，Next.js 不监测）
-export const configFilePath = path.resolve(__dirname, '..', '..', '..', '..', 'data', 'server-config.json');
+const runtimeDataDir = process.env.OPENCLAW_DATA_DIR?.trim();
+export const configFilePath = runtimeDataDir
+  ? path.join(runtimeDataDir, 'server-config.json')
+  : path.resolve(__dirname, '..', '..', '..', '..', 'data', 'server-config.json');
 
 function ensureConfigDir() {
   const dir = path.dirname(configFilePath);

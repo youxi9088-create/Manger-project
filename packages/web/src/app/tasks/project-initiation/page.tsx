@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { QuickValidationForm } from "@/components/project-initiation/QuickValidationForm";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || (process.env.NODE_ENV === "production" ? "/a/openclaw" : "http://localhost:3001");
 
 interface ProjectInitiation {
   id: string;

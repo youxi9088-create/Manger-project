@@ -1,10 +1,12 @@
 "use client";
 
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, Loader2, Send, Plus, Trash2 } from "lucide-react";
+import { Search as SearchIcon, Loader2, Send, Plus, Trash2, History, Sparkles, Link2, Copy, Share2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 type Role = "user" | "assistant" | "system";
 
@@ -21,7 +23,7 @@ type Session = {
   messages: ChatMessage[];
 };
 
-type UpstreamResponse = unknown;
+type UpstreamResponse = any;
 
 const STORAGE_KEY = "quickSearch.sessions.v1";
 const ACTIVE_KEY = "quickSearch.activeSessionId.v1";
@@ -43,11 +45,17 @@ function getDefaultTitle(firstUserText: string) {
   return t.length > 16 ? `${t.slice(0, 16)}…` : t || "新会话";
 }
 
+function formatDateTime(ts: number) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function QuickSearchPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [raw, setRaw] = useState<UpstreamResponse | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>("");
@@ -60,6 +68,22 @@ export default function QuickSearchPage() {
   );
 
   const messages = activeSession?.messages ?? [];
+
+  const firstUserMessage = useMemo(
+    () => messages.find((m) => m.role === "user")?.content || activeSession?.title || "",
+    [messages, activeSession],
+  );
+
+  const lastAssistantContent = useMemo<string>(
+    () => messages.filter((m) => m.role === "assistant").at(-1)?.content || "",
+    [messages],
+  );
+
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim()) return sessions;
+    const q = searchQuery.toLowerCase();
+    return sessions.filter((s) => s.title.toLowerCase().includes(q));
+  }, [sessions, searchQuery]);
 
   // 初始化：从 localStorage 载入
   useEffect(() => {
@@ -143,7 +167,7 @@ export default function QuickSearchPage() {
         prev.map((s) => {
           if (s.id !== activeSessionId) return s;
           if (s.title && s.title !== "新会话") return s;
-          if (s.messages.length > 0) return s; // 已有消息则不改（避免并发）
+          if (s.messages.length > 0) return s;
           return { ...s, title: getDefaultTitle(firstUserText) };
         }),
       );
@@ -253,116 +277,198 @@ export default function QuickSearchPage() {
   }, [input, loading, activeSessionId, activeSession?.messages?.length, maybeSetTitle, updateActiveMessages, messages, scrollToBottom]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">快速搜索</h1>
-        <p className="text-muted-foreground mt-1">以对话的方式快速提问与获取答案（自动保存会话）</p>
+    <div className="flex h-[calc(100vh-64px)] flex-col p-7">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--oc-text-primary)]">快速搜索</h1>
+          <p className="mt-1.5 text-[13px] text-[var(--oc-text-secondary)]">
+            轻量 AI 搜索，快速定位项目、任务、知识与决策
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 gap-1.5 rounded-[10px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 text-[13px] font-semibold text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]"
+        >
+          <History className="h-4 w-4" />
+          搜索历史
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[280px_1fr]">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">会话列表</CardTitle>
-            <Button variant="outline" size="sm" className="gap-2" onClick={newSession}>
-              <Plus className="h-4 w-4" />
-              新建
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="max-h-[60vh] overflow-auto space-y-2 pr-1">
-              {sessions.map((s) => (
-                <div
-                  key={s.id}
-                  className={
-                    s.id === activeSessionId
-                      ? "flex items-center gap-2 rounded-md border bg-muted px-2 py-2"
-                      : "flex items-center gap-2 rounded-md border px-2 py-2"
-                  }
-                >
-                  <button
-                    type="button"
-                    className="flex-1 text-left text-sm"
-                    onClick={() => setActiveSessionId(s.id)}
-                    title={s.title}
-                  >
-                    <div className="truncate font-medium">{s.title || "新会话"}</div>
-                    <div className="truncate text-xs text-muted-foreground">{s.messages.length} 条消息</div>
-                  </button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => deleteSession(s.id)}
-                    aria-label="删除会话"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+      {/* 主布局 */}
+      <div className="grid flex-1 gap-5 overflow-hidden md:grid-cols-[280px_1fr]">
+        {/* 搜索列表 */}
+        <aside className="flex h-full flex-col overflow-hidden rounded-[14px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+          <div className="shrink-0 border-b border-[var(--oc-border-subtle)] p-3.5">
+            <div className="flex items-center gap-2 rounded-[10px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 py-2 text-[var(--oc-text-secondary)] transition-all focus-within:border-[var(--oc-border-strong)] focus-within:bg-[var(--oc-bg-elevated)] focus-within:text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)]">
+              <SearchIcon className="h-3.5 w-3.5 shrink-0" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="输入问题开始搜索…"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--oc-text-primary)] placeholder:text-[var(--oc-text-tertiary)] outline-none"
+              />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SearchIcon className="h-5 w-5" />
-              对话
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div ref={listRef} className="h-[52vh] overflow-auto rounded-md border bg-background p-4 space-y-3">
-              {messages.length === 0 ? <div className="text-sm text-muted-foreground">输入问题开始对话。</div> : null}
-
-              {messages.map((m) => (
-                <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {filteredSessions.length === 0 ? (
+              <div className="py-8 text-center text-sm text-[var(--oc-text-secondary)]">暂无搜索记录</div>
+            ) : (
+              <div className="p-2">
+                {filteredSessions.map((s) => (
                   <div
-                    className={
-                      m.role === "user"
-                        ? "max-w-[85%] rounded-2xl bg-primary px-3 py-2 text-primary-foreground whitespace-pre-wrap"
-                        : "max-w-[85%] rounded-2xl bg-muted px-3 py-2 text-foreground whitespace-pre-wrap"
-                    }
+                    key={s.id}
+                    onClick={() => setActiveSessionId(s.id)}
+                    className={cn(
+                      "cursor-pointer rounded-lg border border-transparent px-3 py-2.5 transition-all",
+                      s.id === activeSessionId
+                        ? "border-[var(--oc-border-strong)] bg-[var(--oc-bg-active)]"
+                        : "hover:border-[var(--oc-border-subtle)] hover:bg-[var(--oc-bg-elevated)]"
+                    )}
                   >
-                    {m.content}
+                    <div className="truncate text-[13px] font-semibold text-[var(--oc-text-primary)]">
+                      {s.title || "新会话"}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[var(--oc-text-secondary)]">
+                      {s.messages.length} 条消息 · {formatDateTime(s.createdAt)}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
 
-              {loading ? (
-                <div className="flex justify-start">
-                  <div className="max-w-[85%] rounded-2xl bg-muted px-3 py-2 text-foreground inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    正在思考…
-                  </div>
-                </div>
-              ) : null}
+        {/* 详情区 */}
+        <main className="flex h-full flex-col overflow-hidden rounded-[14px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+          {/* 详情头部 */}
+          <div className="flex shrink-0 items-center justify-between border-b border-[var(--oc-border-subtle)] px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-[15px] font-bold text-[var(--oc-text-primary)]">
+                {firstUserMessage || "开始一次新搜索"}
+              </h2>
+              <div className="mt-1 text-xs text-[var(--oc-text-secondary)]">
+                {activeSession ? (
+                  <>
+                    基于 {messages.filter((m) => m.role === "user").length} 轮对话生成 · {formatDateTime(activeSession.createdAt)}
+                  </>
+                ) : (
+                  "选择左侧搜索记录或输入新问题"
+                )}
+              </div>
             </div>
+            <div className="flex shrink-0 items-center gap-2 pl-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 text-xs font-semibold text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                复制
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 rounded-lg bg-[var(--oc-accent)] px-3 text-xs font-semibold text-[var(--oc-bg-root)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_1px_2px_rgba(0,0,0,0.24)] transition-all hover:-translate-y-px hover:bg-[var(--oc-accent-hover)] hover:shadow-[0_2px_0_rgba(255,255,255,0.12)_inset,0_4px_16px_rgba(0,0,0,0.32)] active:translate-y-0"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                分享
+              </Button>
+            </div>
+          </div>
 
-            <div className="flex gap-2">
+          {/* 详情主体 */}
+          <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-5">
+            {messages.length === 0 && !loading ? (
+              <div className="flex h-full flex-col items-center justify-center text-[var(--oc-text-secondary)]">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--oc-accent-soft)]">
+                  <SearchIcon className="h-7 w-7 text-[var(--oc-accent)]" />
+                </div>
+                <p className="text-sm font-medium">输入问题开始搜索</p>
+                <p className="mt-1 text-xs text-[var(--oc-text-tertiary)]">AI 会基于项目数据生成简洁回答</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* AI 回答 */}
+                <Card className="rounded-[14px] border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+                  <CardHeader className="flex flex-row items-center gap-2 px-5 py-4">
+                    <Sparkles className="h-4 w-4 text-[var(--oc-accent)]" />
+                    <CardTitle className="text-[13px] font-bold text-[var(--oc-text-primary)]">AI 回答</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 pt-0">
+                    {lastAssistantContent ? (
+                      <div className="text-[14px] leading-[1.8] text-[var(--oc-text-primary)] whitespace-pre-wrap">
+                        {lastAssistantContent}
+                        {loading && <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-[var(--oc-accent)]" />}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-[var(--oc-text-secondary)]">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        正在生成回答…
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 参考来源占位 */}
+                <div className="rounded-[14px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+                  <div className="flex flex-row items-center gap-2 px-5 py-4">
+                    <Link2 className="h-4 w-4 text-[var(--oc-accent)]" />
+                    <span className="text-[13px] font-bold text-[var(--oc-text-primary)]">参考来源</span>
+                  </div>
+                  <div className="px-5 pb-5 pt-0">
+                    <div className="rounded-[10px] border border-dashed border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-4 py-6 text-center text-sm text-[var(--oc-text-secondary)]">
+                      来源信息将在接入知识库后展示
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="rounded-[10px] border border-[rgba(201,123,109,0.25)] bg-[var(--oc-error-soft)] px-3 py-2 text-sm text-[var(--oc-error)]">
+                    {error}
+                  </div>
+                )}
+
+                {raw && (
+                  <details className="text-xs text-[var(--oc-text-secondary)]">
+                    <summary className="cursor-pointer text-[var(--oc-text-secondary)] hover:text-[var(--oc-text-primary)]">
+                      查看原始响应
+                    </summary>
+                    <pre className="mt-2 overflow-auto rounded-[10px] border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-root)] p-3 text-[var(--oc-text-secondary)]">
+                      {JSON.stringify(raw, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 输入区 */}
+          <div className="shrink-0 border-t border-[var(--oc-border-subtle)] px-5 py-4">
+            <div className="flex items-end gap-3">
               <Input
                 value={input}
-                placeholder="输入问题后回车发送..."
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") send();
                 }}
+                placeholder="输入问题后回车发送…"
+                disabled={loading}
+                className="h-11 flex-1 rounded-[10px] border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-4 text-[13px] text-[var(--oc-text-primary)] placeholder:text-[var(--oc-text-tertiary)] focus:border-[var(--oc-accent)] focus:ring-[var(--oc-accent-soft)] focus:ring-[3px]"
               />
-              <Button onClick={send} disabled={!canSend} className="gap-2">
-                <Send className="h-4 w-4" />
+              <Button
+                onClick={send}
+                disabled={!canSend}
+                className="h-11 gap-1.5 rounded-[10px] bg-[var(--oc-accent)] px-5 text-[13px] font-semibold text-[var(--oc-bg-root)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_1px_2px_rgba(0,0,0,0.24)] transition-all hover:-translate-y-px hover:bg-[var(--oc-accent-hover)] hover:shadow-[0_2px_0_rgba(255,255,255,0.12)_inset,0_4px_16px_rgba(0,0,0,0.32)] active:translate-y-0 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 发送
               </Button>
             </div>
-
-            {error ? <div className="text-sm text-destructive whitespace-pre-wrap">{error}</div> : null}
-
-            {raw ? (
-              <details className="text-xs text-muted-foreground">
-                <summary className="cursor-pointer">查看原始响应</summary>
-                <pre className="mt-2 overflow-auto rounded-md bg-muted p-3">{JSON.stringify(raw, null, 2)}</pre>
-              </details>
-            ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </main>
       </div>
     </div>
   );

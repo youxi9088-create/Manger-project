@@ -1,4 +1,4 @@
-// F:\个人\app\openclaw\packages\server\src\services\agent-tools.ts
+// F:\youxi\app\openclaw\packages\server\src\services\agent-tools.ts
 // Agent 工具注册表：管理所有可调用工具
 
 import { registerQueryTools } from "./agent-tools-query.js";
@@ -7,6 +7,8 @@ import type { AgentToolDefinition, MoonshotTool } from "@openclaw/shared/types/a
 
 export interface AgentTool {
   definition: AgentToolDefinition;
+  /** 是否需要用户二次确认（删除、批量修改、状态流转等） */
+  requireConfirm?: boolean;
   execute: (params: Record<string, unknown>) => Promise<unknown>;
 }
 

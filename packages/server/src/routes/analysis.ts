@@ -7,7 +7,7 @@ import * as db from "../services/db.js";
 import dbInstance from "../services/db.js";
 import { buildAnalysisPrompt, parseMarkdownReport, extractSummary } from "../services/analysis-service.js";
 import { getAuthToken, defaultModel, createAgentSession } from "../utils/agent-sdk.js";
-import { readEnvFileContent } from "../utils/env.js";
+import { ensureU9Configuration } from "./im-u9.js";
 
 const router = Router();
 
@@ -118,17 +118,11 @@ router.post("/api/analysis/run", async (req, res) => {
     return res.json({ success: false, message: `${targetDate} 没有聊天记录` });
   }
 
-  // ---- 修复空 group_name：从 .env 的 U9_CONVERSATION_NAMES_xxx 反查群名 ----
-  const envContent = readEnvFileContent();
-  const convNameMap = new Map<string, string>();
-  const nameRegex = /^U9_CONVERSATION_NAMES_([^=]+)=(.+)$/gm;
-  let nm;
-  while ((nm = nameRegex.exec(envContent)) !== null) {
-    const gid = nm[1].trim();
-    if (!convNameMap.has(gid)) {
-      convNameMap.set(gid, nm[2].trim());
-    }
-  }
+  // 修复空 group_name：会话目录统一从数据管理读取，不再读取项目配置文件。
+  const configuredDirectory = await ensureU9Configuration();
+  const convNameMap = new Map(configuredDirectory.sessions
+    .filter((session) => session.name)
+    .map((session) => [session.id, session.name]));
 
   let fixedCount = 0;
   for (const r of chatRecords) {

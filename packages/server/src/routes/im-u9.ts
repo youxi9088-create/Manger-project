@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 import * as db from "../services/db.js";
 import { U9ApiClient } from "../services/u9-api.js";
-import { readEnvFileContent, readRuntimeConfig, persistEnvVar, envFilePath } from "../utils/env.js";
+import { readEnvFileContent, readRuntimeConfig, persistEnvVar, removeRuntimeConfig, envFilePath } from "../utils/env.js";
+import { listRemoteU9Conversations, saveRemoteU9Conversations } from "../services/u9-conversation-store.js";
 
 const router = Router();
 
@@ -27,13 +30,278 @@ function normalizeU9Timestamp(rawTime: string | number | undefined, fallback: st
 }
 
 function createU9Client() {
+  const envContent = readEnvFileContent();
+  const readValue = (key: string) => process.env[key]?.trim()
+    || envContent.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]?.trim()
+    || '';
   return new U9ApiClient({
-    baseUrl: process.env.U9_API_BASE_URL,
-    authId: process.env.U9_API_AUTH_ID || '',
-    authKey: process.env.U9_API_AUTH_KEY || '',
-    appId: process.env.U9_SDP_APP_ID || '',
-    diff: parseInt(process.env.U9_API_DIFF || '0'),
+    baseUrl: readValue('U9_API_BASE_URL') || 'https://im-message-search.sdp.101.com',
+    authId: readValue('U9_API_AUTH_ID'),
+    authKey: readValue('U9_API_AUTH_KEY'),
+    appId: readValue('U9_SDP_APP_ID'),
+    diff: parseInt(readValue('U9_API_DIFF') || '0'),
   });
+}
+
+type U9Auth = {
+  access_token: string;
+  mac_key: string;
+  refresh_token?: string;
+  expires_at?: string;
+  diff?: number;
+  user_id?: string;
+};
+type U9Conversation = { id: string; name: string };
+type U9ConversationLoad = { sessions: U9Conversation[]; source: 'u9_api' | 'local_chat_records' | 'u9_api_merged' | 'u9_data_store' };
+
+function readStoredU9Auth(): U9Auth | null {
+  const candidates = [
+    path.resolve(process.cwd(), 'data', 'auth', 'oa-auth.json'),
+    path.resolve(process.cwd(), 'data', 'auth', 'meeting-auth.json'),
+    path.resolve(process.cwd(), '..', '..', 'data', 'auth', 'oa-auth.json'),
+    path.resolve(process.cwd(), '..', '..', 'data', 'auth', 'meeting-auth.json'),
+    path.resolve(process.cwd(), '..', '..', 'api', '_data', 'auth', 'oa-auth.json'),
+    path.resolve(process.cwd(), '..', '..', 'api', '_data', 'auth', 'meeting-auth.json'),
+  ];
+
+  let newest: { auth: U9Auth; expiresAt: number } | null = null;
+  for (const filePath of candidates) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const state = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      for (const origin of state?.origins || []) {
+        for (const entry of origin?.localStorage || []) {
+          if (!String(entry?.name || '').includes('ND_UC_AUTH') || !String(entry?.name || '').includes('token')) continue;
+          const wrapper = JSON.parse(String(entry.value || '{}'));
+          const token = typeof wrapper?.value === 'string' ? JSON.parse(wrapper.value) : wrapper?.value;
+          if (token?.access_token && token?.mac_key) {
+            const auth: U9Auth = {
+              access_token: token.access_token,
+              mac_key: token.mac_key,
+              refresh_token: token.refresh_token,
+              expires_at: token.expires_at,
+              diff: token.diff || 0,
+              user_id: token.user_id,
+            };
+            const expiresAt = Number.isFinite(new Date(token.expires_at).getTime())
+              ? new Date(token.expires_at).getTime()
+              : fs.statSync(filePath).mtimeMs;
+            if (!newest || expiresAt > newest.expiresAt) newest = { auth, expiresAt };
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[U9] 读取认证快照失败: ${path.basename(filePath)}`, error);
+    }
+  }
+  return newest?.auth || null;
+}
+
+function getU9AuthSnapshotPath(): string {
+  const candidates = [
+    path.resolve(process.cwd(), 'data', 'auth', 'oa-auth.json'),
+    path.resolve(process.cwd(), '..', '..', 'data', 'auth', 'oa-auth.json'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
+}
+
+function isU9TokenExpired(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return /UC\/AUTH_(TOKEN_EXPIRED|INVALID_TOKEN|UNAVAILABLE_TOKEN|INVALID_TOKEN_BE_KICKED)/.test(message);
+}
+
+function shouldRefreshU9Auth(auth: U9Auth): boolean {
+  const expiresAt = auth.expires_at ? new Date(auth.expires_at).getTime() : NaN;
+  // Refresh only when the current access token is nearly expired. U9 rotates
+  // refresh tokens, so refreshing every setup would invalidate the deployed snapshot.
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now() + 5 * 60 * 1000;
+}
+
+async function refreshU9Auth(auth: U9Auth): Promise<U9Auth> {
+  if (!auth.refresh_token) {
+    throw new Error('本地 U9 认证快照缺少续期凭据。请在本机重新登录 99U 后再同步。');
+  }
+
+  const response = await fetch(`https://uc-gateway.101.com/v1.1/tokens/${encodeURIComponent(auth.refresh_token)}/actions/refresh`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'sdp-app-id': process.env.U9_SDP_APP_ID || 'b4fb92a0-af7f-49c2-b270-8f62afac1133',
+      Origin: 'https://ndim.101.com',
+      Referer: 'https://ndim.101.com/',
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    if (/UC\/AUTH_(TOKEN_EXPIRED|INVALID_TOKEN|UNAVAILABLE_TOKEN|INVALID_TOKEN_BE_KICKED)/.test(body)) {
+      throw new Error('99U 登录已失效，无法自动续期。请在本机重新登录 99U 后再同步认证。');
+    }
+    throw new Error(`99U 授权续期失败（HTTP ${response.status}）`);
+  }
+
+  const refreshed = await response.json() as Partial<U9Auth> & { server_time?: string | number };
+  if (!refreshed.access_token || !refreshed.mac_key) {
+    throw new Error('99U 授权续期返回的数据不完整。请在本机重新登录 99U 后再同步认证。');
+  }
+
+  const serverTime = refreshed.server_time ? new Date(refreshed.server_time).getTime() : NaN;
+  return {
+    ...auth,
+    ...refreshed,
+    refresh_token: refreshed.refresh_token || auth.refresh_token,
+    diff: typeof refreshed.diff === 'number'
+      ? refreshed.diff
+      : (Number.isFinite(serverTime) ? serverTime - Date.now() : auth.diff || 0),
+    user_id: refreshed.user_id || auth.user_id,
+  };
+}
+
+async function loadU9Conversations(auth: U9Auth): Promise<U9ConversationLoad> {
+  const client = new U9ApiClient({
+    baseUrl: process.env.U9_API_BASE_URL || 'https://im-message-search.sdp.101.com',
+    authId: auth.access_token,
+    authKey: auth.mac_key,
+    appId: process.env.U9_SDP_APP_ID || 'b4fb92a0-af7f-49c2-b270-8f62afac1133',
+    diff: Number(auth.diff || 0),
+  });
+  const [groupsResult, friendsResult] = await Promise.allSettled([
+    client.getGroups(auth.user_id || '986916'),
+    client.getAllFriends(),
+  ]);
+  const groups = groupsResult.status === 'fulfilled' ? groupsResult.value : [];
+  const friends = friendsResult.status === 'fulfilled' ? friendsResult.value : [];
+  const live = [...groups, ...friends]
+    .filter((item: any) => item?.id)
+    .map((item: any) => ({ id: String(item.id), name: String(item.name || '') }));
+  const [stored, saved] = await Promise.all([
+    listRemoteU9Conversations(),
+    Promise.resolve(db.getSavedU9Conversations()),
+  ]);
+
+  // The U9 directory is sometimes partial. Keep its fresh names, but never
+  // discard conversation IDs already proven by real local chat records.
+  const conversations = new Map<string, U9Conversation>();
+  for (const session of saved) conversations.set(session.id, session);
+  for (const session of stored) conversations.set(session.id, { id: session.id, name: session.name || conversations.get(session.id)?.name || '' });
+  for (const session of live) {
+    const existing = conversations.get(session.id);
+    conversations.set(session.id, { id: session.id, name: session.name || existing?.name || '' });
+  }
+  const sessions = Array.from(conversations.values());
+  if (live.length > 0 && (saved.length > 0 || stored.length > 0)) return { sessions, source: 'u9_api_merged' };
+  if (live.length > 0) return { sessions, source: 'u9_api' };
+  if (stored.length > 0) return { sessions, source: 'u9_data_store' };
+  if (saved.length > 0) return { sessions, source: 'local_chat_records' };
+
+  const errors = [groupsResult, friendsResult]
+    .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+    .map((result) => result.reason instanceof Error ? result.reason.message : String(result.reason));
+  if (errors.length > 0) throw new Error(`U9 会话目录读取失败：${errors.join('；')}`);
+  return { sessions: [], source: 'u9_api' };
+}
+
+async function persistU9Configuration(auth: U9Auth, sessions: U9Conversation[]) {
+  const convIds = sessions.map((session) => session.id).join(',');
+  persistEnvVar('U9_API_AUTH_ID', auth.access_token);
+  persistEnvVar('U9_API_AUTH_KEY', auth.mac_key);
+  if (auth.refresh_token) persistEnvVar('U9_REFRESH_TOKEN', auth.refresh_token);
+  if (auth.expires_at) persistEnvVar('U9_TOKEN_EXPIRES_AT', auth.expires_at);
+  if (auth.user_id) persistEnvVar('U9_USER_ID', String(auth.user_id));
+  persistEnvVar('U9_SDP_APP_ID', 'b4fb92a0-af7f-49c2-b270-8f62afac1133');
+  persistEnvVar('U9_API_DIFF', String(auth.diff || 0));
+  persistEnvVar('U9_API_BASE_URL', 'https://im-message-search.sdp.101.com');
+  await saveRemoteU9Conversations(sessions);
+  return convIds;
+}
+
+function readLegacyU9Conversations(): U9Conversation[] {
+  const envContent = readEnvFileContent();
+  const ids = (envContent.match(/^U9_CONVERSATIONS=(.*)/m)?.[1] || '')
+    .split(',').map((id) => id.trim()).filter(Boolean);
+  const names: Record<string, string> = {};
+  const nameRegex = /^U9_CONVERSATION_NAMES_([^=]+)=(.*)$/gm;
+  let match: RegExpExecArray | null;
+  while ((match = nameRegex.exec(envContent)) !== null) names[match[1].trim()] = match[2].trim();
+  return Array.from(new Set([...ids, ...Object.keys(names)])).map((id) => ({ id, name: names[id] || '' }));
+}
+
+async function migrateLegacyU9Conversations(): Promise<U9Conversation[]> {
+  const sessions = readLegacyU9Conversations();
+  if (sessions.length === 0) return [];
+  if (await saveRemoteU9Conversations(sessions)) {
+    const config = readRuntimeConfig();
+    removeRuntimeConfig(Object.keys(config).filter((key) => key === 'U9_CONVERSATIONS' || key.startsWith('U9_CONVERSATION_NAMES_')));
+  }
+  return sessions;
+}
+
+/**
+ * F functions keep runtime files in /tmp, which are cleared after a cold start.
+ * Restore the active U9 configuration from the packaged local-login snapshot
+ * before an endpoint attempts to call the U9 API.
+ */
+export async function ensureU9Configuration(): Promise<{ sessions: U9Conversation[]; source: U9ConversationLoad['source'] | 'runtime' }> {
+  const envContent = readEnvFileContent();
+  const readValue = (key: string) => process.env[key]?.trim()
+    || envContent.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]?.trim()
+    || '';
+  const authId = readValue('U9_API_AUTH_ID');
+  const authKey = readValue('U9_API_AUTH_KEY');
+  const appId = readValue('U9_SDP_APP_ID');
+  const refreshToken = readValue('U9_REFRESH_TOKEN');
+  const envAuth: U9Auth | null = authId && authKey && appId ? {
+    access_token: authId,
+    mac_key: authKey,
+    refresh_token: refreshToken || undefined,
+    expires_at: readValue('U9_TOKEN_EXPIRES_AT') || undefined,
+    diff: Number(readValue('U9_API_DIFF') || 0),
+    user_id: readValue('U9_USER_ID') || '986916',
+  } : null;
+  const stored = await listRemoteU9Conversations();
+
+  if (authId && authKey && appId && stored.length > 0) {
+    // 已有会话目录时也必须检查 token；否则冷启动会一直沿用已过期凭据。
+    if (envAuth && shouldRefreshU9Auth(envAuth)) {
+      if (!envAuth.refresh_token) {
+        throw new Error('99U 登录已失效，无法自动续期。请在本机重新登录 99U 后再同步认证。');
+      }
+      const refreshed = await refreshU9Auth(envAuth);
+      await persistU9Configuration(refreshed, stored);
+    }
+    return { sessions: stored.map(({ id, name }) => ({ id, name })), source: 'u9_data_store' };
+  }
+
+  const legacy = await migrateLegacyU9Conversations();
+  if (authId && authKey && appId && legacy.length > 0) {
+    return { sessions: legacy, source: 'runtime' };
+  }
+
+  // FN 冷启动时没有本地运行时文件，但平台环境变量仍然可直接使用。
+  // 先用它们恢复会话目录，避免误报“未找到本地登录快照”。
+  if (authId && authKey && appId) {
+    const activeAuth = envAuth && shouldRefreshU9Auth(envAuth)
+      ? await refreshU9Auth(envAuth)
+      : envAuth!;
+    const loaded = await loadU9Conversations({
+      ...activeAuth,
+    });
+    await persistU9Configuration(activeAuth, loaded.sessions);
+    return loaded;
+  }
+
+  const storedAuth = readStoredU9Auth();
+  if (!storedAuth) {
+    throw new Error('未找到可用的本地 99U 登录快照。请先在本机登录 99U 后再同步认证。');
+  }
+
+  const activeAuth = shouldRefreshU9Auth(storedAuth)
+    ? await refreshU9Auth(storedAuth)
+    : storedAuth;
+  const loaded = await loadU9Conversations(activeAuth);
+  await persistU9Configuration(activeAuth, loaded.sessions);
+  return loaded;
 }
 
 // ============= 从 99U 导入聊天记录 =============
@@ -46,6 +314,7 @@ router.post("/api/im/chat-records/import-u9", async (req, res) => {
     const source = db.getImSource(sourceId);
     if (!source) return res.status(404).json({ error: "数据源不存在" });
 
+    await ensureU9Configuration();
     const u9Client = createU9Client();
     const myName = process.env.U9_MY_NAME || '';
     const messages = await u9Client.getAllMessages(convId, { keyword, beginTime, endTime, maxMessages, myName });
@@ -68,6 +337,9 @@ router.post("/api/im/chat-records/import-u9", async (req, res) => {
 
     res.json({ success: true, imported: importResult.inserted, skipped: importResult.skipped, totalFromApi: messages.length, convId, sourceId });
   } catch (error: any) {
+    if (isU9TokenExpired(error)) {
+      return res.status(401).json({ error: '99U 授权已过期。请在「设置」中重新配置，系统会先尝试自动续期。' });
+    }
     res.status(500).json({ error: error?.message || '导入失败' });
   }
 });
@@ -79,6 +351,7 @@ router.post("/api/im/chat-records/search-u9", async (req, res) => {
     const { convId, keyword, beginTime, endTime, beforeMsgId, limit = 30 } = req.body;
     if (!convId) return res.status(400).json({ error: "convId 不能为空" });
 
+    await ensureU9Configuration();
     const u9Client = createU9Client();
     const response = await u9Client.searchMessages({ convId, keyword, beginTime, endTime, beforeMsgId, limit });
     res.json({ messages: response.messages, total: response.total, has_more: response.has_more, pre: response.pre, earliest_conv_msg_id: response.earliest_conv_msg_id });
@@ -91,28 +364,12 @@ router.post("/api/im/chat-records/search-u9", async (req, res) => {
 
 router.get("/api/im/u9-conversations", async (req, res) => {
   try {
-    const envContent = readEnvFileContent();
-    const match = envContent.match(/^U9_CONVERSATIONS=(.*)/m);
-    let envValue = match ? match[1].trim() : '';
-
-    if (!envValue) {
-      const nameMatches = envContent.match(/^U9_CONVERSATION_NAMES_([^=]+)=/gm);
-      if (nameMatches && nameMatches.length > 0) {
-        const recoveredIds = nameMatches.map(m => m.replace('U9_CONVERSATION_NAMES_', '').replace('=', ''));
-        envValue = recoveredIds.join(',');
-        persistEnvVar('U9_CONVERSATIONS', envValue);
-      }
-    }
-
-    const nameMap: Record<string, string> = {};
-    const nameRegex = /^U9_CONVERSATION_NAMES_([^=]+)=(.*)$/gm;
-    let nm;
-    while ((nm = nameRegex.exec(envContent)) !== null) { if (!(nm[1] in nameMap)) nameMap[nm[1]] = nm[2].trim(); }
-
-    const conversations = envValue.split(',').map(id => id.trim()).filter(Boolean)
-      .map(id => ({ id, name: nameMap[id] || `会话 ${id.slice(-6)}` }));
-
-    res.json({ conversations, total: conversations.length, source: 'env' });
+    const configured = await ensureU9Configuration();
+    const conversations = configured.sessions.map((session) => ({
+      id: session.id,
+      name: session.name || `会话 ${session.id.slice(-6)}`,
+    }));
+    res.json({ conversations, total: conversations.length, source: configured.source });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || '获取会话列表失败' });
   }
@@ -122,6 +379,7 @@ router.get("/api/im/u9-conversations", async (req, res) => {
 
 router.post("/api/im/refresh-conversations", async (req, res) => {
   try {
+    const configured = await ensureU9Configuration();
     const envContent = readEnvFileContent();
     const authId = envContent.match(/^U9_API_AUTH_ID=(.*)/m)?.[1]?.trim();
     const authKey = envContent.match(/^U9_API_AUTH_KEY=(.*)/m)?.[1]?.trim();
@@ -141,12 +399,8 @@ router.post("/api/im/refresh-conversations", async (req, res) => {
       u9Client.getAllFriends().catch(() => [] as { id: string; name: string }[]),
     ]);
 
-    const convMatch = envContent.match(/^U9_CONVERSATIONS=(.*)/m);
-    const existingIds = new Set((convMatch?.[1]?.trim() || '').split(',').map(id => id.trim()).filter(Boolean));
-    const existingNames: Record<string, string> = {};
-    const nameRegex = /^U9_CONVERSATION_NAMES_([^=]+)=(.*)$/gm;
-    let nm;
-    while ((nm = nameRegex.exec(envContent)) !== null) { if (!(nm[1] in existingNames)) existingNames[nm[1]] = nm[2].trim(); }
+    const existingIds = new Set(configured.sessions.map((session) => session.id));
+    const existingNames: Record<string, string> = Object.fromEntries(configured.sessions.map((session) => [session.id, session.name]));
 
     const previousCount = existingIds.size;
     const newConversations: { id: string; name: string; type: string }[] = [];
@@ -160,10 +414,7 @@ router.post("/api/im/refresh-conversations", async (req, res) => {
       if (f.name) existingNames[f.id] = f.name;
     }
 
-    const allIds = Array.from(existingIds).join(',');
-    persistEnvVar('U9_CONVERSATIONS', allIds);
-    process.env.U9_CONVERSATIONS = allIds;
-    for (const [id, name] of Object.entries(existingNames)) { persistEnvVar(`U9_CONVERSATION_NAMES_${id}`, name); }
+    await saveRemoteU9Conversations(Array.from(existingIds).map((id) => ({ id, name: existingNames[id] || '' })));
 
     res.json({ success: true, previousCount, currentCount: existingIds.size, newCount: newConversations.length, newConversations, groupsFromApi: groups.length, friendsFromApi: friends.length });
   } catch (error: any) {
@@ -191,29 +442,30 @@ router.post("/api/im/refresh-env", (req, res) => {
 
 router.get("/api/im/u9-status", async (req, res) => {
   try {
+    const configuredDirectory = await ensureU9Configuration();
     const envContent = readEnvFileContent();
-    const authId = envContent.match(/^U9_API_AUTH_ID=(.*)/m)?.[1]?.trim() || '';
-    const authKey = envContent.match(/^U9_API_AUTH_KEY=(.*)/m)?.[1]?.trim() || '';
-    const appId = envContent.match(/^U9_SDP_APP_ID=(.*)/m)?.[1]?.trim() || '';
-    const baseUrl = envContent.match(/^U9_API_BASE_URL=(.*)/m)?.[1]?.trim() || 'https://im-message-search.sdp.101.com';
-    let conversationsValue = envContent.match(/^U9_CONVERSATIONS=(.*)/m)?.[1]?.trim() || '';
-
-    if (!conversationsValue) {
-      const nameMatches = envContent.match(/^U9_CONVERSATION_NAMES_([^=]+)=/gm);
-      if (nameMatches && nameMatches.length > 0) {
-        const recoveredIds = nameMatches.map(m => m.replace('U9_CONVERSATION_NAMES_', '').replace('=', ''));
-        conversationsValue = recoveredIds.join(',');
-        persistEnvVar('U9_CONVERSATIONS', conversationsValue);
-        process.env.U9_CONVERSATIONS = conversationsValue;
-      }
-    }
-
+    const readValue = (key: string) => process.env[key]?.trim()
+      || envContent.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]?.trim()
+      || '';
+    const authId = readValue('U9_API_AUTH_ID');
+    const authKey = readValue('U9_API_AUTH_KEY');
+    const appId = readValue('U9_SDP_APP_ID');
+    const baseUrl = readValue('U9_API_BASE_URL') || 'https://im-message-search.sdp.101.com';
     const configured = !!(authId && authKey && appId);
-    const conversations = conversationsValue.split(',').map(id => id.trim()).filter(Boolean);
+    const conversations = configuredDirectory.sessions.map((session) => session.id);
 
     res.json({ configured, hasAuthId: !!authId, hasAuthKey: !!authKey, hasAppId: !!appId, baseUrl, conversations, conversationsCount: conversations.length });
   } catch (error: any) {
-    res.status(500).json({ error: error?.message || '检查配置失败' });
+    res.json({
+      configured: false,
+      hasAuthId: false,
+      hasAuthKey: false,
+      hasAppId: false,
+      baseUrl: 'https://im-message-search.sdp.101.com',
+      conversations: [],
+      conversationsCount: 0,
+      error: error?.message || '检查配置失败',
+    });
   }
 });
 
@@ -224,7 +476,6 @@ let autoSetupSmsResolve: ((code: string) => void) | null = null;
 
 router.post("/api/im/auto-setup", async (req, res) => {
   const { employeeId, password } = req.body;
-  if (!employeeId || !password) return res.status(400).json({ error: '工号和密码不能为空' });
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -235,8 +486,41 @@ router.post("/api/im/auto-setup", async (req, res) => {
   };
 
   try {
+    const storedAuth = readStoredU9Auth();
+    if (storedAuth) {
+      try {
+        send('log', { message: '已从本地已登录认证快照获取 U9 凭据。' });
+        let activeAuth = storedAuth;
+        if (shouldRefreshU9Auth(storedAuth)) {
+          send('log', { message: '正在续期即将过期的 U9 授权...' });
+          activeAuth = await refreshU9Auth(storedAuth);
+        }
+        send('log', { message: '正在通过 U9 API 获取会话列表...' });
+        const loaded = await loadU9Conversations(activeAuth);
+        const { sessions } = loaded;
+        if (loaded.source === 'local_chat_records') {
+          send('log', { message: 'U9 会话目录为空，已从本地真实聊天记录恢复会话列表。' });
+        }
+        await persistU9Configuration(activeAuth, sessions);
+        send('done', {
+          message: `配置完成！获取到 ${sessions.length} 个会话`,
+          sessions: sessions.length,
+          userId: activeAuth.user_id,
+          conversationIds: sessions.map((session) => session.id),
+        });
+        res.end();
+        return;
+      } catch (error) {
+        if (process.platform === 'linux') throw error;
+        send('log', { message: '本地认证快照已失效，转为浏览器重新登录。' });
+      }
+    }
+
+    if (process.platform === 'linux') {
+      throw new Error('未找到可用的 U9 认证快照。请先在本地登录 U9 并同步认证后重试。');
+    }
+
     const { chromium } = await import('playwright');
-    const fs = await import('fs');
 
     send('log', { message: '启动浏览器...' });
 
@@ -279,6 +563,10 @@ router.post("/api/im/auto-setup", async (req, res) => {
       } catch { }
 
       if (!loggedInByQr) {
+        if (!employeeId || !password) {
+          send('error', { message: '请在打开的浏览器中完成扫码登录；若使用密码登录，请在本地页面补充工号和密码后重试。' });
+          await browser.close(); autoSetupBrowser = null; res.end(); return;
+        }
         send('log', { message: '扫码未完成，尝试密码登录...' });
         const pcSwitcher = await page.$('.login-qrcode-switcher__pc');
         if (pcSwitcher) {
@@ -381,6 +669,16 @@ router.post("/api/im/auto-setup", async (req, res) => {
 
     if (!authInfo) { send('error', { message: '无法提取认证信息' }); await browser.close(); autoSetupBrowser = null; res.end(); return; }
 
+    const authSnapshotPath = getU9AuthSnapshotPath();
+    fs.mkdirSync(path.dirname(authSnapshotPath), { recursive: true });
+    await context.storageState({ path: authSnapshotPath });
+    const refreshedSnapshot = readStoredU9Auth();
+    if (!refreshedSnapshot?.refresh_token) {
+      send('error', { message: '已登录，但无法保存可续期的 U9 认证信息' });
+      await browser.close(); autoSetupBrowser = null; res.end(); return;
+    }
+    const persistedAuth: U9Auth = { ...authInfo, refresh_token: refreshedSnapshot.refresh_token };
+
     send('log', { message: `认证信息已获取 (user_id: ${authInfo.user_id})` });
     send('log', { message: '获取会话列表...' });
     await page.waitForTimeout(5000);
@@ -408,23 +706,14 @@ router.post("/api/im/auto-setup", async (req, res) => {
     });
 
     send('log', { message: `获取到 ${sessions.length} 个会话` });
-    send('log', { message: '保存配置到 .env...' });
+    send('log', { message: '保存认证并迁移会话目录到数据管理...' });
 
-    persistEnvVar('U9_API_AUTH_ID', authInfo.access_token);
-    persistEnvVar('U9_API_AUTH_KEY', authInfo.mac_key);
-    persistEnvVar('U9_SDP_APP_ID', 'b4fb92a0-af7f-49c2-b270-8f62afac1133');
-    persistEnvVar('U9_API_DIFF', String(authInfo.diff || 0));
-    persistEnvVar('U9_API_BASE_URL', 'https://im-message-search.sdp.101.com');
-
-    const convIds = sessions.map((s: any) => s.id).join(',');
-    if (convIds) persistEnvVar('U9_CONVERSATIONS', convIds);
-    for (const s of sessions) { if (s.name) persistEnvVar(`U9_CONVERSATION_NAMES_${s.id}`, s.name); }
+    await persistU9Configuration(persistedAuth, sessions);
 
     process.env.U9_API_AUTH_ID = authInfo.access_token;
     process.env.U9_API_AUTH_KEY = authInfo.mac_key;
     process.env.U9_SDP_APP_ID = 'b4fb92a0-af7f-49c2-b270-8f62afac1133';
     process.env.U9_API_DIFF = String(authInfo.diff || 0);
-    process.env.U9_CONVERSATIONS = convIds;
 
     await browser.close();
     autoSetupBrowser = null;
@@ -458,10 +747,9 @@ router.post("/api/im/auto-setup/sms", (req, res) => {
 
 // ============= 调试用 =============
 
-router.get("/api/debug-env", (req, res) => {
-  const envContent = readEnvFileContent();
-  const match = envContent.match(/U9_CONVERSATIONS=(.*)/);
-  res.json({ rawEnv: match ? match[1] : 'not found', fromProcessEnv: process.env.U9_CONVERSATIONS, parsed: process.env.U9_CONVERSATIONS ? process.env.U9_CONVERSATIONS.split(',').filter(Boolean) : [] });
+router.get("/api/debug-env", async (req, res) => {
+  const conversations = await listRemoteU9Conversations();
+  res.json({ conversationStore: 'mongo', conversations: conversations.length });
 });
 
 export default router;

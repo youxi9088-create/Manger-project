@@ -7,17 +7,18 @@ import { Button } from "@/components/ui/button";
 import {
   UserRound, Clock, Zap, Coffee, XCircle, CircleDot,
   RefreshCw, Square, ArrowRightLeft, ClipboardList, Trash2, Bot,
+  Plus, GanttChart,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || (process.env.NODE_ENV === "production" ? "/a/openclaw" : "http://localhost:3001");
 
 // ============ 内联组件 ============
-function ProgressBar({ value, color }: { value: number; color: string }) {
+function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="absolute -top-1 left-1 right-1 h-1.5 rounded-full bg-black/30 overflow-hidden">
+    <div className="absolute left-1 right-1 top-0 h-1 overflow-hidden rounded-full bg-[var(--oc-bg-hover)]">
       <div
-        className="h-full rounded-full transition-all duration-1000 ease-linear"
-        style={{ width: `${Math.min(100, value)}%`, backgroundColor: color }}
+        className="h-full rounded-full bg-[var(--oc-accent)] transition-all duration-700"
+        style={{ width: `${Math.min(100, value)}%` }}
       />
     </div>
   );
@@ -52,43 +53,43 @@ interface WorkCycle {
 
 const ZONE_CONFIG = {
   waiting: {
-    label: "等待区",
+    label: "待处理",
     icon: CircleDot,
-    color: "#10b981",
-    bgClass: "bg-emerald-500/5",
-    borderClass: "border-emerald-500/30",
-    headerBg: "bg-emerald-500/10",
-    textColor: "text-emerald-400",
+    color: "var(--oc-success)",
+    bgClass: "bg-[var(--oc-bg-surface)]",
+    borderClass: "border-[var(--oc-border-subtle)]",
+    headerBg: "bg-[var(--oc-success-soft)]",
+    textColor: "text-[var(--oc-success)]",
     description: "可接任务",
   },
   working: {
-    label: "工作区",
+    label: "进行中",
     icon: Zap,
-    color: "#f59e0b",
-    bgClass: "bg-amber-500/5",
-    borderClass: "border-amber-500/30",
-    headerBg: "bg-amber-500/10",
-    textColor: "text-amber-400",
+    color: "var(--oc-warning)",
+    bgClass: "bg-[var(--oc-bg-surface)]",
+    borderClass: "border-[var(--oc-border-subtle)]",
+    headerBg: "bg-[var(--oc-warning-soft)]",
+    textColor: "text-[var(--oc-warning)]",
     description: "工作中",
   },
   offline: {
     label: "离线",
     icon: XCircle,
-    color: "#6b7280",
-    bgClass: "bg-zinc-500/5",
-    borderClass: "border-zinc-500/30",
-    headerBg: "bg-zinc-500/10",
-    textColor: "text-zinc-400",
+    color: "var(--oc-text-tertiary)",
+    bgClass: "bg-[var(--oc-bg-surface)]",
+    borderClass: "border-[var(--oc-border-subtle)]",
+    headerBg: "bg-[var(--oc-bg-elevated)]",
+    textColor: "text-[var(--oc-text-tertiary)]",
     description: "离线中",
   },
   leave: {
     label: "休假",
     icon: Coffee,
-    color: "#3b82f6",
-    bgClass: "bg-blue-500/5",
-    borderClass: "border-blue-500/30",
-    headerBg: "bg-blue-500/10",
-    textColor: "text-blue-400",
+    color: "var(--oc-info)",
+    bgClass: "bg-[var(--oc-bg-surface)]",
+    borderClass: "border-[var(--oc-border-subtle)]",
+    headerBg: "bg-[var(--oc-info-soft)]",
+    textColor: "text-[var(--oc-info)]",
     description: "休假中",
   },
 };
@@ -199,12 +200,6 @@ function calcEmployeeSchedule(
   return schedule;
 }
 
-function elapsedMinutes(startTime: string): string {
-  const diff = (new Date().getTime() - new Date(startTime).getTime()) / 60000;
-  if (diff < 60) return `${Math.round(diff)}分钟`;
-  return `${(diff / 60).toFixed(1)}小时`;
-}
-
 /** 判断是否已完成（进度 >= 100%） */
 function isCompleted(cycle: WorkCycle): boolean {
   if (cycle.status === "completed") return true;
@@ -281,36 +276,54 @@ export default function KanbanPage() {
     } catch (err) { console.error("删除失败:", err); }
   };
 
-  // ============ 渲染：白板区域 ============
+  // ============ 渲染：看板区域 ============
   const renderBoard = () => (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4" />
+          <CardTitle className="flex items-center gap-2 text-base text-[var(--oc-text-primary)]">
+            <ArrowRightLeft className="h-4 w-4 text-[var(--oc-accent)]" />
             开发看板
           </CardTitle>
-          <Button size="sm" variant="outline" onClick={fetchData} disabled={loading}>
-            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
-            刷新（每12h）
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={fetchData}
+            disabled={loading}
+            className="h-9 gap-1.5 border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            刷新
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-4 gap-3 min-h-[260px]">
+      <CardContent className="pb-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {/* 四列看板 */}
           {(Object.entries(ZONE_CONFIG) as [keyof typeof ZONE_CONFIG, typeof ZONE_CONFIG.waiting][]).map(([key, config]) => {
             const zoneList = { waiting, working, offline, leave }[key];
             return (
-              <div key={key} className={`rounded-xl border ${config.borderClass} ${config.bgClass} p-3 flex flex-col`}>
-                <div className={`flex items-center gap-2 mb-3 px-1 py-1.5 rounded-lg ${config.headerBg}`}>
-                  <config.icon className={`h-4 w-4 ${config.textColor}`} />
-                  <span className="text-sm font-medium">{config.label}</span>
-                  <Badge variant="outline" className="ml-auto text-[10px]">{zoneList.length}</Badge>
+              <div
+                key={key}
+                className={`flex flex-col gap-2.5 rounded-xl border ${config.borderClass} ${config.bgClass} p-3.5`}
+              >
+                <div className="flex items-center justify-between border-b border-[var(--oc-border-subtle)] pb-2">
+                  <div className="flex items-center gap-2">
+                    <config.icon className={`h-4 w-4 ${config.textColor}`} />
+                    <span className="text-sm font-semibold text-[var(--oc-text-primary)]">
+                      {config.label}
+                    </span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-[10px] text-[var(--oc-text-tertiary)]"
+                  >
+                    {zoneList.length}
+                  </Badge>
                 </div>
                 <div className="flex-1 space-y-2 overflow-y-auto">
                   {zoneList.length === 0 ? (
-                    <p className="text-xs text-muted-foreground/50 text-center py-6">暂无</p>
+                    <p className="py-6 text-center text-xs text-[var(--oc-text-tertiary)]">暂无</p>
                   ) : (
                     zoneList.map((emp) => {
                       const cycle = key === "working" ? getCycleForEmployee(emp.id) : undefined;
@@ -342,30 +355,30 @@ export default function KanbanPage() {
 
   // ============ 渲染：工作计划表 ============
   const renderTable = () => (
-    <Card>
+    <Card className="border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <ClipboardList className="h-4 w-4" />
+        <CardTitle className="flex items-center gap-2 text-base text-[var(--oc-text-primary)]">
+          <ClipboardList className="h-4 w-4 text-[var(--oc-accent)]" />
           工作计划表
         </CardTitle>
       </CardHeader>
       <CardContent>
         {allCycles.length === 0 ? (
-          <p className="text-sm text-muted-foreground/50 text-center py-8">暂无工作计划记录</p>
+          <p className="py-8 text-center text-sm text-[var(--oc-text-tertiary)]">暂无工作计划记录</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/50">
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">员工</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">关联任务</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">开始时间</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">预估耗时</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">进度</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">预计结束</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">实际结束</th>
-                  <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">状态</th>
-                  <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">操作</th>
+                <tr className="border-b border-[var(--oc-border-subtle)]">
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">成员</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">关联任务</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">开始时间</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">预估耗时</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">进度</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">预计结束</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">实际结束</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">状态</th>
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-[var(--oc-text-secondary)]">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -391,74 +404,79 @@ export default function KanbanPage() {
                     const displayStatus = isActive && done ? "completed" : cycle.status;
 
                     return (
-                      <tr key={cycle.id} className="border-b border-border/30 hover:bg-white/[0.02] transition-colors">
-                        <td className="py-2.5 px-3">
+                      <tr
+                        key={cycle.id}
+                        className="border-b border-[var(--oc-border-subtle)] transition-colors hover:bg-[var(--oc-bg-elevated)]"
+                      >
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
                             {emp?.avatar_url ? (
-                              <img src={emp.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                              <img src={emp.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
                             ) : (
-                              <UserRound className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground" />
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--oc-bg-elevated)] text-[var(--oc-text-secondary)]">
+                                <UserRound className="h-3.5 w-3.5" />
+                              </div>
                             )}
-                            <span className="font-medium">{emp?.name || cycle.employee_id}</span>
+                            <span className="font-medium text-[var(--oc-text-primary)]">{emp?.name || cycle.employee_id}</span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-muted-foreground max-w-[180px] truncate">
+                        <td className="max-w-[180px] truncate px-3 py-2.5 text-[var(--oc-text-secondary)]">
                           {cycle.task_title || "-"}
                         </td>
                         {/* 开始时间 - 根据同员工任务排队自动计算 */}
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5 text-[var(--oc-text-primary)]">
                           {sch ? formatDateTime(sch.scheduledStart.toISOString()) : formatDateTime(cycle.start_time)}
                         </td>
                         {/* 预估耗时 - 只读，数据来源于需求分析的开发任务 */}
-                        <td className="py-2.5 px-3">
-                          <span className="text-xs tabular-nums">
+                        <td className="px-3 py-2.5">
+                          <span className="tabular-nums text-xs text-[var(--oc-text-secondary)]">
                             {cycle.estimated_hours != null ? `${cycle.estimated_hours}h` : "-"}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--oc-bg-hover)]">
                               <div
                                 className="h-full rounded-full"
                                 style={{
                                   width: `${prog}%`,
-                                  backgroundColor: done ? "#10b981" : isActive ? "#f59e0b" : "#10b981",
+                                  backgroundColor: done ? "var(--oc-success)" : isActive ? "var(--oc-warning)" : "var(--oc-success)",
                                 }}
                               />
                             </div>
-                            <span className="text-xs tabular-nums">{prog}%</span>
+                            <span className="tabular-nums text-xs text-[var(--oc-text-secondary)]">{prog}%</span>
                           </div>
                         </td>
                         {/* 预计结束 - 按工作日制计算 */}
-                        <td className="py-2.5 px-3 text-muted-foreground">
+                        <td className="px-3 py-2.5 text-[var(--oc-text-secondary)]">
                           {sch && cycle.estimated_hours && cycle.estimated_hours > 0
                             ? formatDateTime(sch.scheduledEnd.toISOString())
                             : "--"}
                         </td>
-                        <td className="py-2.5 px-3 text-muted-foreground">
+                        <td className="px-3 py-2.5 text-[var(--oc-text-secondary)]">
                           {cycle.end_time ? formatDateTime(cycle.end_time) : "-"}
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5">
                           <Badge
                             variant="outline"
                             className={
                               displayStatus === "completed"
-                                ? "border-emerald-500/30 text-emerald-400"
+                                ? "border-[var(--oc-success)]/30 text-[var(--oc-success)]"
                                 : displayStatus === "queued"
-                                ? "border-blue-500/30 text-blue-400"
+                                ? "border-[var(--oc-info)]/30 text-[var(--oc-info)]"
                                 : displayStatus === "cancelled"
-                                ? "border-red-500/30 text-red-400"
-                                : "border-amber-500/30 text-amber-400"
+                                ? "border-[var(--oc-error)]/30 text-[var(--oc-error)]"
+                                : "border-[var(--oc-warning)]/30 text-[var(--oc-warning)]"
                             }
                           >
                             {displayStatus === "active" ? "进行中" : displayStatus === "completed" ? "已完成" : displayStatus === "queued" ? "待执行" : "已取消"}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className="px-3 py-2.5">
                           <div className="flex justify-center">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDeleteCycle(cycle.id, cycle.task_title); }}
-                              className="p-1 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--oc-text-secondary)] transition-colors hover:bg-[var(--oc-error-soft)] hover:text-[var(--oc-error)]"
                               title="删除此工作计划"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -478,11 +496,28 @@ export default function KanbanPage() {
   );
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-flex">员工看板</h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">实时查看团队工作状态与工时追踪</p>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--oc-text-primary)]">团队看板</h1>
+          <p className="mt-1.5 text-[13px] text-[var(--oc-text-secondary)]">团队工作周期排期表与任务流动视图</p>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]"
+          >
+            <GanttChart className="h-4 w-4" />
+            甘特图
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 gap-1.5 bg-[var(--oc-accent)] text-[var(--oc-bg-root)] hover:bg-[var(--oc-accent-hover)]"
+          >
+            <Plus className="h-4 w-4" />
+            新建排期
+          </Button>
         </div>
       </div>
 
@@ -493,7 +528,6 @@ export default function KanbanPage() {
 }
 
 // ============ 员工卡片子组件 ============
-// 改动1: 卡片只显示 状态、头像、当前任务进度百分比
 
 function EmployeeCard({
   employee,
@@ -516,28 +550,28 @@ function EmployeeCard({
   const Icon = config.icon;
 
   return (
-    <div className={`group relative rounded-lg border border-border/40 p-2.5 hover:bg-white/[0.04] transition-colors cursor-default`}>
+    <div className="group relative cursor-default rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] p-2.5 transition-colors hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]">
       {/* 工作区顶部进度条 */}
       {zone === "working" && progress !== undefined && !isCompleted && (
-        <ProgressBar value={progress} color={isCompleted ? "#10b981" : config.color} />
+        <ProgressBar value={progress} />
       )}
 
       {/* 核心：头像 + 状态标签 + 进度百分比 */}
       <div className="flex flex-col items-center gap-1.5 pt-1">
         {/* 头像 */}
         <div className="relative">
-          <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-primary/15 to-primary/5 border border-border flex items-center shadow-sm">
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-hover)] shadow-sm">
             {employee.avatar_url ? (
-              <img src={employee.avatar_url} alt="" className="w-full h-full object-cover" />
+              <img src={employee.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <UserRound className="h-6 w-6 text-muted-foreground opacity-40" />
+              <UserRound className="h-6 w-6 text-[var(--oc-text-tertiary)]" />
             )}
           </div>
           {/* Agent 标识 */}
           {employee.agent_type && (
             <div
-              className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-sm border border-background ${
-                employee.agent_type === "main" ? "bg-sky-500" : employee.agent_type === "exec" ? "bg-amber-500" : "bg-violet-500"
+              className={`absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--oc-bg-surface)] shadow-sm ${
+                employee.agent_type === "main" ? "bg-[var(--oc-info)]" : employee.agent_type === "exec" ? "bg-[var(--oc-warning)]" : "bg-[var(--oc-accent)]"
               }`}
               title={`AI Agent: ${employee.agent_type === "main" ? "PM Agent" : employee.agent_type === "exec" ? "Exec Agent" : employee.agent_type}`}
             >
@@ -546,7 +580,7 @@ function EmployeeCard({
           )}
           {/* 工作区角标 */}
           {zone === "working" && (
-            <div className={`absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full flex items-center justify-center ${isCompleted ? "bg-emerald-500" : "bg-amber-500"}`}>
+            <div className={`absolute -bottom-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full ${isCompleted ? "bg-[var(--oc-success)]" : "bg-[var(--oc-warning)]"}`}>
               {isCompleted ? (
                 <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
               ) : (
@@ -556,40 +590,40 @@ function EmployeeCard({
           )}
         </div>
 
-        {/* 状态标签 — 只显示状态 */}
-        <Badge variant="outline" className={`${config.textColor} border-current/20 text-[9px] px-1.5 py-0 leading-none`}>
-          <Icon className="h-2.5 w-2.5 mr-0.5" />
+        {/* 状态标签 */}
+        <Badge
+          variant="outline"
+          className={`text-[9px] ${config.textColor} border-current/20 px-1.5 py-0`}
+        >
+          <Icon className="mr-0.5 h-2.5 w-2.5" />
           {isCompleted ? "已完成" : config.description}
         </Badge>
 
         {/* 进度百分比 — 只在工作区显示 */}
         {zone === "working" && progress !== undefined && (
-          <div className={`mt-0.5 text-base font-bold tabular-nums ${isCompleted ? "text-emerald-400" : "text-amber-400"}`}>
+          <div className={`mt-0.5 text-base font-bold tabular-nums ${isCompleted ? "text-[var(--oc-success)]" : "text-[var(--oc-warning)]"}`}>
             {progress}%
           </div>
         )}
 
-        {/* Agent 相关展示已移至 /agents 页 */}
-
-
-        {/* 排队任务数 — 工作区显示 */}
+        {/* 排队任务数 */}
         {zone === "working" && queuedCount > 0 && (
-          <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/25">
+          <div className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-[var(--oc-info)]/25 bg-[var(--oc-info-soft)] px-1.5 py-0 text-[10px] font-medium text-[var(--oc-info)]">
             <span>排队</span>
-            <Badge className="h-4 min-w-[16px] flex items-center justify-center p-0 bg-blue-500/30 text-blue-300 text-[9px] leading-none">
+            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--oc-info)]/20 px-1 text-[9px] leading-none">
               {queuedCount}
-            </Badge>
+            </span>
           </div>
         )}
 
-        {/* 结束按钮 — 仅未完成时显示 */}
+        {/* 结束按钮 */}
         {zone === "working" && !isCompleted && cycle && (
           <button
             onClick={(e) => { e.stopPropagation(); onComplete?.(); }}
-            className="mt-1 w-full h-5 flex items-center justify-center rounded text-[9px] bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+            className="mt-1 flex h-5 w-full items-center justify-center rounded text-[9px] bg-[var(--oc-warning-soft)] text-[var(--oc-warning)] hover:bg-[var(--oc-warning)]/20 transition-colors"
             title="完成工作，回到等待区"
           >
-            <Square className="h-2.5 w-2.5 mr-0.5" /> 结束
+            <Square className="mr-0.5 h-2.5 w-2.5" /> 结束
           </button>
         )}
       </div>

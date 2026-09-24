@@ -2,25 +2,38 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
-  CheckCircle2,
+  CheckSquare,
   Clock,
   AlertTriangle,
   MessageSquare,
   Video,
   ArrowRight,
   Sparkles,
-  LayoutDashboard,
-  Target,
   FolderKanban,
-  TrendingUp,
+  RefreshCw,
+  FileText,
+  Users,
+  Mic,
+  ClipboardList,
+  Search,
+  HeartPulse,
+  Zap,
+  MessageSquareText,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+
+function localDateKey(date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 function formatDateLabel(iso: string): string {
   const d = new Date(iso);
@@ -52,14 +65,34 @@ interface DailyTask {
   status: string;
   priority: string;
   expected_completion_at?: string;
+  assignee?: string | null;
+  notes?: string | null;
 }
 
 interface AnalysisReport {
-  date: string;
-  pending_tasks?: Array<{ task: string; owner?: string; due?: string; priority?: string }>;
-  follow_ups?: Array<{ item: string; owner?: string; due?: string }>;
-  risks?: Array<{ description: string; severity?: string }>;
-  key_decisions?: Array<{ content: string }>;
+  id?: string;
+  report_date: string;
+  summary?: string;
+  work_priorities?: string[];
+  completed_tasks?: any[];
+  pending_tasks?: Array<
+    | { task?: string; priority?: string; deadline?: string; group?: string; owner?: string }
+    | string
+  >;
+  key_decisions?: Array<
+    | { decision?: string; participants?: string[]; impact?: string; group?: string; content?: string }
+    | string
+  >;
+  follow_ups?: Array<
+    | { item?: string; person?: string; deadline?: string; group?: string }
+    | string
+  >;
+  meeting_notes?: any[];
+  statistics?: any;
+  group_summaries?: Array<{ group: string; summary: string; key_topics?: string[]; active_members?: string[] }>;
+  sender_activities?: any[];
+  raw_chat_count?: number;
+  important_chat_count?: number;
 }
 
 interface ProjectSummary {
@@ -91,14 +124,18 @@ export default function HomePage() {
     isLoading: true,
   });
 
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => localDateKey(), []);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
         const [meetingsRes, dailyRes, reportsRes, projectsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/meetings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }).then(r => r.json()).catch(() => ({ records: [] })),
+          fetch(`${API_BASE}/api/meetings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          }).then(r => r.json()).catch(() => ({ records: [] })),
           fetch(`${API_BASE}/api/daily-plans/${today}`).then(r => r.json()).catch(() => ({ tasks: [], unfinishedTasks: [] })),
           fetch(`${API_BASE}/api/analysis/reports`).then(r => r.json()).catch(() => ({ reports: [] })),
           fetch(`${API_BASE}/api/projects?limit=50`).then(r => r.json()).catch(() => ({ projects: [] })),
@@ -106,7 +143,9 @@ export default function HomePage() {
 
         if (cancelled) return;
 
-        const meetings: Meeting[] = (meetingsRes.records || []).slice(0, 5);
+        const meetings: Meeting[] = (meetingsRes.records || [])
+          .filter((meeting: Meeting) => meeting.startTime && localDateKey(new Date(meeting.startTime)) === today)
+          .slice(0, 5);
         const todayTasks: DailyTask[] = dailyRes.tasks || [];
         const unfinished: DailyTask[] = dailyRes.unfinishedTasks || [];
         const reports: AnalysisReport[] = reportsRes.reports || [];
@@ -115,11 +154,11 @@ export default function HomePage() {
         const projects: ProjectSummary[] = rawProjects.map((p: any) => {
           const phaseStatus = typeof p.phase_status === "string" ? JSON.parse(p.phase_status || "{}") : p.phase_status || {};
           const progress = Math.round(
-            ((phaseStatus.initiation || 0) +
+            (((phaseStatus.initiation || 0) +
               (phaseStatus.requirement || 0) +
               (phaseStatus.planning || 0) +
               (phaseStatus.execution || 0) +
-              (phaseStatus.delivery || 0)) / 5 * 100
+              (phaseStatus.delivery || 0)) / 5) * 100
           );
           return { id: p.id, title: p.title, current_phase: p.current_phase, phase_status: p.phase_status, risk_level: p.risk_level, deadline: p.deadline, progress };
         });
@@ -140,304 +179,442 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [today]);
 
-  const pendingMeetingConfirmations = data.todayMeetings.filter(
-    (m) => m.startTime && new Date(m.startTime) < new Date() && !m.hasIntelligence
-  );
-
-  const overdueTasks = data.todayTasks.filter(
-    (t) =>
-      t.status !== "completed" &&
-      t.expected_completion_at &&
-      new Date(t.expected_completion_at) < new Date()
-  );
-
-  const pendingImports = data.latestReport?.pending_tasks?.length || 0;
-
-  type Concern = { icon: typeof Video; label: string; href: string; tone: "warning" | "danger" | "info" };
-  const concerns: Concern[] = [
-    pendingMeetingConfirmations.length > 0 && {
-      icon: Video,
-      label: `${pendingMeetingConfirmations.length} 场会议纪要待确认`,
-      href: "/tools/meeting-assistant",
-      tone: "warning" as const,
-    },
-    overdueTasks.length > 0 && {
-      icon: AlertTriangle,
-      label: `${overdueTasks.length} 个任务已逾期`,
-      href: "/daily",
-      tone: "danger" as const,
-    },
-    pendingImports > 0 && {
-      icon: MessageSquare,
-      label: `聊天分析发现 ${pendingImports} 条待办可导入`,
-      href: "/tools/chat-analyzer",
-      tone: "info" as const,
-    },
-  ].filter((c): c is Concern => Boolean(c));
-
   const todayMeetingsCount = data.todayMeetings.filter((m) => {
     if (!m.startTime) return false;
     const d = new Date(m.startTime);
     return d.toISOString().slice(0, 10) === today;
   }).length;
 
-  const completedTasks = data.todayTasks.filter((t) => t.status === "completed").length;
-  const totalTasks = data.todayTasks.length;
+  const filteredTodayTasks = useMemo(() => {
+    return data.todayTasks.filter((t) => {
+      if (t.status === "completed" || t.status === "abandoned") return false;
+      if (!t.expected_completion_at) return true;
+      const dueDate = new Date(t.expected_completion_at).toISOString().slice(0, 10);
+      return dueDate <= today;
+    });
+  }, [data.todayTasks, today]);
+
+  const totalTasks = filteredTodayTasks.length;
+  const overdueTasks = filteredTodayTasks.filter(
+    (t) => t.expected_completion_at && new Date(t.expected_completion_at) < new Date()
+  );
+  const highRiskProjects = data.projects.filter((p) => p.risk_level === "high").length;
+
+  const overallHealth = useMemo(() => {
+    if (data.projects.length === 0) return 0;
+    const total = data.projects.reduce((sum, p) => sum + (p.progress || 0), 0);
+    return Math.round(total / data.projects.length);
+  }, [data.projects]);
+
+  const pendingImports = data.latestReport?.pending_tasks?.length || 0;
+  const nextMeeting = data.todayMeetings
+    .filter((m) => m.startTime && new Date(m.startTime) >= new Date())
+    .sort((a, b) => new Date(a.startTime || 0).getTime() - new Date(b.startTime || 0).getTime())[0];
+
+  const pendingAnalysisItems = useMemo(() => {
+    if (!data.latestReport) return [];
+    const items: { title: string; subtitle: string }[] = [];
+
+    for (const t of (data.latestReport.pending_tasks || []).slice(0, 5)) {
+      const taskText = typeof t === "string" ? t : t.task || "";
+      const group = typeof t === "object" ? t.group || "" : "";
+      if (!taskText) continue;
+      items.push({
+        title: taskText,
+        subtitle: group ? `${group} · 待办` : "待办任务",
+      });
+    }
+
+    return items;
+  }, [data.latestReport]);
+
+  const metricCards = [
+    {
+      label: "今日会议",
+      value: todayMeetingsCount,
+      meta: nextMeeting?.startTime ? `下一场 ${formatTime(nextMeeting.startTime)}` : "暂无会议",
+      icon: Video,
+      accent: "text-[var(--oc-text-primary)]",
+    },
+    {
+      label: "待办任务",
+      value: totalTasks,
+      meta: overdueTasks.length > 0
+        ? `${overdueTasks.length} 项已逾期`
+        : data.unfinishedTasks.length > 0
+          ? `${data.unfinishedTasks.length} 个历史未完成`
+          : "今日无逾期",
+      icon: CheckSquare,
+      accent: overdueTasks.length > 0 ? "text-[var(--oc-error)]" : "text-[var(--oc-success)]",
+    },
+    {
+      label: "风险项目",
+      value: highRiskProjects,
+      meta: highRiskProjects > 0 ? `${highRiskProjects} 个高风险项目` : "暂无高风险",
+      icon: AlertTriangle,
+      accent: highRiskProjects > 0 ? "text-[var(--oc-error)]" : "text-[var(--oc-text-secondary)]",
+    },
+    {
+      label: "项目健康度",
+      value: `${overallHealth}%`,
+      meta: `${data.projects.length} 个项目平均进度`,
+      icon: HeartPulse,
+      accent: "text-[var(--oc-success)]",
+    },
+  ];
+
+  function getMeetingStatusBadge(m: Meeting) {
+    if (!m.startTime) return { label: "时间待定", variant: "outline" as const };
+    const isPast = new Date(m.startTime) < new Date();
+    if (m.hasIntelligence) return { label: "已同步", variant: "success" as const };
+    if (isPast) return { label: "待转写", variant: "warning" as const };
+    return { label: "待开始", variant: "default" as const };
+  }
+
+  function getTaskPriorityBadge(priority: string) {
+    switch (priority) {
+      case "high":
+      case "P0":
+        return { label: "P0", className: "bg-[var(--oc-error-soft)] text-[var(--oc-error)] border-transparent" };
+      case "medium":
+      case "P1":
+        return { label: "P1", className: "bg-[var(--oc-warning-soft)] text-[var(--oc-warning)] border-transparent" };
+      default:
+        return { label: "P2", className: "bg-[var(--oc-bg-elevated)] text-[var(--oc-text-secondary)] border-transparent" };
+    }
+  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <LayoutDashboard className="h-6 w-6" />
+          <h1 className="text-[24px] font-bold tracking-tight text-[var(--oc-text-primary)]">
             今日工作驾驶舱
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}
+          <p className="mt-1 text-sm text-[var(--oc-text-secondary)]">
+            {new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" })} · {data.latestReport?.report_date ? `最新聊天分析：${data.latestReport.report_date}` : "暂无聊天分析报告"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/daily">
-            <Button variant="outline" size="sm">
-              <Target className="h-4 w-4 mr-1" />
-              今日任务
-            </Button>
-          </Link>
-          <Link href="/tools/meeting-assistant">
-            <Button variant="outline" size="sm">
-              <Video className="h-4 w-4 mr-1" />
-              会议助手
-            </Button>
-          </Link>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2 border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] text-[var(--oc-text-primary)] hover:bg-[var(--oc-bg-hover)] hover:text-[var(--oc-text-primary)]"
+          >
+            <RefreshCw className="h-4 w-4" strokeWidth={1.75} />
+            同步数据
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 gap-2 bg-[var(--oc-accent)] text-[var(--oc-bg-root)] hover:bg-[var(--oc-accent-hover)]"
+          >
+            <FileText className="h-4 w-4" strokeWidth={1.75} />
+            生成日报
+          </Button>
         </div>
       </div>
 
-      {/* 今日关注 */}
-      <Card className={concerns.length > 0 ? "border-amber-500/30" : "border-green-500/30"}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            {concerns.length > 0 ? (
-              <>
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                今日关注（{concerns.length} 项）
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                今日暂无紧急关注项
-              </>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {concerns.length > 0 ? (
-            <ul className="space-y-2">
-              {concerns.map((c, i) => (
-                <li key={i}>
-                  <Link href={c.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
-                    <c.icon className={`h-4 w-4 ${c.tone === "danger" ? "text-red-500" : c.tone === "warning" ? "text-amber-500" : "text-blue-500"}`} />
-                    <span className="text-sm">{c.label}</span>
-                    <ArrowRight className="h-3 w-3 ml-auto text-muted-foreground" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">会议、任务、聊天分析均无紧急事项，可以安心推进重点工作。</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Metric Cards */}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {metricCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] p-5 transition-all hover:border-[var(--oc-border-strong)]"
+            >
+              <div className="flex items-center gap-2 text-sm text-[var(--oc-text-secondary)]">
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
+                {card.label}
+              </div>
+              <div className="mt-3 text-[32px] font-bold leading-none tracking-tight text-[var(--oc-text-primary)]">
+                {data.isLoading ? "—" : card.value}
+              </div>
+              <div className={cn("mt-2 text-xs", card.accent)}>
+                {data.isLoading ? "加载中..." : card.meta}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-      {/* 两栏：今日会议 + 今日任务 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              今日会议（{todayMeetingsCount} 场）
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Middle Section: Meetings + Tasks */}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Today's Meetings */}
+        <div className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+          <div className="flex items-center justify-between border-b border-[var(--oc-border-subtle)] px-5 py-4">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--oc-text-primary)]">
+              <Calendar className="h-[18px] w-[18px] text-[var(--oc-text-secondary)]" strokeWidth={1.75} />
+              今日会议
+            </div>
+            <Link
+              href="/tools/meeting-assistant"
+              className="flex items-center gap-1 text-xs text-[var(--oc-text-secondary)] hover:text-[var(--oc-accent)]"
+            >
+              查看全部 <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="p-2">
             {data.isLoading ? (
-              <p className="text-sm text-muted-foreground">加载中...</p>
+              <div className="p-4 text-sm text-[var(--oc-text-secondary)]">加载中...</div>
             ) : data.todayMeetings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">今天暂无会议。</p>
+              <div className="p-4 text-sm text-[var(--oc-text-secondary)]">今天暂无会议。</div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {data.todayMeetings.slice(0, 5).map((m, i) => {
-                  const isPast = m.startTime ? new Date(m.startTime) < new Date() : false;
+                  const status = getMeetingStatusBadge(m);
                   return (
-                    <li key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-8 rounded-full ${isPast ? "bg-muted" : "bg-blue-500"}`} />
-                        <div>
-                          <p className="text-sm font-medium">{m.title || "未命名会议"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {m.startTime ? `${formatDateLabel(m.startTime)} ${formatTime(m.startTime)}` : "时间待定"}
-                          </p>
-                        </div>
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-[var(--oc-bg-hover)]"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--oc-bg-elevated)] text-[var(--oc-text-secondary)]">
+                        <Users className="h-5 w-5" strokeWidth={1.75} />
                       </div>
-                      <Link href="/tools/meeting-assistant">
-                        <Button size="sm" variant={m.hasIntelligence ? "ghost" : "outline"}>
-                          {m.hasIntelligence ? "查看" : isPast ? "生成纪要" : "详情"}
-                        </Button>
-                      </Link>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[var(--oc-text-primary)]">
+                          {m.title || "未命名会议"}
+                        </p>
+                        <p className="text-xs text-[var(--oc-text-tertiary)]">
+                          {m.startTime
+                            ? `${formatDateLabel(m.startTime)} ${formatTime(m.startTime)} · 腾讯会议`
+                            : "时间待定"}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 text-[10px]",
+                          status.variant === "success" && "border-transparent bg-[var(--oc-success-soft)] text-[var(--oc-success)]",
+                          status.variant === "warning" && "border-transparent bg-[var(--oc-warning-soft)] text-[var(--oc-warning)]",
+                          status.variant === "default" && "border-transparent bg-[var(--oc-bg-elevated)] text-[var(--oc-text-secondary)]"
+                        )}
+                      >
+                        {status.label}
+                      </Badge>
                     </li>
                   );
                 })}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5" />
-              今日任务（{completedTasks}/{totalTasks || 0}）
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Today's Tasks */}
+        <div className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+          <div className="flex items-center justify-between border-b border-[var(--oc-border-subtle)] px-5 py-4">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--oc-text-primary)]">
+              <CheckSquare className="h-[18px] w-[18px] text-[var(--oc-text-secondary)]" strokeWidth={1.75} />
+              今日任务
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="rounded-full bg-[var(--oc-bg-elevated)] px-2.5 py-1 text-[10px] font-medium text-[var(--oc-text-primary)]">
+                全部
+              </button>
+              <button className="rounded-full px-2.5 py-1 text-[10px] font-medium text-[var(--oc-text-tertiary)] hover:text-[var(--oc-text-secondary)]">
+                P0
+              </button>
+              <button className="rounded-full px-2.5 py-1 text-[10px] font-medium text-[var(--oc-text-tertiary)] hover:text-[var(--oc-text-secondary)]">
+                已逾期
+              </button>
+            </div>
+          </div>
+          <div className="p-2">
             {data.isLoading ? (
-              <p className="text-sm text-muted-foreground">加载中...</p>
-            ) : data.todayTasks.length === 0 && data.unfinishedTasks.length === 0 ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">今天还没有计划任务。</p>
+              <div className="p-4 text-sm text-[var(--oc-text-secondary)]">加载中...</div>
+            ) : filteredTodayTasks.length === 0 && data.unfinishedTasks.length === 0 ? (
+              <div className="p-4">
+                <p className="text-sm text-[var(--oc-text-secondary)]">今天还没有计划任务。</p>
                 <Link href="/daily">
-                  <Button size="sm" variant="outline">
-                    <Sparkles className="h-3.5 w-3.5 mr-1" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-[var(--oc-border-subtle)] text-[var(--oc-text-primary)] hover:bg-[var(--oc-bg-hover)]"
+                  >
+                    <Sparkles className="mr-1 h-3.5 w-3.5" />
                     去 Daily Plan 规划
                   </Button>
                 </Link>
               </div>
             ) : (
-              <ul className="space-y-2">
-                {data.todayTasks.slice(0, 6).map((t) => (
-                  <li key={t.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        t.status === "completed"
-                          ? "bg-green-500"
-                          : t.priority === "high"
-                          ? "bg-red-500"
-                          : t.priority === "medium"
-                          ? "bg-amber-500"
-                          : "bg-blue-500"
-                      }`}
-                    />
-                    <span className={`text-sm flex-1 ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
-                      {t.title}
-                    </span>
-                    {t.status !== "completed" && t.expected_completion_at && new Date(t.expected_completion_at) < new Date() && (
-                      <Badge variant="destructive" className="text-xs">逾期</Badge>
-                    )}
-                  </li>
-                ))}
+              <ul className="space-y-1">
+                {filteredTodayTasks.slice(0, 6).map((t) => {
+                  const priority = getTaskPriorityBadge(t.priority);
+                  const isOverdue =
+                    t.status !== "completed" &&
+                    t.expected_completion_at &&
+                    new Date(t.expected_completion_at) < new Date();
+                  return (
+                    <li
+                      key={t.id}
+                      className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-[var(--oc-bg-hover)]"
+                    >
+                      <div
+                        className={cn(
+                          "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border transition-colors",
+                          t.status === "completed"
+                            ? "border-[var(--oc-success)] bg-[var(--oc-success)] text-[var(--oc-bg-root)]"
+                            : "border-[var(--oc-border-strong)] hover:border-[var(--oc-accent)]"
+                        )}
+                      >
+                        {t.status === "completed" && <CheckSquare className="h-3 w-3" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            "truncate text-sm",
+                            t.status === "completed"
+                              ? "text-[var(--oc-text-tertiary)] line-through"
+                              : "text-[var(--oc-text-primary)]"
+                          )}
+                        >
+                          {t.title}
+                        </p>
+                        <p className="text-xs text-[var(--oc-text-tertiary)]">
+                          {t.expected_completion_at
+                            ? `截止 ${formatDateLabel(t.expected_completion_at)} ${formatTime(t.expected_completion_at)}`
+                            : t.notes || t.assignee || "无截止时间"}
+                        </p>
+                      </div>
+                      <Badge className={cn("shrink-0 text-[10px]", priority.className)}>{priority.label}</Badge>
+                    </li>
+                  );
+                })}
                 {data.unfinishedTasks.length > 0 && (
-                  <li className="pt-2 border-t">
-                    <Link href="/daily" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                  <li className="border-t border-[var(--oc-border-subtle)] px-3 py-2">
+                    <Link
+                      href="/daily"
+                      className="flex items-center gap-1 text-xs text-[var(--oc-text-tertiary)] hover:text-[var(--oc-accent)]"
+                    >
                       还有 {data.unfinishedTasks.length} 个历史未完成任务 <ArrowRight className="h-3 w-3" />
                     </Link>
                   </li>
                 )}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      {/* 项目健康度 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FolderKanban className="h-5 w-5" />
-            项目健康度
-            {data.projects.length > 0 && <Badge variant="secondary" className="text-xs">{data.projects.length}</Badge>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.isLoading ? (
-            <p className="text-sm text-muted-foreground">加载中...</p>
-          ) : data.projects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无项目数据。</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.projects.slice(0, 6).map((p) => {
-                const deadlineText = p.deadline
-                  ? formatDateLabel(p.deadline)
-                  : "无截止日";
-                const isOverdue = p.deadline ? new Date(p.deadline) < new Date() : false;
-                return (
-                  <Link key={p.id} href={`/projects/${p.id}`}>
-                    <div className={`p-3 rounded-lg border hover:bg-muted/50 transition-colors ${p.risk_level === "high" ? "border-red-500/30 bg-red-500/5" : ""}`}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium truncate flex-1">{p.title || "(无标题)"}</span>
-                        {p.risk_level === "high" && <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />}
-                      </div>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="px-1.5 py-0.5 rounded bg-muted">{p.current_phase}</span>
-                        <span className={isOverdue ? "text-red-500" : ""}>{deadlineText}</span>
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${p.risk_level === "high" ? "bg-red-500" : "bg-emerald-500"}`}
-                            style={{ width: `${Math.max(0, Math.min(100, p.progress || 0))}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-muted-foreground w-8 text-right">{p.progress || 0}%</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+      {/* Bottom Section: Health + Analysis + Quick Actions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Project Health */}
+        <div className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--oc-text-primary)]">
+              <HeartPulse className="h-[18px] w-[18px] text-[var(--oc-text-secondary)]" strokeWidth={1.75} />
+              项目健康度
             </div>
-          )}
-          <div className="mt-3">
-            <Link href="/projects" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-              查看全部项目 <ArrowRight className="h-3 w-3" />
-            </Link>
+            <span className="rounded-full bg-[var(--oc-success-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--oc-success)]">
+              实时
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-baseline gap-2">
+            <span className="text-[40px] font-bold leading-none tracking-tight text-[var(--oc-text-primary)]">
+              {data.isLoading ? "—" : `${overallHealth}%`}
+            </span>
+          </div>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--oc-bg-elevated)]">
+            <div
+              className="h-full rounded-full bg-[var(--oc-accent)]"
+              style={{ width: `${data.isLoading ? 0 : overallHealth}%` }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-[var(--oc-text-secondary)]">
+            {data.isLoading ? "加载中..." : `${data.projects.length} 个执行中项目 · ${highRiskProjects} 个需关注`}
+          </p>
+        </div>
 
-      {/* 一键处理 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            一键处理
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/daily">
-              <Button variant="outline" size="sm">
-                <Target className="h-4 w-4 mr-1" />
-                规划今日任务
-              </Button>
+        {/* AI Pending Analysis */}
+        <div className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-[var(--oc-text-primary)]">
+              <MessageSquare className="h-[18px] w-[18px] text-[var(--oc-text-secondary)]" strokeWidth={1.75} />
+              AI 待分析
+            </div>
+            <span className="rounded-full bg-[var(--oc-bg-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--oc-text-secondary)]">
+              {pendingImports} 条
+            </span>
+          </div>
+          {data.isLoading ? (
+            <p className="text-sm text-[var(--oc-text-secondary)]">加载中...</p>
+          ) : pendingAnalysisItems.length === 0 ? (
+            <div className="text-sm text-[var(--oc-text-secondary)]">
+              暂无 AI 提取的待确认事项。
+              <Link
+                href="/tools/chat-analyzer"
+                className="ml-1 inline-flex items-center gap-0.5 text-[var(--oc-accent)] hover:underline"
+              >
+                去 Chat Analyzer <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-[var(--oc-text-secondary)]">
+                最新报告（{data.latestReport?.report_date}）识别到以下待确认事项：
+              </p>
+              <ul className="mt-3 space-y-2">
+                {pendingAnalysisItems.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-[var(--oc-text-primary)]">
+                    <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--oc-text-tertiary)]" strokeWidth={1.75} />
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2">{item.title}</p>
+                      <p className="text-xs text-[var(--oc-text-tertiary)]">{item.subtitle}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/tools/chat-analyzer"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--oc-accent)] hover:underline"
+              >
+                查看完整报告 <ArrowRight className="h-3 w-3" />
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="rounded-xl border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] p-5">
+          <div className="mb-4 flex items-center gap-2 text-[15px] font-semibold text-[var(--oc-text-primary)]">
+            <Zap className="h-[18px] w-[18px] text-[var(--oc-text-secondary)]" strokeWidth={1.75} />
+            快捷操作
+          </div>
+          <div className="space-y-2">
+            <Link
+              href="/daily"
+              className="flex items-center justify-between rounded-lg bg-[var(--oc-bg-elevated)] px-4 py-3 text-sm text-[var(--oc-text-primary)] transition-colors hover:bg-[var(--oc-bg-hover)]"
+            >
+              <span className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-[var(--oc-accent)]" strokeWidth={1.75} />
+                生成今日日报
+              </span>
+              <ArrowRight className="h-4 w-4 text-[var(--oc-text-tertiary)]" />
             </Link>
-            <Link href="/tools/meeting-assistant">
-              <Button variant="outline" size="sm">
-                <Video className="h-4 w-4 mr-1" />
-                处理会议纪要
-              </Button>
+            <Link
+              href="/tools/meeting-assistant"
+              className="flex items-center justify-between rounded-lg bg-[var(--oc-bg-elevated)] px-4 py-3 text-sm text-[var(--oc-text-primary)] transition-colors hover:bg-[var(--oc-bg-hover)]"
+            >
+              <span className="flex items-center gap-2">
+                <Mic className="h-4 w-4 text-[var(--oc-accent)]" strokeWidth={1.75} />
+                分析最新会议
+              </span>
+              <ArrowRight className="h-4 w-4 text-[var(--oc-text-tertiary)]" />
             </Link>
-            <Link href="/tools/chat-analyzer">
-              <Button variant="outline" size="sm">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                查看聊天情报
-              </Button>
-            </Link>
-            <Link href="/projects">
-              <Button variant="outline" size="sm">
-                <Clock className="h-4 w-4 mr-1" />
-                查看项目进展
-              </Button>
+            <Link
+              href="/projects"
+              className="flex items-center justify-between rounded-lg bg-[var(--oc-bg-elevated)] px-4 py-3 text-sm text-[var(--oc-text-primary)] transition-colors hover:bg-[var(--oc-bg-hover)]"
+            >
+              <span className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-[var(--oc-accent)]" strokeWidth={1.75} />
+                扫描项目风险
+              </span>
+              <ArrowRight className="h-4 w-4 text-[var(--oc-text-tertiary)]" />
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

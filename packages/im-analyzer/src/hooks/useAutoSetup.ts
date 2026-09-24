@@ -109,64 +109,55 @@ export function useFetchToday() {
     setStatus({ running: true, logs: [], progress: null, result: null });
 
     try {
-      const res = await fetch('/api/im/fetch-today', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId }),
-      });
+      const sourcesRes = await fetch('/api/im/sources');
+      const sourcesJson = await sourcesRes.json();
+      const targetSourceId = sourceId || (sourcesJson.sources || []).find((s: any) => s.type === '99u_web' || s.type === '99u')?.id;
+      if (!targetSourceId) throw new Error('没有可用的 99U 数据源');
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `请求失败 (${res.status})`);
-      }
+      const conversationsRes = await fetch('/api/im/u9-conversations');
+      const conversationsJson = await conversationsRes.json();
+      const conversations = conversationsJson.conversations || [];
+      if (conversations.length === 0) throw new Error('没有配置会话列表');
 
-      if (!res.body) throw new Error('无响应体');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let endedByEvent = false;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const beginTime = `${date} 00:00:00`;
+      const endTime = `${date} 23:59:59`;
+      let imported = 0;
+      let skipped = 0;
+      let failed = 0;
+      let cursor = 0;
+      const worker = async () => {
+        while (true) {
+          const index = cursor++;
+          if (index >= conversations.length) return;
+          const conversation = conversations[index];
           try {
-            const evt = JSON.parse(line.slice(6));
-            if (evt.type === 'log') {
-              setStatus(prev => ({ ...prev, logs: [...prev.logs, evt.message] }));
-            } else if (evt.type === 'progress') {
-              setStatus(prev => ({
-                ...prev,
-                progress: { current: evt.current, total: evt.total, conversation: evt.conversation },
-              }));
-            } else if (evt.type === 'done') {
-              endedByEvent = true;
-              setStatus(prev => ({
-                ...prev, running: false,
-                logs: [...prev.logs, evt.message],
-                result: { imported: evt.imported, skipped: evt.skipped, failed: evt.failed, sourceId: evt.sourceId },
-              }));
-            } else if (evt.type === 'error') {
-              endedByEvent = true;
-              setStatus(prev => ({
-                ...prev, running: false,
-                logs: [...prev.logs, `错误: ${evt.message}`],
-                result: null,
-              }));
-            }
-          } catch {}
+            const res = await fetch('/api/im/chat-records/import-u9', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sourceId: targetSourceId, convId: conversation.id, beginTime, endTime, maxMessages: 500 }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `请求失败 (${res.status})`);
+            imported += Number(data.imported || 0);
+            skipped += Number(data.skipped || 0);
+            if (data.imported > 0) setStatus(prev => ({ ...prev, logs: [...prev.logs, `${conversation.name || conversation.id}: 新增 ${data.imported} 条`] }));
+          } catch (error: any) {
+            failed += 1;
+            setStatus(prev => ({ ...prev, logs: [...prev.logs, `${conversation.name || conversation.id}: 失败 - ${error?.message || '未知错误'}`] }));
+          } finally {
+            setStatus(prev => ({ ...prev, progress: { current: Math.min(cursor, conversations.length), total: conversations.length, conversation: conversation.name || conversation.id } }));
+          }
         }
-      }
-
-      if (!endedByEvent) {
-        setStatus(prev => ({
-          ...prev,
-          running: false,
-          logs: [...prev.logs, '获取已结束'],
-        }));
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(6, conversations.length) }, () => worker()));
+      setStatus(prev => ({
+        ...prev,
+        running: false,
+        logs: [...prev.logs, `采集完成：新增 ${imported} 条，跳过 ${skipped} 条，失败 ${failed} 个会话`],
+        result: { imported, skipped, failed, sourceId: targetSourceId },
+      }));
     } catch (e: any) {
       setStatus(prev => ({
         ...prev, running: false,

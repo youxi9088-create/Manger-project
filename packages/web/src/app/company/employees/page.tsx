@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +27,11 @@ import {
   AlertCircle,
   Lightbulb,
   History,
+  Plus,
+  Download,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || (process.env.NODE_ENV === "production" ? "/a/openclaw" : "http://localhost:3001");
 
 interface PersonSummary {
   name: string;
@@ -82,18 +85,34 @@ const CATEGORY_LABELS: Record<string, string> = {
   vendors: "供应商",
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  leaders: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  stakeholders: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-  colleagues: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  vendors: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-};
-
-const CATEGORY_DOT_COLORS: Record<string, string> = {
-  leaders: "bg-amber-400",
-  stakeholders: "bg-sky-400",
-  colleagues: "bg-emerald-400",
-  vendors: "bg-purple-400",
+const CATEGORY_STYLES: Record<
+  string,
+  { dot: string; badge: string; avatar: string; initial: string }
+> = {
+  leaders: {
+    dot: "bg-[var(--oc-accent)]",
+    badge: "bg-[var(--oc-accent-soft)] text-[var(--oc-accent)] border-[var(--oc-accent)]/20",
+    avatar: "bg-[var(--oc-accent-soft)] text-[var(--oc-accent)]",
+    initial: "L",
+  },
+  stakeholders: {
+    dot: "bg-[var(--oc-info)]",
+    badge: "bg-[var(--oc-info-soft)] text-[var(--oc-info)] border-[var(--oc-info)]/20",
+    avatar: "bg-[var(--oc-info-soft)] text-[var(--oc-info)]",
+    initial: "S",
+  },
+  colleagues: {
+    dot: "bg-[var(--oc-success)]",
+    badge: "bg-[var(--oc-success-soft)] text-[var(--oc-success)] border-[var(--oc-success)]/20",
+    avatar: "bg-[var(--oc-success-soft)] text-[var(--oc-success)]",
+    initial: "C",
+  },
+  vendors: {
+    dot: "bg-[var(--oc-warning)]",
+    badge: "bg-[var(--oc-warning-soft)] text-[var(--oc-warning)] border-[var(--oc-warning)]/20",
+    avatar: "bg-[var(--oc-warning-soft)] text-[var(--oc-warning)]",
+    initial: "V",
+  },
 };
 
 export default function EmployeesPage() {
@@ -174,221 +193,243 @@ export default function EmployeesPage() {
   // 获取首字母
   const getInitial = (name: string) => name.charAt(0);
 
-  // 头像背景色
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      "from-rose-500/20 to-orange-500/20",
-      "from-sky-500/20 to-cyan-500/20",
-      "from-emerald-500/20 to-teal-500/20",
-      "from-violet-500/20 to-purple-500/20",
-      "from-amber-500/20 to-yellow-500/20",
-      "from-pink-500/20 to-rose-500/20",
-      "from-indigo-500/20 to-blue-500/20",
-      "from-lime-500/20 to-green-500/20",
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
-  };
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 p-7">
       {/* 头部 */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 max-w-md relative">
-          <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="搜索姓名、职级、角色、标签..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 bg-transparent border-border"
-          />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--oc-text-primary)]">
+            员工目录
+          </h1>
+          <p className="mt-1.5 text-[13px] text-[var(--oc-text-secondary)]">
+            查看团队成员、状态与负载，快速找到对的人
+          </p>
         </div>
-        <div className="text-xs text-muted-foreground">
-          共 <span className="text-foreground font-medium">{people.length}</span> 人
-          {searchQuery || categoryFilter !== "all" ? (
-            <>, 筛选后 <span className="text-foreground font-medium">{filtered.length}</span> 人</>
-          ) : null}
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-[var(--oc-text-primary)] hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-hover)]"
+          >
+            <Download className="h-4 w-4" />
+            导出
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 gap-1.5 bg-[var(--oc-accent)] text-[var(--oc-bg-root)] hover:bg-[var(--oc-accent-hover)]"
+          >
+            <Plus className="h-4 w-4" />
+            添加成员
+          </Button>
         </div>
       </div>
 
-      {/* 分类筛选 */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <button
-          onClick={() => setCategoryFilter("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            categoryFilter === "all"
-              ? "bg-primary text-primary-foreground"
-              : "bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/[0.06]"
-          }`}
-        >
-          全部
-        </button>
-        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setCategoryFilter(key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              categoryFilter === key
-                ? "bg-primary text-primary-foreground"
-                : "bg-white/[0.03] text-muted-foreground hover:text-foreground hover:bg-white/[0.06]"
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${CATEGORY_DOT_COLORS[key]}`} />
-            {label}
-            <span className="opacity-60">({people.filter((p) => p.category === key).length})</span>
-          </button>
-        ))}
+      {/* 搜索与筛选 */}
+      <Card className="border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]">
+        <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+          <div className="relative w-full max-w-[280px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--oc-text-tertiary)]" />
+            <Input
+              placeholder="搜索姓名、职级、角色、标签…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] pl-9 text-sm text-[var(--oc-text-primary)] placeholder:text-[var(--oc-text-tertiary)] focus-visible:border-[var(--oc-accent)] focus-visible:ring-[var(--oc-accent-soft)]"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChip
+              active={categoryFilter === "all"}
+              onClick={() => setCategoryFilter("all")}
+            >
+              全部
+            </FilterChip>
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              <FilterChip
+                key={key}
+                active={categoryFilter === key}
+                onClick={() => setCategoryFilter(key)}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${CATEGORY_STYLES[key]?.dot || "bg-[var(--oc-text-tertiary)]"}`} />
+                {label}
+                <span className="opacity-60">
+                  ({people.filter((p) => p.category === key).length})
+                </span>
+              </FilterChip>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 统计提示 */}
+      <div className="text-xs text-[var(--oc-text-secondary)]">
+        共 <span className="font-medium text-[var(--oc-text-primary)]">{people.length}</span> 人
+        {searchQuery || categoryFilter !== "all" ? (
+          <>
+            ，筛选后{" "}
+            <span className="font-medium text-[var(--oc-text-primary)]">{filtered.length}</span> 人
+          </>
+        ) : null}
       </div>
 
       {/* 卡片网格 */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <Card key={i} className="animate-pulse bg-card/50 border-border/50">
-              <CardContent className="p-3 space-y-2">
-                <div className="h-10 w-10 rounded-full bg-muted mx-auto" />
-                <div className="h-3 w-16 rounded bg-muted mx-auto" />
-                <div className="h-2.5 w-12 rounded bg-muted mx-auto" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card
+              key={i}
+              className="border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)]"
+            >
+              <CardContent className="flex flex-col items-center gap-3 p-5">
+                <div className="h-14 w-14 rounded-full bg-[var(--oc-bg-elevated)]" />
+                <div className="h-3 w-20 rounded bg-[var(--oc-bg-elevated)]" />
+                <div className="h-2.5 w-14 rounded bg-[var(--oc-bg-elevated)]" />
               </CardContent>
             </Card>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="bg-transparent border-dashed border-border">
-          <CardContent className="flex flex-col items-center py-16 text-muted-foreground gap-3">
-            <Users className="h-12 w-12 opacity-20" />
+        <Card className="border-dashed border-[var(--oc-border-subtle)] bg-transparent">
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-[var(--oc-text-secondary)]">
+            <Users className="h-10 w-10 text-[var(--oc-text-tertiary)]" />
             <p className="text-sm font-medium">
               {searchQuery || categoryFilter !== "all" ? "未找到匹配的人员" : "暂无人员数据"}
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filtered.map((person) => (
-            <Card
-              key={`${person.category}-${person.name}`}
-              className="group cursor-pointer hover:bg-white/[0.03] transition-all duration-200 border-border/60 hover:border-border hover:shadow-sm"
-              onClick={() => openDetail(person.name)}
-            >
-              <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                {/* 头像 */}
-                <div
-                  className={`h-12 w-12 rounded-full bg-gradient-to-br ${getAvatarColor(person.name)} border border-border/60 flex items-center justify-center shrink-0`}
-                >
-                  <span className="text-sm font-semibold text-foreground/80">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((person) => {
+            const style = CATEGORY_STYLES[person.category] || CATEGORY_STYLES.colleagues;
+            return (
+              <Card
+                key={`${person.category}-${person.name}`}
+                className="group cursor-pointer border-[var(--oc-border-subtle)] bg-[var(--oc-bg-surface)] transition-all duration-180 hover:border-[var(--oc-border-strong)] hover:bg-[var(--oc-bg-elevated)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.32)] hover:-translate-y-0.5"
+                onClick={() => openDetail(person.name)}
+              >
+                <CardContent className="flex flex-col items-center p-5 text-center">
+                  <div
+                    className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold ${style.avatar}`}
+                  >
                     {getInitial(person.name)}
-                  </span>
-                </div>
-
-                {/* 姓名 */}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">{person.name}</p>
-                  {person.level && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{person.level}</p>
-                  )}
-                </div>
-
-                {/* 角色 */}
-                {person.role && (
-                  <p className="text-[11px] text-muted-foreground/70 truncate max-w-full">
-                    {person.role}
-                  </p>
-                )}
-
-                {/* 分类标签 */}
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] px-1.5 py-0 leading-none ${CATEGORY_COLORS[person.category] || "border-border text-muted-foreground"}`}
-                >
-                  {CATEGORY_LABELS[person.category] || person.category}
-                </Badge>
-
-                {/* Tags - 最多显示2个 */}
-                {person.tags.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {person.tags.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.04] text-muted-foreground/60"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {person.tags.length > 2 && (
-                      <span className="text-[10px] text-muted-foreground/40">+{person.tags.length - 2}</span>
-                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="text-sm font-bold text-[var(--oc-text-primary)]">
+                    {person.name}
+                  </p>
+                  {person.role && (
+                    <p className="mt-1 text-xs text-[var(--oc-text-secondary)]">
+                      {person.role}
+                    </p>
+                  )}
+                  {person.level && (
+                    <p className="mt-0.5 text-[11px] text-[var(--oc-text-tertiary)]">
+                      {person.level}
+                    </p>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className={`mt-3 text-[10px] ${style.badge}`}
+                  >
+                    {CATEGORY_LABELS[person.category] || person.category}
+                  </Badge>
+                  {person.tags.length > 0 && (
+                    <div className="mt-3 flex flex-wrap justify-center gap-1">
+                      {person.tags.slice(0, 2).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-2 py-0.5 text-[10px] text-[var(--oc-text-secondary)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {person.tags.length > 2 && (
+                        <span className="text-[10px] text-[var(--oc-text-tertiary)]">
+                          +{person.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
       {/* 详情弹窗 */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0">
+        <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto border-[var(--oc-border-strong)] bg-[var(--oc-bg-surface)] p-0 sm:max-w-2xl">
           {detailLoading ? (
-            <div className="p-6 space-y-4 animate-pulse">
+            <div className="space-y-4 p-6">
               <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-full bg-muted" />
+                <div className="h-14 w-14 rounded-full bg-[var(--oc-bg-elevated)]" />
                 <div className="space-y-2">
-                  <div className="h-4 w-24 rounded bg-muted" />
-                  <div className="h-3 w-16 rounded bg-muted" />
+                  <div className="h-4 w-24 rounded bg-[var(--oc-bg-elevated)]" />
+                  <div className="h-3 w-16 rounded bg-[var(--oc-bg-elevated)]" />
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="h-3 w-full rounded bg-muted" />
-                <div className="h-3 w-3/4 rounded bg-muted" />
+                <div className="h-3 w-full rounded bg-[var(--oc-bg-elevated)]" />
+                <div className="h-3 w-3/4 rounded bg-[var(--oc-bg-elevated)]" />
               </div>
             </div>
           ) : selectedPerson ? (
             <>
               {/* 头部信息区 */}
-              <div className="p-6 pb-4 border-b border-border/50">
+              <div className="border-b border-[var(--oc-border-subtle)] p-6 pb-4">
                 <div className="flex items-start gap-4">
                   <div
-                    className={`h-16 w-16 rounded-xl bg-gradient-to-br ${getAvatarColor(selectedPerson.name)} border border-border/60 flex items-center justify-center shrink-0`}
+                    className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${
+                      CATEGORY_STYLES[selectedPerson.category || "colleagues"]?.avatar ||
+                      CATEGORY_STYLES.colleagues.avatar
+                    }`}
                   >
-                    <span className="text-xl font-bold text-foreground/80">
-                      {getInitial(selectedPerson.name)}
-                    </span>
+                    {getInitial(selectedPerson.name)}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <DialogHeader className="space-y-1">
-                      <DialogTitle className="text-lg flex items-center gap-2">
+                      <DialogTitle className="flex items-center gap-2 text-lg text-[var(--oc-text-primary)]">
                         {selectedPerson.name}
                         {selectedPerson.aliases && selectedPerson.aliases.length > 0 && (
-                          <span className="text-xs text-muted-foreground font-normal">
+                          <span className="text-xs font-normal text-[var(--oc-text-secondary)]">
                             （{selectedPerson.aliases.join("、")}）
                           </span>
                         )}
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       {selectedPerson.level && (
-                        <Badge variant="outline" className="text-xs border-primary/30 text-primary">
-                          <TrendingUp className="h-3 w-3 mr-1" />
+                        <Badge
+                          variant="outline"
+                          className="border-[var(--oc-accent)]/30 text-xs text-[var(--oc-accent)]"
+                        >
+                          <TrendingUp className="mr-1 h-3 w-3" />
                           {selectedPerson.level}
                         </Badge>
                       )}
                       {selectedPerson.role && (
-                        <Badge variant="outline" className="text-xs border-border text-muted-foreground">
-                          <Briefcase className="h-3 w-3 mr-1" />
+                        <Badge
+                          variant="outline"
+                          className="border-[var(--oc-border-subtle)] text-xs text-[var(--oc-text-secondary)]"
+                        >
+                          <Briefcase className="mr-1 h-3 w-3" />
                           {selectedPerson.role}
                         </Badge>
                       )}
                       {selectedPerson.department && (
-                        <Badge variant="outline" className="text-xs border-border text-muted-foreground">
-                          <Building2 className="h-3 w-3 mr-1" />
+                        <Badge
+                          variant="outline"
+                          className="border-[var(--oc-border-subtle)] text-xs text-[var(--oc-text-secondary)]"
+                        >
+                          <Building2 className="mr-1 h-3 w-3" />
                           {selectedPerson.department}
                         </Badge>
                       )}
                       {selectedPerson.category && (
                         <Badge
                           variant="outline"
-                          className={`text-xs ${CATEGORY_COLORS[selectedPerson.category] || ""}`}
+                          className={`text-xs ${
+                            CATEGORY_STYLES[selectedPerson.category]?.badge || ""
+                          }`}
                         >
                           {CATEGORY_LABELS[selectedPerson.category] || selectedPerson.category}
                         </Badge>
@@ -396,7 +437,7 @@ export default function EmployeesPage() {
                     </div>
 
                     {/* 汇报关系 */}
-                    <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                    <div className="mt-2 space-y-0.5 text-xs text-[var(--oc-text-secondary)]">
                       {selectedPerson.reports_to && (
                         <p>汇报给：{selectedPerson.reports_to}</p>
                       )}
@@ -412,13 +453,13 @@ export default function EmployeesPage() {
 
                 {/* 标签 */}
                 {selectedPerson.tags && selectedPerson.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     {selectedPerson.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/15"
+                        className="flex items-center gap-1 rounded-full border border-[var(--oc-accent)]/15 bg-[var(--oc-accent-soft)] px-2 py-0.5 text-xs text-[var(--oc-accent)]"
                       >
-                        <Tag className="h-3 w-3 inline mr-1" />
+                        <Tag className="h-3 w-3" />
                         {tag}
                       </span>
                     ))}
@@ -427,7 +468,7 @@ export default function EmployeesPage() {
               </div>
 
               {/* 内容区 */}
-              <div className="p-6 space-y-5">
+              <div className="space-y-5 p-6">
                 {/* 性格特征 */}
                 {selectedPerson.personality && (
                   <Section icon={Brain} title="性格特征">
@@ -435,25 +476,34 @@ export default function EmployeesPage() {
                       {selectedPerson.personality.traits && selectedPerson.personality.traits.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {selectedPerson.personality.traits.map((t) => (
-                            <Badge key={t} variant="secondary" className="text-xs">
+                            <Badge
+                              key={t}
+                              variant="outline"
+                              className="border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-xs text-[var(--oc-text-secondary)]"
+                            >
                               {t}
                             </Badge>
                           ))}
                         </div>
                       )}
                       {selectedPerson.personality.decision_making && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">
+                        <p className="text-sm leading-relaxed text-[var(--oc-text-secondary)]">
                           {selectedPerson.personality.decision_making}
                         </p>
                       )}
-                      {selectedPerson.personality.ai_interest !== null && selectedPerson.personality.ai_interest !== undefined && (
-                        <Badge
-                          variant="outline"
-                          className={selectedPerson.personality.ai_interest ? "text-emerald-400 border-emerald-500/30" : "text-muted-foreground"}
-                        >
-                          {selectedPerson.personality.ai_interest ? "对 AI 感兴趣" : "对 AI 兴趣一般"}
-                        </Badge>
-                      )}
+                      {selectedPerson.personality.ai_interest !== null &&
+                        selectedPerson.personality.ai_interest !== undefined && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              selectedPerson.personality.ai_interest
+                                ? "border-[var(--oc-success)]/30 text-[var(--oc-success)]"
+                                : "border-[var(--oc-border-subtle)] text-[var(--oc-text-tertiary)]"
+                            }
+                          >
+                            {selectedPerson.personality.ai_interest ? "对 AI 感兴趣" : "对 AI 兴趣一般"}
+                          </Badge>
+                        )}
                     </div>
                   </Section>
                 )}
@@ -463,17 +513,20 @@ export default function EmployeesPage() {
                   <Section icon={MessageSquare} title="沟通风格">
                     <div className="space-y-3">
                       {selectedPerson.communication.style && (
-                        <p className="text-sm">
-                          <span className="text-muted-foreground">风格：</span>
+                        <p className="text-sm text-[var(--oc-text-primary)]">
+                          <span className="text-[var(--oc-text-secondary)]">风格：</span>
                           <span className="font-medium">{selectedPerson.communication.style}</span>
                         </p>
                       )}
                       {selectedPerson.communication.prefers && selectedPerson.communication.prefers.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">偏好：</p>
+                          <p className="mb-1 text-xs text-[var(--oc-text-secondary)]">偏好：</p>
                           <div className="flex flex-wrap gap-1.5">
                             {selectedPerson.communication.prefers.map((p) => (
-                              <span key={p} className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                              <span
+                                key={p}
+                                className="rounded border border-[var(--oc-success)]/15 bg-[var(--oc-success-soft)] px-2 py-0.5 text-xs text-[var(--oc-success)]"
+                              >
                                 {p}
                               </span>
                             ))}
@@ -482,30 +535,37 @@ export default function EmployeesPage() {
                       )}
                       {selectedPerson.communication.avoids && selectedPerson.communication.avoids.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">忌讳：</p>
+                          <p className="mb-1 text-xs text-[var(--oc-text-secondary)]">忌讳：</p>
                           <div className="flex flex-wrap gap-1.5">
                             {selectedPerson.communication.avoids.map((a) => (
-                              <span key={a} className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/15">
+                              <span
+                                key={a}
+                                className="rounded border border-[var(--oc-error)]/15 bg-[var(--oc-error-soft)] px-2 py-0.5 text-xs text-[var(--oc-error)]"
+                              >
                                 {a}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      {selectedPerson.communication.typical_scenes && Object.keys(selectedPerson.communication.typical_scenes).length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1.5">典型场景：</p>
-                          <div className="space-y-1.5">
-                            {Object.entries(selectedPerson.communication.typical_scenes).map(([scene, desc]) => (
-                              <div key={scene} className="text-sm bg-white/[0.02] rounded-lg px-3 py-2">
-                                <span className="font-medium text-foreground/90">{scene}</span>
-                                <ChevronRight className="h-3 w-3 inline mx-1 text-muted-foreground" />
-                                <span className="text-muted-foreground">{desc}</span>
-                              </div>
-                            ))}
+                      {selectedPerson.communication.typical_scenes &&
+                        Object.keys(selectedPerson.communication.typical_scenes).length > 0 && (
+                          <div>
+                            <p className="mb-1.5 text-xs text-[var(--oc-text-secondary)]">典型场景：</p>
+                            <div className="space-y-1.5">
+                              {Object.entries(selectedPerson.communication.typical_scenes).map(([scene, desc]) => (
+                                <div
+                                  key={scene}
+                                  className="rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 py-2 text-sm"
+                                >
+                                  <span className="font-medium text-[var(--oc-text-primary)]">{scene}</span>
+                                  <ChevronRight className="mx-1 inline h-3 w-3 text-[var(--oc-text-secondary)]" />
+                                  <span className="text-[var(--oc-text-secondary)]">{desc}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </Section>
                 )}
@@ -533,7 +593,7 @@ export default function EmployeesPage() {
                       )}
                     </div>
                     {selectedPerson.meeting_style.notes && (
-                      <p className="text-sm text-muted-foreground mt-2 bg-white/[0.02] rounded-lg px-3 py-2">
+                      <p className="mt-2 rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 py-2 text-sm text-[var(--oc-text-secondary)]">
                         {selectedPerson.meeting_style.notes}
                       </p>
                     )}
@@ -545,8 +605,8 @@ export default function EmployeesPage() {
                   <Section icon={Lightbulb} title="AI 协作建议">
                     <ul className="space-y-1.5">
                       {selectedPerson.notes_for_ai.map((note, i) => (
-                        <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <AlertCircle className="h-3.5 w-3.5 text-amber-400/70 shrink-0 mt-0.5" />
+                        <li key={i} className="flex items-start gap-2 text-sm text-[var(--oc-text-secondary)]">
+                          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--oc-warning)]" />
                           {note}
                         </li>
                       ))}
@@ -559,12 +619,15 @@ export default function EmployeesPage() {
                   <Section icon={History} title="互动历史">
                     <div className="space-y-2">
                       {selectedPerson.interaction_history.map((item, i) => (
-                        <div key={i} className="text-sm bg-white/[0.02] rounded-lg px-3 py-2">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-muted-foreground">{item.time}</span>
-                            <span className="font-medium">{item.scene}</span>
+                        <div
+                          key={i}
+                          className="rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 py-2 text-sm"
+                        >
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="text-xs text-[var(--oc-text-tertiary)]">{item.time}</span>
+                            <span className="font-medium text-[var(--oc-text-primary)]">{item.scene}</span>
                           </div>
-                          <p className="text-muted-foreground text-xs">{item.result}</p>
+                          <p className="text-xs text-[var(--oc-text-secondary)]">{item.result}</p>
                         </div>
                       ))}
                     </div>
@@ -581,6 +644,30 @@ export default function EmployeesPage() {
 
 /* ─── 辅助组件 ─── */
 
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "border-[var(--oc-accent)]/25 bg-[var(--oc-accent-soft)] text-[var(--oc-accent)]"
+          : "border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] text-[var(--oc-text-secondary)] hover:border-[var(--oc-border-strong)] hover:text-[var(--oc-text-primary)]"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Section({
   icon: Icon,
   title,
@@ -592,8 +679,8 @@ function Section({
 }) {
   return (
     <div className="space-y-2.5">
-      <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/90">
-        <Icon className="h-4 w-4 text-primary/70" />
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--oc-text-primary)]">
+        <Icon className="h-4 w-4 text-[var(--oc-accent)]" />
         {title}
       </h3>
       <div className="pl-6">{children}</div>
@@ -603,9 +690,10 @@ function Section({
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white/[0.02] rounded-lg px-3 py-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium mt-0.5">{value}</p>
+    <div className="rounded-lg border border-[var(--oc-border-subtle)] bg-[var(--oc-bg-elevated)] px-3 py-2">
+      <p className="text-[11px] text-[var(--oc-text-secondary)]">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-[var(--oc-text-primary)]">{value}</p>
     </div>
   );
 }
+

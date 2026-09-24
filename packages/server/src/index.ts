@@ -53,22 +53,33 @@ import agentRoutes from "./routes/agents.js";
 import agentMainRoutes from "./routes/agent-main.js";
 import dailyPlanRoutes from "./routes/daily-plans.js";
 import projectRoutes from "./routes/projects.js";
+import projectRequirementsRoutes from "./routes/project-requirements.js";
+import projectTasksRoutes from "./routes/project-tasks.js";
+import projectDeliveriesRoutes from "./routes/project-deliveries.js";
 import peopleRoutes from "./routes/people.js";
 import workflowRoutes from "./routes/workflow.js";
 import autoOrderConfigRoutes from "./routes/auto-order-config.js";
+import mcpKeysRoutes from "./routes/mcp-keys.js";
+import mcpApplyRoutes from "./routes/mcp-apply.js";
+import mcpToolsListRoutes from "./routes/mcp-tools-list.js";
+import mcpCallRoutes from "./routes/mcp-call.js";
+import mcpSseRoutes from "./mcp/mcp-sse-route.js";
 
-const app = express();
+export const app = express();
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;
 
+// MCP SSE 路由必须在 express.json() 之前挂载，以便 POST /mcp/messages 能读取原始请求体
+app.use(mcpSseRoutes);
+
 // 确保数据目录存在
-const DATA_DIR = path.resolve(__dirname, '..', '..', '..', 'data');
+const DATA_DIR = process.env.OPENCLAW_DATA_DIR || path.resolve(__dirname, '..', '..', '..', 'data');
 const MEETINGS_DIR = path.join(DATA_DIR, 'meetings');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 for (const dir of [DATA_DIR, MEETINGS_DIR, UPLOADS_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-// 中间件
+// 中间件（MCP 路由已提前挂载，避免 JSON 解析器消耗原始请求体）
 app.use(express.json());
 
 // CORS
@@ -108,9 +119,16 @@ app.use(agentRoutes);
 app.use(agentMainRoutes);
 app.use(dailyPlanRoutes);
 app.use(projectRoutes);
+app.use(projectRequirementsRoutes);
+app.use(projectTasksRoutes);
+app.use(projectDeliveriesRoutes);
 app.use(peopleRoutes);
 app.use(workflowRoutes);
 app.use(autoOrderConfigRoutes);
+app.use(mcpKeysRoutes);
+app.use(mcpApplyRoutes);
+app.use(mcpToolsListRoutes);
+app.use(mcpCallRoutes);
 
 // SPA 回退
 app.get("*", (req, res) => {
@@ -136,9 +154,9 @@ app.get("*", (req, res) => {
   }
 });
 
-// 启动
-app.listen(PORT, () => {
-  console.log(`
+export function startServer() {
+  return app.listen(PORT, () => {
+    console.log(`
 ╔══════════════════════════════════════════════════╗
 ║         OpenClaw 统一后端服务已启动               ║
 ║                                                  ║
@@ -153,6 +171,11 @@ app.listen(PORT, () => {
 ╚══════════════════════════════════════════════════╝
   `);
 
-  initScheduledTasks();
-  ensureDefaultScheduledTask();
-});
+    initScheduledTasks();
+    ensureDefaultScheduledTask();
+  });
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  startServer();
+}

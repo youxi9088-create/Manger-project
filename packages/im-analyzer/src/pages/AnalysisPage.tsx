@@ -2076,7 +2076,7 @@ U9_SDP_APP_ID=sdp-app-id 请求头的值（UUID格式）`}
         <div className="space-y-4">
           {!autoSetupStatus.running && !autoSetupStatus.result && (
             <>
-              <Alert theme="info" message="输入 99U 工号和密码，工具将自动登录并获取所有配置信息。" />
+              <Alert theme="info" message="可直接启动浏览器扫码登录；也可填写工号和密码后自动登录。" />
               <div>
                 <div className="text-sm font-medium mb-2">工号</div>
                 <Input value={setupEmployeeId} onChange={v => setSetupEmployeeId(v)} placeholder="例如：986916@nd" />
@@ -2087,7 +2087,7 @@ U9_SDP_APP_ID=sdp-app-id 请求头的值（UUID格式）`}
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setSetupDialogVisible(false)}>取消</Button>
-                <Button theme="primary" onClick={() => startSetup(setupEmployeeId, setupPassword)} disabled={!setupEmployeeId || !setupPassword}>
+                <Button theme="primary" onClick={() => startSetup(setupEmployeeId, setupPassword)}>
                   开始自动配置
                 </Button>
               </div>

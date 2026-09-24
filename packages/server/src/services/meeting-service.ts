@@ -3,29 +3,15 @@ import path from 'path';
 import crypto from 'crypto';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import {
+  listRemoteMeetingResults,
+  loadRemoteMeetingResult,
+  PersistedMeetingResult,
+  saveRemoteMeetingResult,
+} from './meeting-result-store.js';
 
 // ====== 本地持久化转录结果（用于刷新后保持“已转录”状态）======
 // 说明：列表返回的 meetingId 可能不稳定（每次刷新变化），因此这里使用稳定键（title + startTime）来做持久化。
-
-type PersistedMeetingResult = {
-  key: string; // stable key
-  meetingId?: string; // 仅用于记录，不作为主键
-  title?: string;
-  startTime?: string;
-  updatedAt: string;
-  transcript?: string;
-  summary?: string;
-  todos?: string[];
-  audioPath?: string;
-  // 版本记录：versions[0] 为最新
-  versions?: Array<{
-    versionId: string;
-    createdAt: string;
-    transcript?: string;
-    summary?: string;
-    todos?: string[];
-  }>;
-};
 
 function stableKeyOf(title?: string, startTime?: string) {
   const t = String(title || '').trim();
@@ -57,6 +43,16 @@ function loadPersistedResultByKey(key: string, dataDir: string): PersistedMeetin
   }
 }
 
+function listLocalPersistedResults(dataDir: string, limit: number): PersistedMeetingResult[] {
+  if (!fs.existsSync(dataDir)) return [];
+  return fs.readdirSync(dataDir)
+    .filter((name) => name.startsWith('result__') && name.endsWith('.json'))
+    .map((name) => loadPersistedResultByKey(name.slice('result__'.length, -'.json'.length), dataDir))
+    .filter((result): result is PersistedMeetingResult => Boolean(result))
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .slice(0, limit);
+}
+
 function newVersionId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
@@ -79,6 +75,7 @@ const DATA_DIR = process.env.MEETING_DATA_DIR || path.resolve(process.cwd(), 'da
 // 认证文件路径（优先使用 im-chat-analyzer 目录下的）
 const AUTH_FILE_PATHS = [
   path.resolve(process.cwd(), 'data', 'auth', 'meeting-auth.json'),
+  path.resolve(process.cwd(), 'packages', 'server', 'data', 'auth', 'meeting-auth.json'),
   'F:/个人/app/im-chat-analyzer/meeting-auth.json',
   'F:/个人/app/claw studio/meeting-auth.json',
 ];
@@ -128,7 +125,11 @@ interface AuthInfo {
 
 // 从认证文件加载认证信息
 function loadAuthFromFile(): AuthInfo | null {
-  for (const authPath of AUTH_FILE_PATHS) {
+  const authPaths = AUTH_FILE_PATHS
+    .filter((authPath) => fs.existsSync(authPath))
+    .sort((left, right) => fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs);
+
+  for (const authPath of authPaths) {
     try {
       if (fs.existsSync(authPath)) {
         const content = fs.readFileSync(authPath, 'utf-8');
@@ -313,66 +314,51 @@ class MeetingAPIService {
     return false;
   }
 
-  // 使用保存的 token 调用 ndmeeting 真实 API 获取会议录制列表
+  // The web client lists cloud recordings from the meeting service's files API.
+  // It authenticates with both UC MAC auth and the meeting token; the old
+  // /record/list guesses return an authorization denial from this service.
   async fetchMeetingListWithToken(): Promise<MeetingRecord[]> {
-    if (!this.authInfo?.token) {
+    if (!this.authInfo?.token || !this.authInfo.accessToken || !this.authInfo.macKey) {
       throw new Error('未找到有效的认证 token');
     }
 
-    console.log('使用 token 调用会议录制列表 API...');
-
-    // ndmeeting 录制列表 API - 尝试多个端点
-    const endpoints = [
-      `${this.extendUrl}/api/v1/record/list`,
-      `${this.extendUrl}/api/v1/recordings`,
-      `${this.baseUrl}/api/v1/recordings`,
-    ];
-
-    for (const apiUrl of endpoints) {
-      try {
-        console.log(`尝试 API: ${apiUrl}`);
-
-        const isPost = apiUrl.includes('/record/list');
-        const response = await fetchFn(apiUrl, {
-          method: isPost ? 'POST' : 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.authInfo.token}`,
-            'X-User-Id': this.authInfo.userId,
-            'X-Tenant-Id': this.authInfo.tenantId,
-          },
-          ...(isPost ? {
-            body: JSON.stringify({
-              page: 1,
-              page_size: 50,
-              user_id: this.authInfo.userId,
-            }),
-          } : {}),
-        });
-
-        console.log(`API 响应状态: ${response.status}`);
-
-        const text = await response.text();
-        console.log(`API 响应内容 (前200字符): ${text.slice(0, 200)}`);
-
-        if (response.ok && text) {
-          try {
-            const data = JSON.parse(text);
-            const records = this.parseMeetingRecords(data);
-            if (records.length > 0) {
-              console.log(`✓ 成功从 ${apiUrl} 获取 ${records.length} 条记录`);
-              return records;
-            }
-          } catch (parseErr) {
-            console.log('JSON 解析失败:', parseErr);
-          }
-        }
-      } catch (err) {
-        console.log(`API ${apiUrl} 请求失败:`, err);
-      }
+    const pageSize = 100;
+    const records: MeetingRecord[] = [];
+    for (let offset = 0; offset < 1_000; offset += pageSize) {
+      const apiUrl = new URL('https://nd-meeting-extend.sdp.101.com/v2/api/files');
+      apiUrl.searchParams.set('$limit', String(pageSize));
+      apiUrl.searchParams.set('$offset', String(offset));
+      apiUrl.searchParams.set('status', 'all');
+      const response = await fetchFn(apiUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: generateMacAuth('GET', apiUrl.pathname, apiUrl.host, this.authInfo),
+          'nd-meeting-token': this.authInfo.token,
+          'accept-language': 'zh-CN',
+        },
+      });
+      if (!response.ok) throw new Error(`会议录制列表请求失败: ${response.status}`);
+      const data = await response.json();
+      const page = this.parseMeetingRecords(data);
+      records.push(...page);
+      if (page.length < pageSize) break;
     }
 
-    throw new Error('所有 API 端点都失败了');
+    const persistedByKey = new Map((await this.listMeetingResults(1_000)).map((item) => [item.key, item]));
+    const uniqueRecords = Array.from(new Map(records.map((record) => [record.meetingId, record])).values());
+    const hydrated = uniqueRecords.map((record) => {
+      const persisted = persistedByKey.get(stableKeyOf(record.title, record.startTime));
+      if (!persisted?.transcript) return record;
+      return {
+        ...record,
+        status: 'completed' as const,
+        transcript: persisted.transcript,
+        summary: persisted.summary,
+        todos: persisted.todos || [],
+      };
+    });
+    console.log(`会议录制列表返回 ${hydrated.length} 条记录`);
+    return hydrated;
   }
 
   async fetchMeetingList(): Promise<MeetingRecord[]> {
@@ -501,20 +487,32 @@ class MeetingAPIService {
   }
 
   private parseMeetingRecords(data: any): MeetingRecord[] {
-    if (!data.list && !data.data) {
+    if (!data.items && !data.list && !data.data) {
       return [];
     }
 
-    const list = data.list || data.data || [];
+    // 平台在 extend_info.mp3_url 中提供独立的纯音频文件，
+    // 体积远小于 MP4 录像（约 1/5），转写/下载应优先使用。
+    const extractMp3Url = (item: any): string | undefined => {
+      try {
+        const info = typeof item.extend_info === 'string' ? JSON.parse(item.extend_info) : item.extend_info;
+        const url = info?.mp3_url;
+        return typeof url === 'string' && url ? url : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+
+    const list = data.items || data.list || data.data || [];
     return list.map((item: any) => ({
-      meetingId: item.id || item.meetingId || item.recordId,
-      title: item.title || item.subject || '会议',
-      startTime: item.startTime || item.createTime || new Date().toISOString(),
-      recorder: item.recorder || item.owner || USERNAME,
-      duration: item.duration || '00:00:00',
-      fileSize: item.fileSize || item.size || '0B',
-      videoUrl: item.videoUrl || item.video,
-      audioUrl: item.audioUrl || item.audio,
+      meetingId: item.id || item.file_id || item.meetingId || item.recordId,
+      title: item.title || item.subject || item.name || item.file_name || '会议',
+      startTime: item.startTime || item.start_time || item.begin_time || item.createTime || item.created_at || item.createdAt || '',
+      recorder: item.recorder || item.owner || item.creator || item.user_name || item.uid_name || USERNAME,
+      duration: item.duration || item.record_time || '00:00:00',
+      fileSize: item.fileSize || item.file_size || item.size || '0B',
+      videoUrl: item.videoUrl || item.video || item.url,
+      audioUrl: item.audioUrl || item.audio || extractMp3Url(item) || item.url,
       status: 'pending',
     }));
   }
@@ -547,6 +545,7 @@ class MeetingAPIService {
     meetingId: string,
     format: 'video' | 'audio',
     directUrl?: string,
+    options?: { forceRefresh?: boolean },
   ): Promise<string> {
     console.log(`下载会议 ${meetingId} 的${format}文件...`);
 
@@ -555,11 +554,16 @@ class MeetingAPIService {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // 检查本地是否已有有效音频文件（>10KB），有则直接复用
+    // 检查本地是否已有有效音频文件（>10KB），有则直接复用；forceRefresh 时删除旧文件强制重新下载
     const existingExts = ['mp3', 'm4a', 'wav', 'mp4'];
     for (const ext of existingExts) {
       const candidate = path.join(dataDir, `${meetingId}_${format}.${ext}`);
       if (fs.existsSync(candidate)) {
+        if (options?.forceRefresh) {
+          fs.rmSync(candidate, { force: true });
+          console.log(`强制刷新：已删除旧文件 ${candidate}`);
+          continue;
+        }
         const stat = fs.statSync(candidate);
         if (stat.size > 10000) {
           console.log(`✓ 复用已有音频文件: ${candidate} (${(stat.size / 1024 / 1024).toFixed(2)} MB)`);
@@ -570,7 +574,7 @@ class MeetingAPIService {
 
     const guessExtFromUrl = (url?: string) => {
       try {
-        if (!url) return 'mp4';
+        if (!url) return '';
         const u = new URL(url);
         const name = u.searchParams.get('name') || '';
         const m = name.match(/\.([a-zA-Z0-9]{2,5})$/);
@@ -580,16 +584,28 @@ class MeetingAPIService {
       } catch {
         // ignore
       }
+      return '';
+    };
+
+    const extFromContentType = (contentType: string) => {
+      const ct = contentType.toLowerCase();
+      if (ct.includes('mpeg') || ct.includes('mp3')) return 'mp3';
+      if (ct.includes('wav')) return 'wav';
+      if (ct.includes('ogg')) return 'ogg';
+      if (ct.includes('m4a') || ct.includes('x-m4a') || ct.includes('aac')) return 'm4a';
       return 'mp4';
     };
 
-    const ext = directUrl ? guessExtFromUrl(directUrl) : 'mp4';
+    // 平台直链没有扩展名，以响应 Content-Type 为准（mp3_url 返回 audio/mpeg）
+    const urlExt = directUrl ? guessExtFromUrl(directUrl) : '';
+    const ext = urlExt || 'mp4';
     const fileName = `${meetingId}_${format}.${ext}`;
     const filePath = path.join(dataDir, fileName);
 
     // 1) 如果给了真实直链（例如 gcdncs 下载链接），优先使用直链下载
     if (directUrl) {
-      console.log('directUrl:', directUrl);
+      const target = new URL(directUrl);
+      console.log(`下载会议媒体: ${target.origin}${target.pathname}`);
       try {
         // 构建下载请求头，gcdncs.101.com 需要 MAC 认证
         const downloadHeaders: Record<string, string> = {
@@ -627,24 +643,26 @@ class MeetingAPIService {
         }
 
         if (response.body) {
+          const resolvedExt = urlExt || extFromContentType(response.headers.get('content-type') || '');
+          const resolvedPath = path.join(dataDir, `${meetingId}_${format}.${resolvedExt}`);
           const nodeStream = Readable.fromWeb(response.body as any);
-          await pipeline(nodeStream, fs.createWriteStream(filePath));
+          await pipeline(nodeStream, fs.createWriteStream(resolvedPath));
 
           // 验证下载的文件是否是有效音频（防止 HTML 登录页被存为 mp3）
-          const stat = fs.statSync(filePath);
+          const stat = fs.statSync(resolvedPath);
           if (stat.size < 10000) {
             // 文件太小，可能是错误响应
-            const head = fs.readFileSync(filePath, 'utf-8').slice(0, 200);
+            const head = fs.readFileSync(resolvedPath, 'utf-8').slice(0, 200);
             if (head.includes('<!doctype') || head.includes('<html') || head.includes('{')) {
               console.log(`⚠️ 下载的文件不是有效音频（${stat.size} 字节），内容: ${head.slice(0, 100)}`);
-              fs.unlinkSync(filePath);
+              fs.unlinkSync(resolvedPath);
               throw new Error(`音频下载返回了非音频内容（${stat.size} 字节），可能需要重新登录会议系统`);
             }
           }
 
-          console.log(`直链下载完成: ${filePath} (${(stat.size / 1024 / 1024).toFixed(2)} MB)`);
+          console.log(`直链下载完成: ${resolvedPath} (${(stat.size / 1024 / 1024).toFixed(2)} MB)`);
           // 直链已成功下载：直接返回，避免继续回退到会议系统下载导致再次写入其它格式文件
-          return filePath;
+          return resolvedPath;
         }
       } catch (e) {
         console.log('直链下载失败，回退到会议系统下载:', e);
@@ -692,46 +710,35 @@ class MeetingAPIService {
       console.log('MCP 下载失败');
     }
 
-    // 兜底：返回一个“真实存在”的本地测试媒体文件，避免返回不存在的路径导致 /download 404。
-    try {
-      const fallbackCandidates = [
-        // 优先找同 id 的文件
-        path.join(dataDir, `${meetingId}_${format}.mp4`),
-        path.join(dataDir, `${meetingId}_${format}.m4a`),
-        path.join(dataDir, `${meetingId}_${format}.mp3`),
-        // 其次使用目录下任何 *_audio.mp4（当前仓库里已有）
-        ...fs
-          .readdirSync(dataDir)
-          .filter((f) => f.endsWith('_audio.mp4'))
-          .map((f) => path.join(dataDir, f)),
-      ];
-
-      const hit = fallbackCandidates.find((p) => fs.existsSync(p));
-      if (hit) {
-        console.log('下载失败，使用本地兜底文件:', hit);
-        return hit;
-      }
-    } catch {
-      // ignore
-    }
-
-    console.log('下载失败，且没有可用的本地兜底文件');
-    return filePath;
+    throw new Error(`无法下载会议 ${meetingId} 的真实${format}文件`);
   }
 
   // 供 API 使用：在 process 成功转录/生成纪要后持久化结果
-  getMeetingResultLatest(params: { title?: string; startTime?: string }) {
+  async getMeetingResultLatest(params: { title?: string; startTime?: string }) {
     const key = stableKeyOf(params.title, params.startTime);
     if (!key.trim()) return null;
-    return loadPersistedResultByKey(key, DATA_DIR);
+    return (await loadRemoteMeetingResult(key)) || loadPersistedResultByKey(key, DATA_DIR);
   }
 
-  listMeetingResultVersions(params: { title?: string; startTime?: string }) {
-    const latest = this.getMeetingResultLatest(params);
+  async listMeetingResultVersions(params: { title?: string; startTime?: string }) {
+    const latest = await this.getMeetingResultLatest(params);
     return latest?.versions || [];
   }
 
-  persistMeetingResult(params: {
+  async listMeetingResults(limit = 200): Promise<PersistedMeetingResult[]> {
+    const [remote, local] = await Promise.all([
+      listRemoteMeetingResults(limit),
+      Promise.resolve(listLocalPersistedResults(DATA_DIR, limit)),
+    ]);
+    const results = new Map<string, PersistedMeetingResult>();
+    for (const result of local) results.set(result.key, result);
+    for (const result of remote) results.set(result.key, result);
+    return Array.from(results.values())
+      .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+      .slice(0, limit);
+  }
+
+  async persistMeetingResult(params: {
     meetingId: string;
     title?: string;
     startTime?: string;
@@ -754,21 +761,20 @@ class MeetingAPIService {
 
     const versions = [version, ...(prev?.versions || [])].slice(0, 20);
 
-    savePersistedResultByKey(
-      {
-        key,
-        meetingId: params.meetingId,
-        title: params.title,
-        startTime: params.startTime,
-        updatedAt: new Date().toISOString(),
-        transcript: params.transcript,
-        summary: params.summary,
-        todos: params.todos,
-        audioPath: params.audioPath,
-        versions,
-      },
-      DATA_DIR,
-    );
+    const result: PersistedMeetingResult = {
+      key,
+      meetingId: params.meetingId,
+      title: params.title,
+      startTime: params.startTime,
+      updatedAt: new Date().toISOString(),
+      transcript: params.transcript,
+      summary: params.summary,
+      todos: params.todos,
+      audioPath: params.audioPath,
+      versions,
+    };
+    savePersistedResultByKey(result, DATA_DIR);
+    await saveRemoteMeetingResult(result);
   }
 
   cleanupOldMeetingMedia(params?: { retentionDays?: number }) {

@@ -101,6 +101,7 @@ openclaw/
 │   ├── server/                       ← 统一后端
 │   │   ├── src/routes/               ← Express 路由（14 个文件）
 │   │   ├── src/services/             ← 业务逻辑
+│   │   ├── src/mcp/                  ← MCP Server：供 Hermes 等外部 Agent 调用 OpenClaw 工具
 │   │   └── src/utils/                ← 纯工具函数
 │   └── shared/                       ← 共享类型
 │
@@ -154,11 +155,12 @@ openclaw/
 | `oa-automation.js` | 455 | mcp | OA 自动填单原始脚本（参考备份） |
 | `agent-tools.ts` ✨ | ~40 | 新增 | Agent 工具注册表（toolRegistry Map + initAgentTools） |
 | `agent-tools-query.ts` ✨ | ~200 | 新增 | 只读查询工具：9 个工具（系统状态/项目/需求/任务/员工/版本/工作周期/聊天/报告） |
-| `agent-tools-write.ts` ✨ | ~150 | 新增 | 写操作工具：5 个工具（创建立项/需求/开发任务/更新状态/分配员工） |
+| `agent-tools-write.ts` ✨ | ~150 | 新增 | 写操作工具：12+ 工具（创建立项/需求/开发任务/更新状态/分配员工/每日计划等） |
 | `agent-loop.ts` ✨ | ~170 | 新增 | 自研 Agent Loop 引擎（Moonshot 直连 Function Calling + overrideExecutor 机制） |
 | `agent-prompts.ts` ✨ | ~80 | 新增 | 主/执行 Agent system prompt 管理（SystemStatus 接口 + 两个 prompt 构建函数） |
 | `agent-chat-service.ts` ✨ | ~130 | 新增 | 主 Agent 聊天业务逻辑（会话准备 + dispatch_exec_agent 真调度 + overrideExecutor） |
 | `exec-agent.ts` ✨ | ~110 | 新增 | 执行 Agent（agent_tasks 记录写入 + 多步骤工具调用 + SSE 进度回传） |
+| `mcp/*` ✨ | - | 新增 | Hermes MCP Server：`create-mcp-server.ts` 暴露 OpenClaw 工具，`mcp-sse-route.ts` 提供 SSE 端点 |
 
 ### 3.4 工具文件（src/utils/）
 

@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
-const IM_ANALYZER_URL = process.env.NEXT_PUBLIC_IM_ANALYZER_URL || "http://localhost:5173";
+const IM_ANALYZER_URL = process.env.NEXT_PUBLIC_IM_ANALYZER_URL
+  || `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/im-analyzer/`;
 
 // 当前用户标识，可扩展为从配置/用户设置读取
 const MY_IDENTIFIERS = ["游浠", "youxi", "you xi", "U9_MY_NAME"];
@@ -93,7 +94,7 @@ function formatDateLabel(date: string): string {
   return d.toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
 }
 
-export default function ChatAnalyzerPage() {
+function ChatAnalyzerSummaryPage() {
   const [reports, setReports] = useState<AnalysisReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -665,6 +666,18 @@ export default function ChatAnalyzerPage() {
           </Tabs>
         </>
       )}
+    </div>
+  );
+}
+
+export default function ChatAnalyzerPage() {
+  return (
+    <div className="h-[calc(100vh-4rem)] min-h-[700px] overflow-hidden bg-[var(--oc-bg-root)]">
+      <iframe
+        title="IM 聊天记录分析"
+        src={IM_ANALYZER_URL}
+        className="h-full w-full border-0"
+      />
     </div>
   );
 }

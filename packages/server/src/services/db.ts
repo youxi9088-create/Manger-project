@@ -6,6 +6,19 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// LLM 配置动态读取（避免模块加载早于 dotenv）
+function getLLMConfig() {
+  const moonshotBaseUrl = process.env.MOONSHOT_BASE_URL || 'https://api.moonshot.cn/v1';
+  const moonshotApiKey  = process.env.MOONSHOT_API_KEY  || '';
+  return {
+    baseUrl: process.env.OPENAI_BASE_URL || moonshotBaseUrl,
+    apiKey:  process.env.OPENAI_API_KEY  || moonshotApiKey || '',
+    fallbackBaseUrl: moonshotBaseUrl,
+    fallbackApiKey: moonshotApiKey,
+    model:   process.env.OPENAI_CHAT_MODEL || process.env.MOONSHOT_MODEL || 'moonshot-v1-128k',
+  };
+}
+
 // 数据库文件路径（openclaw/data/chat.db）
 const dbPath = process.env.DB_PATH || path.join(__dirname, '..', '..', '..', '..', 'data', 'chat.db');
 
@@ -104,6 +117,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS scheduled_tasks (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    type TEXT DEFAULT 'project_sync',
+    config TEXT,
     cron_expression TEXT NOT NULL,
     enabled INTEGER DEFAULT 1,
     last_run_at TEXT,
@@ -118,6 +133,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_chat_records_timestamp ON im_chat_records(timestamp);
   CREATE INDEX IF NOT EXISTS idx_chat_records_sender ON im_chat_records(sender_name);
   CREATE INDEX IF NOT EXISTS idx_analysis_reports_date ON analysis_reports(report_date);
+
+  -- 每日更新流水线日志表
+  CREATE TABLE IF NOT EXISTS daily_update_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    status TEXT DEFAULT 'success',
+    report TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_daily_update_logs_date ON daily_update_logs(date);
 
   -- 数据源关联的会话ID表（支持一个数据源对应多个会话）
   CREATE TABLE IF NOT EXISTS im_source_conversations (
@@ -366,6 +391,22 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_workflow_outputs_source ON workflow_outputs(source);
   CREATE INDEX IF NOT EXISTS idx_workflow_outputs_created ON workflow_outputs(created_at DESC);
+
+  -- ========== 项目信息聚合表（按 proid 覆盖） ==========
+  CREATE TABLE IF NOT EXISTS project_info_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    proid TEXT NOT NULL UNIQUE,
+    title TEXT,
+    content TEXT NOT NULL,
+    raw_content TEXT,
+    ask TEXT,
+    workflow_run_id TEXT,
+    metadata TEXT DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_project_info_files_proid ON project_info_files(proid);
+  CREATE INDEX IF NOT EXISTS idx_project_info_files_updated ON project_info_files(updated_at DESC);
 `);
 
 // ============= 数据库迁移 =============
@@ -494,6 +535,25 @@ try {
   if (!piColNames.includes('vp')) piAdd.push({ col: 'vp', def: 'TEXT' });
   if (!piColNames.includes('knowledge_base_path')) piAdd.push({ col: 'knowledge_base_path', def: 'TEXT' });
   if (!piColNames.includes('last_synced_at')) piAdd.push({ col: 'last_synced_at', def: 'TEXT' });
+
+  // 迁移：scheduled_tasks 表增加 type 和 config 字段
+  try {
+    const stColumns = db.prepare("PRAGMA table_info(scheduled_tasks)").all() as { name: string }[];
+    const stColNames = stColumns.map(c => c.name);
+    const stAdd: Array<{ col: string; def: string }> = [];
+    if (!stColNames.includes('type')) stAdd.push({ col: 'type', def: "TEXT DEFAULT 'project_sync'" });
+    if (!stColNames.includes('config')) stAdd.push({ col: 'config', def: 'TEXT' });
+    for (const { col, def } of stAdd) {
+      db.exec(`ALTER TABLE scheduled_tasks ADD COLUMN ${col} ${def}`);
+    }
+    if (stAdd.length > 0) {
+      console.log(`[DB] scheduled_tasks 表已添加字段: ${stAdd.map(x => x.col).join(', ')}`);
+    }
+  } catch (e: any) {
+    if (!e.message?.includes('duplicate column name')) {
+      console.error('[DB] scheduled_tasks 迁移出错:', e.message);
+    }
+  }
   for (const { col, def } of piAdd) {
     db.exec(`ALTER TABLE project_initiations ADD COLUMN ${col} ${def}`);
   }
@@ -670,6 +730,8 @@ export interface DbAnalysisReport {
 export interface DbScheduledTask {
   id: string;
   name: string;
+  type: string;
+  config: string | null;
   cron_expression: string;
   enabled: number;
   last_run_at: string | null;
@@ -983,6 +1045,17 @@ export function getChatRecords(options?: {
   return { records, total };
 }
 
+export function getSavedU9Conversations(): { id: string; name: string }[] {
+  const stmt = db.prepare(`
+    SELECT group_id AS id, MAX(group_name) AS name
+    FROM im_chat_records
+    WHERE group_id IS NOT NULL AND TRIM(group_id) <> ''
+    GROUP BY group_id
+    ORDER BY MAX(timestamp) DESC
+  `);
+  return stmt.all() as { id: string; name: string }[];
+}
+
 export function getChatRecordsByDateRange(startDate: string, endDate: string): DbChatRecord[] {
   // 支持 ISO 8601 格式的时间戳（如 2026-04-10T00:04:33.000+0800）
   // 如果 startDate 只是日期（YYYY-MM-DD），使用 LIKE 查询
@@ -1101,14 +1174,14 @@ export function getScheduledTask(id: string): DbScheduledTask | undefined {
 
 export function createScheduledTask(task: DbScheduledTask): DbScheduledTask {
   const stmt = db.prepare(`
-    INSERT INTO scheduled_tasks (id, name, cron_expression, enabled, last_run_at, next_run_at, last_status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO scheduled_tasks (id, name, type, config, cron_expression, enabled, last_run_at, next_run_at, last_status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  stmt.run(task.id, task.name, task.cron_expression, task.enabled, task.last_run_at, task.next_run_at, task.last_status, task.created_at, task.updated_at);
+  stmt.run(task.id, task.name, task.type || 'project_sync', task.config, task.cron_expression, task.enabled, task.last_run_at, task.next_run_at, task.last_status, task.created_at, task.updated_at);
   return task;
 }
 
-export function updateScheduledTask(id: string, updates: Partial<Pick<DbScheduledTask, 'name' | 'cron_expression' | 'enabled' | 'last_run_at' | 'next_run_at' | 'last_status'>>): boolean {
+export function updateScheduledTask(id: string, updates: Partial<Pick<DbScheduledTask, 'name' | 'type' | 'config' | 'cron_expression' | 'enabled' | 'last_run_at' | 'next_run_at' | 'last_status'>>): boolean {
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -1477,6 +1550,11 @@ export function getProjectById(id: string): DbProject | undefined {
   return db.prepare('SELECT * FROM project_initiations WHERE id = ?').get(id) as DbProject | undefined;
 }
 
+// 根据 external_project_id（proid）获取项目列表
+export function getProjectsByExternalId(externalProjectId: string): DbProject[] {
+  return db.prepare('SELECT * FROM project_initiations WHERE external_project_id = ?').all(externalProjectId) as DbProject[];
+}
+
 // 更新项目阶段
 export function updateProjectPhase(
   projectId: string,
@@ -1596,15 +1674,18 @@ export function getProjectStats(projectId: string): {
   is_delayed: boolean;
   members_count: number;
 } {
-  // 从需求关联的任务统计
+  // 从需求关联的任务统计（同时支持 initiation_id 和 project_id 关联）
   const taskStats = db.prepare(`
     SELECT 
       COUNT(*) as total,
       SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
       SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress
     FROM dev_tasks
-    WHERE requirement_id IN (SELECT id FROM requirement_analyses WHERE initiation_id = ?)
-  `).get(projectId) as { total: number; done: number; in_progress: number };
+    WHERE requirement_id IN (
+      SELECT id FROM requirement_analyses 
+      WHERE initiation_id = ? OR project_id = ?
+    )
+  `).get(projectId, projectId) as { total: number; done: number; in_progress: number };
 
   const project = db.prepare('SELECT deadline, team_size_current FROM project_initiations WHERE id = ?').get(projectId) as { deadline: string | null; team_size_current: number } | undefined;
 
@@ -1642,7 +1723,7 @@ export function syncProjectStatus(projectId: string): { updated: boolean; newPha
       return { updated: false, newPhase: project.current_phase, newPhaseStatus: JSON.parse(project.phase_status || '{}'), reason: '项目已归档或已驳回，跳过同步' };
     }
 
-    // 统计项目下的 dev_tasks（通过 requirement_analyses → initiation_id 关联）
+    // 统计项目下的 dev_tasks（同时支持 initiation_id 和 project_id 关联）
     const taskStats = db.prepare(`
       SELECT 
         COUNT(*) as total,
@@ -1651,16 +1732,19 @@ export function syncProjectStatus(projectId: string): { updated: boolean; newPha
         SUM(CASE WHEN status = 'testing' THEN 1 ELSE 0 END) as testing,
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
       FROM dev_tasks
-      WHERE requirement_id IN (SELECT id FROM requirement_analyses WHERE initiation_id = ?)
-    `).get(projectId) as { total: number; done: number; in_progress: number; testing: number; pending: number };
+      WHERE requirement_id IN (
+        SELECT id FROM requirement_analyses 
+        WHERE initiation_id = ? OR project_id = ?
+      )
+    `).get(projectId, projectId) as { total: number; done: number; in_progress: number; testing: number; pending: number };
 
     const total = taskStats.total || 0;
     const done = taskStats.done || 0;
     const inProgress = taskStats.in_progress || 0;
     const testing = taskStats.testing || 0;
 
-    // 计算需求分析数量（作为 requirement 阶段依据）
-    const reqCount = db.prepare(`SELECT COUNT(*) as c FROM requirement_analyses WHERE initiation_id = ?`).get(projectId) as { c: number };
+    // 计算需求分析数量（同时支持 initiation_id 和 project_id）
+    const reqCount = db.prepare(`SELECT COUNT(*) as c FROM requirement_analyses WHERE initiation_id = ? OR project_id = ?`).get(projectId, projectId) as { c: number };
     const hasRequirements = (reqCount.c || 0) > 0;
 
     // 计算各阶段进度
@@ -1760,6 +1844,361 @@ export function syncAllProjectStatuses(): { projectId: string; result: NonNullab
     if (r) results.push({ projectId: p.id, result: r });
   }
   return results;
+}
+
+/* ─── 调用 LLM 从项目信息报告中提取结构化字段 ─── */
+async function callLLMExtractProjectFields(report: string): Promise<{
+  title?: string;
+  project_leader?: string;
+  current_phase?: string;
+  phase_status?: Record<string, number>;
+  deadline?: string | null;
+  team_size_required?: number;
+  team_size_current?: number;
+  risk_level?: 'low' | 'medium' | 'high';
+  risk_reason?: string;
+  summary?: string;
+} | null> {
+  const cfg = getLLMConfig();
+  if (!cfg.apiKey) {
+    console.warn('[syncProjectInfoFromWorkflow] 未配置 LLM API Key');
+    return null;
+  }
+
+  const systemPrompt = `你是一位项目信息提取助手。我会给你一份项目信息分析报告（Markdown），请从中提取关键字段并输出 JSON。
+
+可提取字段：
+- title: 项目名称/标题
+- project_leader: 项目负责人/项目经理（人名）
+- current_phase: 项目当前阶段，必须是以下之一：draft, submitted, approved, planning, plan_locked, recruiting, executing, delivering, reviewing, accepted, rejected, archived。如果报告提到"预立项"用 approved，"执行中"用 executing，"交付中"用 delivering，"验收中"用 reviewing，"已完成"用 accepted
+- phase_status: 各阶段进度，JSON 对象 {initiation, requirement, planning, execution, delivery}，值为 0-1 之间的小数。报告未明确时按当前阶段推断
+- deadline: 截止日期，格式 YYYY-MM-DD，不确定则设为 null
+- team_size_required: 需要团队人数，整数，未明确则设为 null
+- team_size_current: 当前团队人数，整数，未明确则设为 null
+- risk_level: 风险等级 low/medium/high，无风险则 low
+- risk_reason: 风险原因，无风险则省略
+- summary: 项目摘要，100字以内
+
+注意：
+1. 只输出 JSON，不要输出 JSON 以外的任何内容
+2. 不要编造信息，报告中没有明确提到的字段可以省略或设为 null
+3. current_phase 必须从枚举值中选择`;
+
+  const callLLM = async (baseUrl: string, apiKey: string): Promise<any> => {
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `项目信息报告：\n\n${report}` },
+        ],
+        temperature: 0.2,
+      }),
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(json?.error?.message || json?.message || `LLM 失败 ${resp.status}`);
+    return json;
+  };
+
+  try {
+    let json: any;
+    try {
+      json = await callLLM(cfg.baseUrl, cfg.apiKey);
+    } catch (e: any) {
+      if (cfg.baseUrl !== cfg.fallbackBaseUrl && cfg.fallbackApiKey) {
+        console.log('[syncProjectInfoFromWorkflow] 回退到 Moonshot 官方 API...');
+        json = await callLLM(cfg.fallbackBaseUrl, cfg.fallbackApiKey);
+      } else {
+        throw e;
+      }
+    }
+
+    const content = json.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string') return null;
+
+    // 尝试从内容中提取 JSON
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed;
+  } catch (e: any) {
+    console.warn('[syncProjectInfoFromWorkflow] LLM 提取失败:', e?.message);
+    return null;
+  }
+}
+
+/* ─── 从工作流项目信息同步到项目立项 ─── */
+export async function syncProjectInfoFromWorkflow(projectId: string): Promise<{
+  success: boolean;
+  updated: boolean;
+  message: string;
+  fields?: string[];
+  proid?: string;
+}> {
+  try {
+    const project = db.prepare('SELECT * FROM project_initiations WHERE id = ?').get(projectId) as DbProject | undefined;
+    if (!project) {
+      return { success: false, updated: false, message: '项目不存在' };
+    }
+
+    const proid = project.external_project_id;
+    if (!proid) {
+      return { success: false, updated: false, message: '项目未设置 proid（external_project_id），无法同步工作流信息' };
+    }
+
+    const infoFile = db.prepare('SELECT * FROM project_info_files WHERE proid = ? ORDER BY updated_at DESC LIMIT 1').get(proid) as DbProjectInfoFile | undefined;
+    if (!infoFile) {
+      return { success: false, updated: false, message: `未找到 proid=${proid} 的工作流项目信息，请先在「工作流输出」页面触发查询`, proid };
+    }
+
+    // 使用 LLM 提取结构化字段
+    const extracted = await callLLMExtractProjectFields(infoFile.content);
+    console.log('[syncProjectInfoFromWorkflow] LLM 提取结果:', JSON.stringify(extracted));
+
+    if (!extracted) {
+      return { success: false, updated: false, message: 'LLM 字段提取失败，无法同步', proid };
+    }
+
+    const allowedPhases = ['draft', 'submitted', 'approved', 'planning', 'plan_locked', 'recruiting', 'executing', 'delivering', 'reviewing', 'accepted', 'rejected', 'archived'];
+
+    const updates: Partial<Omit<DbProject, 'id' | 'created_at' | 'updated_at'>> = {};
+
+    if (extracted?.title) updates.title = extracted.title;
+    if (extracted?.project_leader) updates.project_leader = extracted.project_leader;
+    if (extracted?.deadline !== undefined) updates.deadline = extracted.deadline;
+    if (extracted?.team_size_required !== undefined && extracted.team_size_required !== null) updates.team_size_required = extracted.team_size_required;
+    if (extracted?.team_size_current !== undefined && extracted.team_size_current !== null) updates.team_size_current = extracted.team_size_current;
+
+    // current_phase 校验
+    if (extracted?.current_phase && allowedPhases.includes(extracted.current_phase)) {
+      updates.current_phase = extracted.current_phase;
+    }
+
+    // phase_status 合并
+    if (extracted?.phase_status && typeof extracted.phase_status === 'object') {
+      const current = JSON.parse(project.phase_status || '{}');
+      const merged = { ...current, ...extracted.phase_status };
+      // 确保五个阶段都有值；项目已存在，initiation 至少为 1
+      for (const key of ['initiation', 'requirement', 'planning', 'execution', 'delivery']) {
+        const v = merged[key];
+        merged[key] = (v === undefined || v === null) ? (current[key] || 0) : v;
+      }
+      if ((merged.initiation || 0) < 1) merged.initiation = 1;
+      updates.phase_status = JSON.stringify(merged);
+    }
+
+    // risk_level 校验
+    if (extracted?.risk_level && ['low', 'medium', 'high'].includes(extracted.risk_level)) {
+      updates.risk_level = extracted.risk_level;
+      updates.risk_reason = extracted.risk_reason || null;
+    }
+
+    // summary 写入 ai_generated_content
+    if (extracted?.summary) {
+      updates.ai_generated_content = extracted.summary;
+    }
+
+    const fields = Object.keys(updates);
+    if (fields.length === 0) {
+      return { success: true, updated: false, message: '工作流信息中没有可同步的新字段', proid };
+    }
+
+    // 更新 last_synced_at
+    (updates as any).last_synced_at = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' }).replace(' ', 'T');
+
+    const ok = updateProject(projectId, updates);
+    if (!ok) {
+      return { success: false, updated: false, message: '更新项目失败', proid };
+    }
+
+    // 如果 phase 变化，记录日志
+    if (updates.current_phase && updates.current_phase !== project.current_phase) {
+      const logId = uuidv4();
+      const now = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' }).replace(' ', 'T');
+      db.prepare(`
+        INSERT INTO project_phase_logs (id, project_id, from_phase, to_phase, triggered_by, reason, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        logId,
+        projectId,
+        project.current_phase,
+        updates.current_phase,
+        'workflow_info_sync',
+        `从工作流项目信息同步：proid=${proid}`,
+        now
+      );
+    }
+
+    return { success: true, updated: true, message: `已同步 ${fields.length} 个字段`, fields, proid };
+  } catch (e: any) {
+    console.error('[syncProjectInfoFromWorkflow] 失败:', e?.message);
+    return { success: false, updated: false, message: e?.message || '同步失败' };
+  }
+}
+
+/* ─── 将工作流项目信息同步到知识库 ───
+ * 会覆盖：project-report-*.md、summary.json 中各模块数据
+ * 会删除：旧的 project-data-*.md（飞书同步的旧数据），以工作流输出为准
+ */
+export function syncKnowledgeBaseForProjectInfo(
+  proid: string,
+  content: string,
+  structuredData: Record<string, any> = {},
+  todoList?: string
+): {
+  success: boolean;
+  message: string;
+  updatedFiles: string[];
+} {
+  const updatedFiles: string[] = [];
+  try {
+    const projects = getProjectsByExternalId(proid);
+    if (projects.length === 0) {
+      return { success: true, message: `未找到 proid=${proid} 关联的项目，跳过知识库同步`, updatedFiles };
+    }
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const syncedAt = now.toISOString();
+
+    for (const project of projects) {
+      if (!project.knowledge_base_path) continue;
+
+      let kbPath = project.knowledge_base_path;
+      // Windows 路径转换：/c/Users/... -> C:/Users/...
+      if (kbPath.startsWith('/c/') || kbPath.startsWith('/C/')) {
+        kbPath = 'C:/' + kbPath.substring(3);
+      }
+
+      const kbDir = path.dirname(kbPath);
+      if (!fs.existsSync(kbDir)) {
+        console.warn(`[syncKnowledgeBase] 知识库目录不存在: ${kbDir}`);
+        continue;
+      }
+
+      // 删除旧的 project-data-*.md（飞书同步数据），以工作流输出为准
+      try {
+        const entries = fs.readdirSync(kbDir);
+        for (const entry of entries) {
+          if (/^project-data-\d{4}-\d{2}-\d{2}\.md$/.test(entry)) {
+            fs.unlinkSync(path.join(kbDir, entry));
+            console.log(`[syncKnowledgeBase] 删除旧飞书数据: ${entry}`);
+          }
+        }
+      } catch (e: any) {
+        console.warn('[syncKnowledgeBase] 清理旧飞书数据失败:', e?.message);
+      }
+
+      // 1. 写入工作流分析报告
+      const reportFileName = `project-report-${today}.md`;
+      const reportFilePath = path.join(kbDir, reportFileName);
+      let reportContent = `# 项目信息同步报告 (proid: ${proid})\n\n> 同步时间: ${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n> 来源: AIHub 工作流 project-info-analysis\n> 关联项目: ${project.title || project.id}\n\n${content}`;
+      if (todoList && todoList.trim()) {
+        reportContent += `\n\n---\n\n## 执行中待办（原始）\n\n${todoList.trim()}`;
+      }
+      fs.writeFileSync(reportFilePath, reportContent, 'utf-8');
+      updatedFiles.push(reportFilePath);
+
+      // 2. 更新 summary.json 各模块
+      const summaryPath = path.join(kbDir, 'summary.json');
+      if (fs.existsSync(summaryPath)) {
+        try {
+          const summaryRaw = fs.readFileSync(summaryPath, 'utf-8');
+          const summary = JSON.parse(summaryRaw);
+
+          const sd = structuredData || {};
+
+          // 解包 AIHub 常见包装结构：{ obj: {...} } / { items: [...] }
+          const unwrap = (v: any): any => {
+            if (v && typeof v === 'object' && !Array.isArray(v)) {
+              if (v.obj !== undefined) return v.obj;
+              if (v.items !== undefined) return v.items;
+            }
+            return v;
+          };
+
+          // project_profile：以工作流输出为准，只保留前端需要的字段
+          const rawProfile = unwrap(sd.project_profile);
+          const cleanProfile: Record<string, any> = {};
+          const keepFields = [
+            'name', 'code', 'project_id', 'status_name', 'lifecycle_phase_name',
+            'plan_finish_date', 'manage_vp', 'manage_vp_uid', 'importance',
+            'summary', 'original_intention',
+          ];
+          if (rawProfile && typeof rawProfile === 'object') {
+            for (const k of keepFields) {
+              if (rawProfile[k] !== undefined) cleanProfile[k] = rawProfile[k];
+            }
+          } else {
+            if (sd.projectName || sd.name) cleanProfile.name = sd.projectName || sd.name;
+            if (sd.proid || sd.project_id) cleanProfile.project_id = sd.proid || sd.project_id;
+            if (sd.statusName || sd.status_name) cleanProfile.status_name = sd.statusName || sd.status_name;
+            if (sd.lifecyclePhaseName || sd.lifecycle_phase_name) cleanProfile.lifecycle_phase_name = sd.lifecyclePhaseName || sd.lifecycle_phase_name;
+            if (sd.planFinishDate || sd.plan_finish_date) cleanProfile.plan_finish_date = sd.planFinishDate || sd.plan_finish_date;
+            if (sd.manageVp || sd.manage_vp) cleanProfile.manage_vp = sd.manageVp || sd.manage_vp;
+            if (sd.manageVpUid || sd.manage_vp_uid) cleanProfile.manage_vp_uid = sd.manageVpUid || sd.manage_vp_uid;
+            if (sd.importance !== undefined) cleanProfile.importance = sd.importance;
+          }
+          // 摘要优先使用 LLM 报告正文前 800 字
+          const brief = content.replace(/^#.*\n/, '').trim().slice(0, 800).trim();
+          cleanProfile.summary = brief + (content.length > 800 ? '…' : '');
+          cleanProfile._workflow_synced_at = syncedAt;
+          summary.project_profile = cleanProfile;
+
+          // 其他模块：以工作流输出为准；工作流中存在则覆盖/解包，不存在则清空旧值
+          const modules = [
+            'core_values',
+            'goal_users',
+            'stage_objectives',
+            'weekly_versions',
+            'monthly_plan',
+            'budget',
+            'year_cost_budget',
+          ];
+          for (const m of modules) {
+            if (sd[m] !== undefined) {
+              summary[m] = unwrap(sd[m]);
+            }
+            // 工作流未返回的模块保留旧数据，避免同步后清空已有内容
+          }
+
+          // 保留执行中待办文本
+          if (sd.todo_list_text && typeof sd.todo_list_text === 'string') {
+            summary.todo_list = sd.todo_list_text;
+          } else if (!sd.todo_list_text && summary.todo_list !== undefined) {
+            delete summary.todo_list;
+          }
+
+          // 预算字段兼容：工作流返回 year_cost_budget 时，同时映射到 budget 字符串供前端展示
+          if (summary.year_cost_budget !== undefined && summary.budget === undefined) {
+            const ycb = summary.year_cost_budget;
+            if (typeof ycb === 'string') {
+              summary.budget = ycb;
+            } else if (ycb && typeof ycb === 'object') {
+              const budgetText = ycb.budget_cost_situation || ycb.budget || ycb.summary || JSON.stringify(ycb, null, 2);
+              summary.budget = budgetText;
+            }
+          }
+
+          fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2), 'utf-8');
+          updatedFiles.push(summaryPath);
+        } catch (e: any) {
+          console.warn('[syncKnowledgeBase] 更新 summary.json 失败:', e?.message);
+        }
+      }
+    }
+
+    return { success: true, message: `已同步到 ${updatedFiles.length} 个知识库文件`, updatedFiles };
+  } catch (e: any) {
+    console.error('[syncKnowledgeBase] 失败:', e?.message);
+    return { success: false, message: e?.message || '知识库同步失败', updatedFiles };
+  }
 }
 
 // 获取阶段流转日志
@@ -1889,6 +2328,115 @@ export function deleteWorkflowOutput(id: number): boolean {
   } catch {
     return false;
   }
+}
+
+/* ========== 项目信息聚合（按 proid 覆盖） ========== */
+
+export interface DbProjectInfoFile {
+  id: number;
+  proid: string;
+  title: string | null;
+  content: string;
+  raw_content: string | null;
+  ask: string | null;
+  workflow_run_id: string | null;
+  metadata: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function upsertProjectInfoFile(params: {
+  proid: string;
+  title?: string;
+  content: string;
+  raw_content?: string;
+  ask?: string;
+  workflow_run_id?: string;
+  metadata?: Record<string, any>;
+}): DbProjectInfoFile | null {
+  try {
+    const metaStr = params.metadata ? JSON.stringify(params.metadata) : '{}';
+    const now = new Date().toISOString();
+    const stmt = db.prepare(`
+      INSERT INTO project_info_files (proid, title, content, raw_content, ask, workflow_run_id, metadata, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(proid) DO UPDATE SET
+        title = excluded.title,
+        content = excluded.content,
+        raw_content = excluded.raw_content,
+        ask = excluded.ask,
+        workflow_run_id = excluded.workflow_run_id,
+        metadata = excluded.metadata,
+        updated_at = excluded.updated_at
+    `);
+    stmt.run(
+      params.proid,
+      params.title || null,
+      params.content,
+      params.raw_content || null,
+      params.ask || null,
+      params.workflow_run_id || null,
+      metaStr,
+      now,
+      now
+    );
+    const row = db.prepare('SELECT * FROM project_info_files WHERE proid = ?').get(params.proid) as DbProjectInfoFile;
+    return row;
+  } catch (e) {
+    console.error('[DB] upsertProjectInfoFile error:', e);
+    return null;
+  }
+}
+
+export function getProjectInfoFiles(options?: {
+  proid?: string;
+  limit?: number;
+}): DbProjectInfoFile[] {
+  let sql = 'SELECT * FROM project_info_files WHERE 1=1';
+  const params: any[] = [];
+  if (options?.proid) {
+    sql += ' AND proid = ?';
+    params.push(options.proid);
+  }
+  sql += ' ORDER BY updated_at DESC';
+  if (options?.limit) {
+    sql += ' LIMIT ?';
+    params.push(options.limit);
+  }
+  return db.prepare(sql).all(...params) as DbProjectInfoFile[];
+}
+
+export function getProjectInfoFileByProid(proid: string): DbProjectInfoFile | undefined {
+  return db.prepare('SELECT * FROM project_info_files WHERE proid = ?').get(proid) as DbProjectInfoFile | undefined;
+}
+
+export function deleteProjectInfoFile(proid: string): boolean {
+  try {
+    const result = db.prepare('DELETE FROM project_info_files WHERE proid = ?').run(proid);
+    return result.changes > 0;
+  } catch {
+    return false;
+  }
+}
+
+// ========== 每日更新流水线日志 ==========
+
+export function createDailyUpdateLog(date: string, status: 'success' | 'partial' | 'error', report: string): void {
+  const ts = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO daily_update_logs (date, status, report, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(date, status, report, ts);
+}
+
+export function getRecentDailyUpdateLogs(limit: number = 7): any[] {
+  const rows = db.prepare(
+    `SELECT * FROM daily_update_logs ORDER BY created_at DESC LIMIT ?`
+  ).all(limit) as any[];
+  return rows.map((r) => ({
+    ...r,
+    report: r.report ? JSON.parse(r.report) : null,
+  }));
 }
 
 export default db;

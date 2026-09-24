@@ -112,6 +112,7 @@ export async function runMainAgentChat(params: {
     model: "moonshot-v1-128k",
     maxIterations: 10,
     attachments,
+    loopId: sessionId,
     onEvent: (event) => {
       onEvent(event);
       if (event.type === "tool_call") {

@@ -2,6 +2,7 @@
 // 只读查询工具，封装常用的数据查询操作
 
 import dbInstance from "./db.js";
+import { enrichRequirement } from "./requirement-service.js";
 import type { AgentTool } from "./agent-tools.js";
 
 export function registerQueryTools(register: (tool: AgentTool) => void): void {
@@ -29,13 +30,32 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
   // ===== 项目立项 =====
   register({
     definition: {
+      name: "get_project_by_id",
+      description: "根据立项 ID 获取项目详情。ID 格式如 PI-20240624-001",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "立项 ID" },
+        },
+        required: ["id"],
+      },
+    },
+    execute: async (params) => {
+      const row = dbInstance.prepare("SELECT * FROM project_initiations WHERE id = ?").get(params.id as string);
+      return row || { error: "项目不存在" };
+    },
+  });
+
+  register({
+    definition: {
       name: "query_projects",
-      description: "查询项目立项列表，支持按状态/类型筛选。status 可选：active/pending/completed/cancelled",
+      description: "查询项目立项列表，支持按状态/类型/标题关键词筛选。status 可选：active/pending/completed/cancelled",
       parameters: {
         type: "object",
         properties: {
           status: { type: "string", description: "立项状态，可选值：active, pending, completed, cancelled" },
           type: { type: "string", description: "立项类型，可选值：quick_validation, pre_to_formal" },
+          title: { type: "string", description: "标题关键词（模糊匹配）" },
           limit: { type: "string", description: "最多返回条数，默认 20" },
         },
       },
@@ -45,6 +65,7 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
       const args: string[] = [];
       if (params.status) { sql += " AND status = ?"; args.push(params.status as string); }
       if (params.type) { sql += " AND type = ?"; args.push(params.type as string); }
+      if (params.title) { sql += " AND title LIKE ?"; args.push(`%${params.title}%`); }
       sql += " ORDER BY created_at DESC LIMIT ?";
       args.push(String(params.limit ?? 20));
       return dbInstance.prepare(sql).all(...args);
@@ -52,6 +73,24 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
   });
 
   // ===== 需求分析 =====
+  register({
+    definition: {
+      name: "get_requirement_by_id",
+      description: "根据需求 ID 获取需求详情。ID 格式如 RA-20240624-001",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "需求 ID" },
+        },
+        required: ["id"],
+      },
+    },
+    execute: async (params) => {
+      const row = dbInstance.prepare("SELECT * FROM requirement_analyses WHERE id = ?").get(params.id as string) as Parameters<typeof enrichRequirement>[0];
+      return row ? enrichRequirement(row) : { error: "需求不存在" };
+    },
+  });
+
   register({
     definition: {
       name: "query_requirements",
@@ -77,6 +116,24 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
   });
 
   // ===== 开发任务 =====
+  register({
+    definition: {
+      name: "get_dev_task_by_id",
+      description: "根据任务 ID 获取开发任务详情。ID 格式如 DT-20240624-001",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "开发任务 ID" },
+        },
+        required: ["id"],
+      },
+    },
+    execute: async (params) => {
+      const row = dbInstance.prepare("SELECT * FROM dev_tasks WHERE id = ?").get(params.id as string);
+      return row || { error: "任务不存在" };
+    },
+  });
+
   register({
     definition: {
       name: "query_dev_tasks",
@@ -107,11 +164,12 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
   register({
     definition: {
       name: "query_employees",
-      description: "查询员工列表，支持按状态/是否为 Agent 筛选",
+      description: "查询员工列表，支持按状态/名称/是否为 Agent 筛选",
       parameters: {
         type: "object",
         properties: {
           status: { type: "string", description: "员工状态：available/busy/off/leave" },
+          name: { type: "string", description: "员工姓名（模糊匹配）" },
           is_agent: { type: "string", description: "是否为 Agent，传 'true' 仅返回 Agent 员工" },
           limit: { type: "string", description: "最多返回条数，默认 30" },
         },
@@ -121,6 +179,7 @@ export function registerQueryTools(register: (tool: AgentTool) => void): void {
       let sql = "SELECT id, name, rank, skills, status, power_level, agent_type FROM employees WHERE 1=1";
       const args: string[] = [];
       if (params.status) { sql += " AND status = ?"; args.push(params.status as string); }
+      if (params.name) { sql += " AND name LIKE ?"; args.push(`%${params.name}%`); }
       if (params.is_agent === "true") { sql += " AND agent_type IS NOT NULL"; }
       sql += " ORDER BY created_at DESC LIMIT ?";
       args.push(String(params.limit ?? 30));

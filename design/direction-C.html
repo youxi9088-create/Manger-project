@@ -1,0 +1,2059 @@
+<!--
+  Direction C · 最佳设计师 / 顶级定制
+  ─────────────────────────────────────
+  选择的设计师 / 工作室：Stripe 设计团队
+
+  设计哲学：
+  Stripe 的设计语言以「信任与精致」著称。他们将复杂的金融与商业数据
+  转化为清晰、可信赖、令人愉悦的界面。其核心不是装饰，而是：
+  1. 精确（Precision）：每一处间距、字重、圆角都服务于信息层级。
+  2. 信任（Trust）：沉稳的暗色调、克制的色彩、一致的反馈，让用户敢把关键业务数据交托于此。
+  3. 温度（Warmth）：通过微妙的暖灰、恰当的留白与精致的微交互，避免企业工具常见的冰冷感。
+  4. 密度与呼吸（Density & Breath）：信息密度高，但层级清晰，眼睛能自然找到重点。
+
+  如何应用到 openclaw：
+  - 色彩：放弃默认紫渐变与冷蓝霓虹，采用温暖的深炭黑底 + 单一琥珀金 accent，
+    传递「沉静、精密、可信、智能、有秩序」的气质。
+  - 排版：中文使用系统字体栈保证可读性；英文与数字使用 DM Sans / JetBrains Mono，
+    在数据、代码、标签中形成精致对比。
+  - 组件：卡片以极淡的边界与阴影区分层级，拒绝「圆角+左彩色 border」的 slop 组合；
+    hover 与 active 状态通过背景色、边框色与微妙的位移呈现。
+  - 交互：页面切换、按钮、列表行均有细腻的过渡，loading、空态、错误态作为真实状态出现，
+    而非后期补丁。
+
+  Assumptions：
+  - 目标用户为项目经理、产品经理、研发组长，界面需要高信息密度与快速扫读。
+  - openclaw 当前无固定品牌色，本方向将琥珀金 #c9a86c 作为 accent 进行探索。
+  - 五个核心页面共用同一套侧边导航与顶部栏，通过 client-side tab 切换展示。
+  - 所有数据为符合 openclaw 功能的真实样例数据，非 Lorem。
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>openclaw · Direction C · Stripe Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      /* Stripe-inspired warm dark palette */
+      --bg-root: #0d0d0f;
+      --bg-surface: #131316;
+      --bg-elevated: #1a1a1e;
+      --bg-hover: #212125;
+      --bg-active: #2a2a2f;
+      --border-subtle: #242429;
+      --border-strong: #33333a;
+      --text-primary: #f2f2f5;
+      --text-secondary: #9b9ba3;
+      --text-tertiary: #6b6b74;
+      --accent: #c9a86c;
+      --accent-hover: #d9bc86;
+      --accent-soft: rgba(201, 168, 108, 0.12);
+      --success: #6a9e7f;
+      --success-soft: rgba(106, 158, 127, 0.12);
+      --warning: #c9a35c;
+      --warning-soft: rgba(201, 163, 92, 0.12);
+      --error: #c97b6d;
+      --error-soft: rgba(201, 123, 109, 0.12);
+      --info: #7a9fc9;
+      --info-soft: rgba(122, 159, 201, 0.12);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
+      --transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
+      --transition-base: 180ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+      --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      --font-display: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg-root);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-wrap: pretty;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #404047; }
+
+    /* Layout */
+    .app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 14px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a88a52 100%);
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-mark svg { width: 16px; height: 16px; color: #0d0d0f; }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .brand-beta {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 2px;
+    }
+
+    .nav-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      padding: 12px 10px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 10px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--bg-active);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .nav-item svg {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      stroke-width: 1.8;
+    }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+    }
+
+    .user-card {
+      margin: 14px 12px 0;
+      padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .user-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-hover);
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      flex-shrink: 0;
+    }
+
+    .user-info { overflow: hidden; }
+    .user-name { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .user-role { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+    /* Main area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg-root);
+    }
+
+    .topbar {
+      height: 60px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(13, 13, 15, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 320px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+
+    .search-box:hover, .search-box:focus-within {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .search-box svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .search-box input {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      outline: none;
+      width: 100%;
+    }
+
+    .search-box input::placeholder { color: var(--text-tertiary); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .icon-btn svg { width: 17px; height: 17px; }
+
+    .icon-btn .dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      background: var(--error);
+      border-radius: 50%;
+      border: 2px solid var(--bg-root);
+    }
+
+    /* Page content */
+    .page {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    .page.active { display: block; }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title-group h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .page-subtitle {
+      margin-top: 6px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .page-actions { display: flex; gap: 10px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .btn svg { width: 15px; height: 15px; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d0d0f;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 0 rgba(255,255,255,0.12) inset, var(--shadow-md);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      transition: all var(--transition-base);
+    }
+
+    .card-hover:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .card-title svg { width: 15px; height: 15px; color: var(--accent); }
+
+    /* Metric cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      transition: all var(--transition-base);
+      cursor: default;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .metric-delta {
+      font-size: 12px;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .metric-delta.up { color: var(--success); }
+    .metric-delta.down { color: var(--error); }
+
+    /* Grid layouts */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    /* Lists */
+    .list { display: flex; flex-direction: column; gap: 8px; }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .list-item:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-subtle);
+    }
+
+    .list-item.active {
+      background: var(--bg-active);
+      border-color: var(--border-strong);
+    }
+
+    .list-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .list-icon svg { width: 16px; height: 16px; }
+
+    .list-content { flex: 1; min-width: 0; }
+    .list-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .list-meta { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+
+    .list-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .status-success { background: var(--success-soft); color: var(--success); }
+    .status-warning { background: var(--warning-soft); color: var(--warning); }
+    .status-error { background: var(--error-soft); color: var(--error); }
+    .status-info { background: var(--info-soft); color: var(--info); }
+    .status-neutral { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+
+    /* Tags */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+    }
+
+    .tag-accent { background: var(--accent-soft); color: var(--accent); border-color: rgba(201, 168, 108, 0.22); }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 6px;
+      background: var(--bg-hover);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all var(--transition-fast);
+    }
+
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent); border-color: var(--accent); }
+
+    /* Project cards */
+    .project-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .project-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .project-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .project-name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+    .project-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 3px;
+    }
+
+    .project-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Daily page */
+    .daily-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+
+    .input-area {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font: inherit;
+      resize: vertical;
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    textarea::placeholder, input::placeholder { color: var(--text-tertiary); }
+
+    .import-source {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin-bottom: 8px;
+    }
+
+    .import-source:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .import-source svg { width: 15px; height: 15px; color: var(--accent); }
+    .import-source-title { font-weight: 600; font-size: 12px; color: var(--text-primary); }
+    .import-source-desc { font-size: 11px; color: var(--text-secondary); }
+
+    /* Task list */
+    .task-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .task-row:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-subtle);
+    }
+
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      transition: all var(--transition-fast);
+    }
+
+    .checkbox:hover { border-color: var(--accent); }
+    .checkbox.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox svg { width: 10px; height: 10px; color: #0d0d0f; display: none; }
+    .checkbox.checked svg { display: block; }
+
+    .task-title { font-weight: 500; color: var(--text-primary); }
+    .task-title.done { text-decoration: line-through; color: var(--text-tertiary); }
+    .task-priority {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .priority-p0 { background: var(--error-soft); color: var(--error); }
+    .priority-p1 { background: var(--warning-soft); color: var(--warning); }
+    .priority-p2 { background: var(--info-soft); color: var(--info); }
+
+    /* Meeting assistant */
+    .meeting-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 160px); }
+
+    .recording-list {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .recording-list-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .recording-items { flex: 1; overflow-y: auto; }
+
+    .recording-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .recording-item:hover { background: var(--bg-elevated); }
+    .recording-item.active { background: var(--bg-active); }
+
+    .recording-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .recording-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: flex; gap: 10px; }
+
+    .meeting-detail {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .meeting-detail-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .meeting-detail-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .transcript-line {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .speaker {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .transcript-time { font-size: 11px; color: var(--text-tertiary); margin-bottom: 2px; }
+    .transcript-text { color: var(--text-primary); line-height: 1.6; }
+
+    /* Empty state */
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--text-secondary);
+      gap: 12px;
+    }
+
+    .empty-state svg { width: 40px; height: 40px; color: var(--text-tertiary); }
+    .empty-state h3 { margin: 0; color: var(--text-primary); font-size: 15px; }
+    .empty-state p { margin: 0; font-size: 13px; max-width: 280px; }
+
+    /* Error state */
+    .error-banner {
+      background: var(--error-soft);
+      border: 1px solid rgba(201, 123, 109, 0.25);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--error);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .error-banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 13, 15, 0.7);
+      backdrop-filter: blur(2px);
+      border-radius: inherit;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-strong);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: var(--border-subtle);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 18px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 3px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-strong);
+    }
+
+    .timeline-item.completed .timeline-dot { border-color: var(--accent); background: var(--accent); }
+    .timeline-item.active .timeline-dot { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+    .timeline-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .timeline-date { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Chips / filters */
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+    .chip.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(201, 168, 108, 0.25); }
+
+    /* Inline code / mono */
+    .mono { font-family: var(--font-mono); }
+
+    /* Utilities */
+    .text-secondary { color: var(--text-secondary); }
+    .text-tertiary { color: var(--text-tertiary); }
+    .mb-0 { margin-bottom: 0; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .relative { position: relative; }
+    .w-full { width: 100%; }
+    .h-3 { height: 12px; }
+    .h-4 { height: 16px; }
+    .h-24 { height: 96px; }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .metrics-row { grid-template-columns: repeat(2, 1fr); }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 64px; }
+      .brand { padding: 0 18px 22px; justify-content: center; }
+      .brand-name, .brand-beta, .nav-item span, .nav-label, .user-info { display: none; }
+      .nav-item { justify-content: center; padding: 12px; }
+      .nav-item.active::before { left: -12px; }
+      .user-card { justify-content: center; padding: 10px; }
+      .grid-2, .grid-3, .daily-layout, .meeting-layout { grid-template-columns: 1fr; }
+      .metrics-row { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: 1fr; }
+      .search-box { width: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <i data-lucide="hexagon"></i>
+        </div>
+        <div>
+          <span class="brand-name">openclaw</span>
+          <span class="brand-beta">C</span>
+        </div>
+      </div>
+
+      <nav class="nav-section">
+        <div class="nav-label">工作区</div>
+        <div class="nav-item active" data-page="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>今日驾驶舱</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="nav-item" data-page="daily">
+          <i data-lucide="calendar-check"></i>
+          <span>日报计划</span>
+        </div>
+        <div class="nav-item" data-page="projects">
+          <i data-lucide="layers"></i>
+          <span>项目列表</span>
+        </div>
+        <div class="nav-item" data-page="meeting">
+          <i data-lucide="mic"></i>
+          <span>会议助手</span>
+        </div>
+
+        <div class="nav-label" style="margin-top: 10px;">智能体</div>
+        <div class="nav-item">
+          <i data-lucide="bot"></i>
+          <span>Hermes Agent</span>
+        </div>
+        <div class="nav-item">
+          <i data-lucide="zap"></i>
+          <span>工作流</span>
+        </div>
+        <div class="nav-item">
+          <i data-lucide="tool"></i>
+          <span>工具台</span>
+        </div>
+      </nav>
+
+      <div class="user-card">
+        <div class="avatar">LZ</div>
+        <div class="user-info">
+          <div class="user-name">林 哲</div>
+          <div class="user-role">项目总监 · 产品研发中心</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="search-box">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="搜索项目、任务、会议、知识库…" />
+          <span class="mono text-tertiary" style="font-size: 11px;">⌘K</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" title="通知">
+            <i data-lucide="bell"></i>
+            <span class="dot"></span>
+          </button>
+          <button class="icon-btn" title="帮助">
+            <i data-lucide="help-circle"></i>
+          </button>
+          <button class="icon-btn" title="设置">
+            <i data-lucide="settings"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page: Dashboard -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>今日工作驾驶舱</h1>
+            <div class="page-subtitle">2026 年 7 月 2 日 · 周四 · AI 助手已于 08:32 完成晨间同步</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="refresh-cw"></i>
+              同步数据
+            </button>
+            <button class="btn btn-primary" onclick="goTo('daily')">
+              <i data-lucide="plus"></i>
+              生成日报
+            </button>
+          </div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="video"></i> 今日会议</div>
+            <div class="metric-value">3</div>
+            <div class="metric-delta up">下一场 14:00 · 架构评审</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="check-square"></i> 待办任务</div>
+            <div class="metric-value">12</div>
+            <div class="metric-delta down">2 项已逾期 · 需关注</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="alert-triangle"></i> 风险项目</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">1 个进度偏差 · 1 个资源冲突</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="heart-pulse"></i> 项目健康度</div>
+            <div class="metric-value">87<span style="font-size: 16px; color: var(--text-secondary);">%</span></div>
+            <div class="metric-delta up">较上周 +4%</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="video"></i> 今日会议</div>
+              <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看全部</button>
+            </div>
+            <div class="list">
+              <div class="list-item active">
+                <div class="list-icon" style="color: var(--accent);">
+                  <i data-lucide="users"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">AI 客服知识库重构 · 架构评审</div>
+                  <div class="list-meta">14:00 · 腾讯会议 · 参与人 7</div>
+                </div>
+                <span class="list-status status-warning">待开始</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="briefcase"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">Q3 产品路线图对齐</div>
+                  <div class="list-meta">10:00 · 已结束 · 待分析</div>
+                </div>
+                <span class="list-status status-info">转写中</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="git-branch"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">研发周会 · 第 27 期</div>
+                  <div class="list-meta">周一 09:30 · 已完成纪要</div>
+                </div>
+                <span class="list-status status-success">已同步</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="check-square"></i> 今日任务</div>
+              <div class="chip-group">
+                <span class="chip active">全部</span>
+                <span class="chip">P0</span>
+                <span class="chip">已逾期</span>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-icon" style="color: var(--error);">
+                  <i data-lucide="flag"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">确认检索模块的 fallback 策略</div>
+                  <div class="list-meta">AI 客服知识库重构 · 逾期 1 天</div>
+                </div>
+                <span class="list-status status-error">P0</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon" style="color: var(--warning);">
+                  <i data-lucide="message-square"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">整理 Q3 路线图会议纪要</div>
+                  <div class="list-meta">来自会议 · 今日 18:00 截止</div>
+                </div>
+                <span class="list-status status-warning">P1</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="file-text"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">输出 API 网关压测报告</div>
+                  <div class="list-meta">统一接入平台 · 今日 20:00 截止</div>
+                </div>
+                <span class="list-status status-neutral">P2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 20px;">
+          <div class="card card-hover">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="heart-pulse"></i> 项目健康度</div>
+              <span class="tag tag-accent">实时</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+              <span style="font-size: 32px; font-weight: 700; font-family: var(--font-display);">87%</span>
+              <span style="color: var(--success); font-size: 12px; font-weight: 600;">↑ 4%</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-fill" style="width: 87%;"></div></div>
+            <div class="text-secondary mt-2" style="font-size: 12px;">18 个执行中项目 · 2 个需关注</div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="bot"></i> AI 待分析</div>
+              <span class="tag">3 条</span>
+            </div>
+            <div class="list-meta mb-3">以下会话包含潜在任务或决策，建议让 Hermes 分析：</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;">
+                <i data-lucide="message-circle" style="width: 13px; height: 13px;"></i>
+                飞书群 · 架构方案讨论（126 条）
+              </div>
+              <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;">
+                <i data-lucide="mail" style="width: 13px; height: 13px;"></i>
+                邮件 · 客户需求变更确认
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="zap"></i> 快捷操作</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;">
+                <span class="flex items-center gap-2"><i data-lucide="calendar"></i> 生成今日日报</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;">
+                <span class="flex items-center gap-2"><i data-lucide="mic"></i> 分析最新会议</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;">
+                <span class="flex items-center gap-2"><i data-lucide="scan"></i> 扫描项目风险</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Projects -->
+      <section class="page" id="page-projects">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>项目列表</h1>
+            <div class="page-subtitle">管理全部项目进度、阶段、风险与同步状态</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="filter"></i>
+              筛选
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="plus"></i>
+              新建项目
+            </button>
+          </div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">总项目</div>
+            <div class="metric-value">24</div>
+            <div class="metric-delta up">较上月 +3</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">执行中</div>
+            <div class="metric-value">18</div>
+            <div class="metric-delta up">占总数 75%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">招募中</div>
+            <div class="metric-value">4</div>
+            <div class="metric-delta neutral">等待资源到位</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">高风险</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">需本周内处理</div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div class="search-box" style="width: 280px;">
+              <i data-lucide="search"></i>
+              <input type="text" placeholder="搜索项目名称、ID、负责人…" />
+            </div>
+            <div class="chip-group">
+              <span class="chip active">全部阶段</span>
+              <span class="chip">需求分析</span>
+              <span class="chip">开发中</span>
+              <span class="chip">测试验收</span>
+              <span class="chip">已上线</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-4" id="projects-grid">
+          <!-- Generated by JS -->
+        </div>
+      </section>
+
+      <!-- Page: Project Detail -->
+      <section class="page" id="page-project">
+        <div class="page-header">
+          <div class="page-title-group">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+              <h1 style="margin: 0;">AI 客服知识库重构</h1>
+              <span class="tag tag-accent">开发中</span>
+              <span class="tag" style="background: var(--error-soft); color: var(--error); border-color: rgba(201, 123, 109, 0.22);">高风险</span>
+            </div>
+            <div class="page-subtitle">
+              <span class="mono">PROJ-2026-0084</span> · 负责人 林哲 · 2026.05.12 - 2026.08.30
+            </div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="refresh-cw"></i>
+              同步知识库
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="git-pull-request"></i>
+              创建任务
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="overview">概览</div>
+          <div class="tab" data-tab="requirements">需求</div>
+          <div class="tab" data-tab="tasks">任务</div>
+          <div class="tab" data-tab="members">成员</div>
+          <div class="tab" data-tab="deliverables">交付</div>
+          <div class="tab" data-tab="logs">日志</div>
+        </div>
+
+        <div id="tab-overview" class="tab-panel active">
+          <div class="grid-4 mb-4">
+            <div class="card">
+              <div class="metric-label">整体进度</div>
+              <div class="metric-value">62<span style="font-size: 16px; color: var(--text-secondary);">%</span></div>
+              <div class="progress-wrap"><div class="progress-fill" style="width: 62%;"></div></div>
+            </div>
+            <div class="card">
+              <div class="metric-label">剩余任务</div>
+              <div class="metric-value">18</div>
+              <div class="metric-delta down">5 项已逾期</div>
+            </div>
+            <div class="card">
+              <div class="metric-label">风险数</div>
+              <div class="metric-value">3</div>
+              <div class="metric-delta down">2 个高优先级</div>
+            </div>
+            <div class="card">
+              <div class="metric-label">最后同步</div>
+              <div class="metric-value" style="font-size: 20px; margin-top: 4px;">08:32</div>
+              <div class="metric-delta up">今日 · 来源 飞书文档</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i data-lucide="book-open"></i> 知识库摘要</div>
+                <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看原文</button>
+              </div>
+              <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.7;">
+                <p style="margin: 0 0 12px 0;">本项目旨在将现有 FAQ 与工单数据迁移至向量检索引擎，并引入 LLM 生成式回答能力。关键约束包括：</p>
+                <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary);">
+                  <li>回答准确率需 ≥ 92%，拒答率控制在 8% 以内。</li>
+                  <li>检索延迟 P99 必须低于 280ms。</li>
+                  <li>需与现有客服工作台保持 SSO 与权限体系一致。</li>
+                </ul>
+              </div>
+              <div class="mt-3" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="tag">向量检索</span>
+                <span class="tag">LLM</span>
+                <span class="tag">客服中台</span>
+                <span class="tag">SSO</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i data-lucide="route"></i> 阶段时间线</div>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item completed">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">需求确认 & 可行性评估</div>
+                  <div class="timeline-date">2026.05.12 - 2026.05.30 · 已完成</div>
+                </div>
+                <div class="timeline-item completed">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">方案设计 & 技术评审</div>
+                  <div class="timeline-date">2026.06.01 - 2026.06.20 · 已完成</div>
+                </div>
+                <div class="timeline-item active">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">核心开发 & 集成测试</div>
+                  <div class="timeline-date">2026.06.23 - 2026.08.10 · 进行中</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">灰度发布 & 效果验收</div>
+                  <div class="timeline-date">2026.08.11 - 2026.08.30 · 未开始</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="lightbulb"></i> AI 行动建议</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="alert-circle"></i>
+                <div>
+                  <div class="import-source-title">处理逾期任务</div>
+                  <div class="import-source-desc">5 项任务已逾期，建议立即召开 15 分钟站会对齐阻塞点。</div>
+                </div>
+              </div>
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="file-input"></i>
+                <div>
+                  <div class="import-source-title">同步会议纪要</div>
+                  <div class="import-source-desc">上周架构评审纪要含 3 条待确认决策，可导入为项目任务。</div>
+                </div>
+              </div>
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="users"></i>
+                <div>
+                  <div class="import-source-title">资源冲突预警</div>
+                  <div class="import-source-desc">后端工程师王磊本周负载 112%，建议调整任务排期。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-requirements" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="book-open"></i> 需求列表</div></div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-001 · 支持多轮对话上下文保持</div><div class="list-meta">优先级 P0 · 产品经理 陈思</div></div>
+                <span class="list-status status-success">已评审</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-002 · 检索结果可解释性与引用溯源</div><div class="list-meta">优先级 P0 · 产品经理 陈思</div></div>
+                <span class="list-status status-success">已评审</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-003 · 人工接管与反馈闭环</div><div class="list-meta">优先级 P1 · 产品经理 陈思</div></div>
+                <span class="list-status status-warning">待细化</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-tasks" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="check-square"></i> 任务看板</div></div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">完成向量索引构建脚本</div><div class="list-meta">负责人 王磊 · 截止 2026.07.01 · 已逾期</div></div>
+                <span class="list-status status-error">P0</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">设计 fallback 兜底策略</div><div class="list-meta">负责人 李明 · 截止 2026.07.05</div></div>
+                <span class="list-status status-warning">P1</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">接入客服工作台 SSO</div><div class="list-meta">负责人 张薇 · 截止 2026.07.08</div></div>
+                <span class="list-status status-neutral">P2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-members" class="tab-panel" style="display: none;">
+          <div class="grid-3">
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar">LZ</div><div><div class="list-title">林哲</div><div class="list-meta">项目负责人 · 产品研发中心</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--info-soft); color: var(--info);">CS</div><div><div class="list-title">陈思</div><div class="list-meta">产品经理 · 产品研发中心</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--success-soft); color: var(--success);">WL</div><div><div class="list-title">王磊</div><div class="list-meta">技术负责人 · 后端架构组</div></div></div></div>
+          </div>
+        </div>
+
+        <div id="tab-deliverables" class="tab-panel" style="display: none;">
+          <div class="card empty-state" style="min-height: 240px;">
+            <i data-lucide="package"></i>
+            <h3>暂无交付物</h3>
+            <p>当前阶段尚未产生可交付文档。可在任务完成后由负责人上传。</p>
+          </div>
+        </div>
+
+        <div id="tab-logs" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="timeline">
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">林哲 同步了飞书文档</div><div class="timeline-date">2026.07.02 08:32</div></div>
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">Hermes 识别到 3 条风险并推送预警</div><div class="timeline-date">2026.07.01 21:15</div></div>
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">王磊 更新了任务状态：向量索引构建脚本 → 进行中</div><div class="timeline-date">2026.07.01 16:40</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Daily -->
+      <section class="page" id="page-daily">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>日报计划</h1>
+            <div class="page-subtitle">输入今日目标与背景，让 AI 生成可执行的任务清单</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">历史日报</button>
+            <button class="btn btn-primary" id="btn-generate-daily" onclick="generateDaily()">
+              <i data-lucide="sparkles"></i>
+              AI 生成今日计划
+            </button>
+          </div>
+        </div>
+
+        <div class="daily-layout">
+          <div class="input-area">
+            <label class="input-label">今日目标 / 背景</label>
+            <textarea rows="6" placeholder="例如：今天需要完成 AI 客服知识库重构的 fallback 策略评审，并同步 Q3 路线图给团队…"></textarea>
+
+            <label class="input-label mt-3">从其他来源导入</label>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="video"></i>
+              <div>
+                <div class="import-source-title">从会议导入待办</div>
+                <div class="import-source-desc">Q3 产品路线图对齐 · 3 条待确认</div>
+              </div>
+              <div class="checkbox" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="message-circle"></i>
+              <div>
+                <div class="import-source-title">从聊天导入行动项</div>
+                <div class="import-source-desc">飞书群 · 架构方案讨论 · 2 条</div>
+              </div>
+              <div class="checkbox" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="history"></i>
+              <div>
+                <div class="import-source-title">继承昨日未完成</div>
+                <div class="import-source-desc">2 项任务未关闭 · 建议优先处理</div>
+              </div>
+              <div class="checkbox checked" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+
+            <div class="error-banner mt-3" id="daily-error" style="display: none;">
+              <i data-lucide="alert-circle"></i>
+              <span>生成失败：无法连接到 Hermes Agent，请检查网络后重试。</span>
+            </div>
+
+            <div class="card mt-3" style="padding: 12px;">
+              <div class="flex items-center gap-2" style="color: var(--warning); font-size: 12px;">
+                <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                <span>昨日有 2 项任务未关闭，已自动加入今日计划。</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="position: relative;">
+            <div class="loading-overlay" id="daily-loading">
+              <div class="spinner"></div>
+              <span style="color: var(--text-secondary); font-size: 13px;">Hermes 正在分析上下文…</span>
+            </div>
+
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="list-checks"></i> 今日任务</div>
+              <div class="chip-group">
+                <span class="chip active">全部</span>
+                <span class="chip">P0</span>
+                <span class="chip">会议</span>
+                <span class="chip">个人</span>
+              </div>
+            </div>
+
+            <div class="list" id="daily-task-list">
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox checked"><i data-lucide="check"></i></div>
+                <div class="task-title done">回复客户关于 SSO 时序的确认邮件</div>
+                <span class="task-priority priority-p2">P2</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">09:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">准备 AI 客服知识库重构 · 架构评审材料</div>
+                <span class="task-priority priority-p0">P0</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">14:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">整理 Q3 产品路线图会议纪要并同步团队</div>
+                <span class="task-priority priority-p1">P1</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">18:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">与王磊对齐向量索引逾期任务的补救方案</div>
+                <span class="task-priority priority-p0">P0</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">16:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">输出 API 网关压测报告初稿</div>
+                <span class="task-priority priority-p1">P1</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">20:00</span>
+              </div>
+            </div>
+
+            <div class="mt-3" style="padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+              <button class="btn btn-ghost" style="width: 100%;">
+                <i data-lucide="plus"></i>
+                添加任务
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Meeting Assistant -->
+      <section class="page" id="page-meeting">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>会议助手</h1>
+            <div class="page-subtitle">录音、转写、纪要、待办一站式管理</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="upload"></i>
+              上传录音
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="mic"></i>
+              开始新会议
+            </button>
+          </div>
+        </div>
+
+        <div class="meeting-layout">
+          <div class="recording-list">
+            <div class="recording-list-header">最近录音</div>
+            <div class="recording-items">
+              <div class="recording-item active" onclick="selectRecording(this, 'q3')">
+                <div class="recording-title">Q3 产品路线图对齐</div>
+                <div class="recording-meta"><span>2026.07.02</span><span>48 分钟</span><span class="status-success">已生成</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'review')">
+                <div class="recording-title">AI 客服知识库重构 · 架构评审</div>
+                <div class="recording-meta"><span>2026.06.30</span><span>62 分钟</span><span class="status-info">转写中</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'weekly')">
+                <div class="recording-title">研发周会 · 第 27 期</div>
+                <div class="recording-meta"><span>2026.06.29</span><span>35 分钟</span><span class="status-success">已生成</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'client')">
+                <div class="recording-title">客户需求变更沟通</div>
+                <div class="recording-meta"><span>2026.06.28</span><span>28 分钟</span><span class="status-warning">待分析</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meeting-detail">
+            <div class="meeting-detail-header">
+              <div>
+                <div style="font-weight: 700; font-size: 15px;">Q3 产品路线图对齐</div>
+                <div class="text-secondary mt-1" style="font-size: 12px;">2026.07.02 10:00 · 48 分钟 · 7 人参与</div>
+              </div>
+              <div class="page-actions">
+                <button class="btn btn-secondary" onclick="syncTodos()">
+                  <i data-lucide="arrow-right-left"></i>
+                  同步待办到日报
+                </button>
+                <button class="btn btn-primary">
+                  <i data-lucide="download"></i>
+                  下载音频
+                </button>
+              </div>
+            </div>
+
+            <div class="meeting-detail-body">
+              <div class="tabs">
+                <div class="tab active" data-mtab="summary">摘要</div>
+                <div class="tab" data-mtab="todos">待办</div>
+                <div class="tab" data-mtab="transcript">原文</div>
+                <div class="tab" data-mtab="analysis">深度分析</div>
+              </div>
+
+              <div id="mtab-summary" class="mtab-panel active">
+                <div class="card mb-3">
+                  <div class="card-header"><div class="card-title"><i data-lucide="file-text"></i> 会议纪要</div></div>
+                  <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                    <p style="margin: 0 0 12px;">本次会议对齐了 Q3 产品路线图，重点讨论了 AI 客服知识库重构、统一接入平台与数据看板三个项目的资源排期与里程碑。</p>
+                    <p style="margin: 0 0 12px;">关键决策：AI 客服知识库重构的上线时间保持不变（8 月 30 日），但需增加一次中期风险评审；统一接入平台延后 2 周进入测试。</p>
+                    <p style="margin: 0;">下步行动：由林哲整理会议纪要并同步全员，陈思更新 PRD，王磊评估 fallback 策略。</p>
+                  </div>
+                </div>
+
+                <div class="grid-2">
+                  <div class="card">
+                    <div class="card-header"><div class="card-title"><i data-lucide="check-square"></i> 关键决策</div></div>
+                    <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                      <li>8 月 30 日上线时间不变。</li>
+                      <li>统一接入平台测试阶段延后 2 周。</li>
+                      <li>新增 7 月 15 日中期风险评审会。</li>
+                    </ul>
+                  </div>
+                  <div class="card">
+                    <div class="card-header"><div class="card-title"><i data-lucide="alert-circle"></i> 风险提示</div></div>
+                    <div style="color: var(--warning); font-size: 13px; line-height: 1.7;">
+                      王磊本周负载 112%，向量索引任务已逾期。建议重新分配任务或调整截止日期，否则可能影响 8 月 30 日上线。
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-todos" class="mtab-panel" style="display: none;">
+                <div class="card">
+                  <div class="card-header"><div class="card-title"><i data-lucide="list-checks"></i> 会议待办</div></div>
+                  <div class="list" id="meeting-todos">
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">林哲整理会议纪要并同步全员</div>
+                      <span class="task-priority priority-p1">P1</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">今日</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">陈思更新 Q3 路线图 PRD</div>
+                      <span class="task-priority priority-p1">P1</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.04</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">王磊评估 fallback 策略可行性</div>
+                      <span class="task-priority priority-p0">P0</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.03</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">预约 7 月 15 日中期风险评审会</div>
+                      <span class="task-priority priority-p2">P2</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.05</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-transcript" class="mtab-panel" style="display: none;">
+                <div class="card">
+                  <div class="transcript-line">
+                    <div class="speaker">LZ</div>
+                    <div>
+                      <div class="transcript-time">10:02 · 林哲</div>
+                      <div class="transcript-text">我们先确认一下 Q3 的三个核心项目。第一个，AI 客服知识库重构，目前进度 62%，但已经有 5 项任务逾期。</div>
+                    </div>
+                  </div>
+                  <div class="transcript-line">
+                    <div class="speaker" style="color: var(--accent);">WL</div>
+                    <div>
+                      <div class="transcript-time">10:04 · 王磊</div>
+                      <div class="transcript-text">向量索引这块主要是数据清洗脚本卡在第三方接口限流上，我已经在协调加 quota，预计明天能恢复。</div>
+                    </div>
+                  </div>
+                  <div class="transcript-line">
+                    <div class="speaker" style="color: var(--info);">CS</div>
+                    <div>
+                      <div class="transcript-time">10:07 · 陈思</div>
+                      <div class="transcript-text">从需求侧看，8 月 30 日上线是业务方已经承诺给客户的时间，不建议后移。我们可以砍掉 P1 需求 fallback 的精细化配置，先保证主路径可用。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-analysis" class="mtab-panel" style="display: none;">
+                <div class="card empty-state" style="min-height: 280px;">
+                  <i data-lucide="bar-chart-2"></i>
+                  <h3>深度分析生成中</h3>
+                  <p>Hermes 正在交叉比对会议纪要、任务状态与项目历史数据，预计需要 30 秒。</p>
+                  <button class="btn btn-secondary mt-3" onclick="startAnalysis(this)">
+                    <i data-lucide="sparkles"></i>
+                    立即生成
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Project data
+    const projects = [
+      { id: 'PROJ-2026-0084', name: 'AI 客服知识库重构', stage: '开发中', progress: 62, risk: 'high', days: 59, sync: '今日 08:32' },
+      { id: 'PROJ-2026-0071', name: '统一接入平台', stage: '测试中', progress: 78, risk: 'medium', days: 34, sync: '今日 08:30' },
+      { id: 'PROJ-2026-0063', name: '数据看板 v2.0', stage: '需求分析', progress: 32, risk: 'low', days: 91, sync: '昨日 19:12' },
+      { id: 'PROJ-2026-0058', name: '移动端 SDK 升级', stage: '已上线', progress: 100, risk: 'low', days: 0, sync: '昨日 16:45' },
+      { id: 'PROJ-2026-0052', name: '销售线索智能分发', stage: '招募中', progress: 12, risk: 'low', days: 120, sync: '2026.06.28' },
+      { id: 'PROJ-2026-0049', name: '内部权限体系重构', stage: '开发中', progress: 55, risk: 'medium', days: 45, sync: '2026.06.30' },
+    ];
+
+    const stageStyles = {
+      '需求分析': 'status-info',
+      '开发中': 'status-warning',
+      '测试中': 'status-info',
+      '已上线': 'status-success',
+      '招募中': 'status-neutral'
+    };
+
+    const riskStyles = {
+      'high': { cls: 'status-error', label: '高风险' },
+      'medium': { cls: 'status-warning', label: '中风险' },
+      'low': { cls: 'status-success', label: '低风险' }
+    };
+
+    function renderProjects() {
+      const grid = document.getElementById('projects-grid');
+      grid.innerHTML = projects.map(p => `
+        <div class="project-card" onclick="goTo('project')">
+          <div class="project-card-header">
+            <div>
+              <div class="project-name">${p.name}</div>
+              <div class="project-id mono">${p.id}</div>
+            </div>
+            <span class="list-status ${stageStyles[p.stage]}">${p.stage}</span>
+          </div>
+          <div class="project-meta-row">
+            <span>进度</span>
+            <span class="mono" style="font-weight: 600; color: var(--text-primary);">${p.progress}%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width: ${p.progress}%"></div></div>
+          <div class="project-meta-row" style="margin-top: 6px;">
+            <span>截止剩余</span>
+            <span class="mono">${p.days} 天</span>
+          </div>
+          <div class="project-meta-row" style="margin-top: 4px;">
+            <span>风险</span>
+            <span class="list-status ${riskStyles[p.risk].cls}">${riskStyles[p.risk].label}</span>
+          </div>
+          <div class="project-meta-row" style="margin-top: 4px;">
+            <span>最后同步</span>
+            <span>${p.sync}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderProjects();
+
+    // Navigation
+    function goTo(pageId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+      document.querySelector(`.nav-item[data-page="${pageId}"]`)?.classList.add('active');
+      document.getElementById(`page-${pageId}`)?.classList.add('active');
+      window.scrollTo(0, 0);
+      lucide.createIcons();
+    }
+
+    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+      item.addEventListener('click', () => goTo(item.dataset.page));
+    });
+
+    // Project detail tabs
+    document.querySelectorAll('#page-project .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#page-project .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#page-project .tab-panel').forEach(p => p.style.display = 'none');
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).style.display = 'block';
+      });
+    });
+
+    // Meeting tabs
+    document.querySelectorAll('[data-mtab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('[data-mtab]').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mtab-panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        tab.classList.add('active');
+        const panel = document.getElementById(`mtab-${tab.dataset.mtab}`);
+        panel.style.display = 'block';
+        panel.classList.add('active');
+      });
+    });
+
+    // Checkbox interactions
+    function toggleTask(row) {
+      const cb = row.querySelector('.checkbox');
+      const title = row.querySelector('.task-title');
+      cb.classList.toggle('checked');
+      title.classList.toggle('done');
+    }
+
+    function toggleImport(el) {
+      const cb = el.querySelector('.checkbox');
+      cb.classList.toggle('checked');
+    }
+
+    // Daily generation loading + error demo
+    function generateDaily() {
+      const btn = document.getElementById('btn-generate-daily');
+      const overlay = document.getElementById('daily-loading');
+      const error = document.getElementById('daily-error');
+      error.style.display = 'none';
+      overlay.classList.add('show');
+      btn.disabled = true;
+
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        btn.disabled = false;
+        // Demo: show error state once, then success on retry
+        if (!window._dailyGenerated) {
+          error.style.display = 'flex';
+          window._dailyGenerated = true;
+        } else {
+          const list = document.getElementById('daily-task-list');
+          const newTask = document.createElement('div');
+          newTask.className = 'task-row';
+          newTask.onclick = function() { toggleTask(this); };
+          newTask.innerHTML = `
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <div class="task-title">[AI 生成] 审阅 Q3 路线图资源冲突表</div>
+            <span class="task-priority priority-p1">P1</span>
+            <span class="text-tertiary mono" style="font-size: 11px;">今日</span>
+          `;
+          list.appendChild(newTask);
+          lucide.createIcons();
+        }
+      }, 1400);
+    }
+
+    // Recording selection
+    function selectRecording(el, key) {
+      document.querySelectorAll('.recording-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Sync todos demo
+    function syncTodos() {
+      const btn = event.currentTarget;
+      const original = btn.innerHTML;
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 同步中…`;
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = `<i data-lucide="check"></i> 已同步 4 条待办`;
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+        lucide.createIcons();
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.add('btn-secondary');
+          btn.classList.remove('btn-primary');
+          btn.disabled = false;
+          lucide.createIcons();
+        }, 2000);
+      }, 1200);
+    }
+
+    // Analysis demo
+    function startAnalysis(btn) {
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 分析中…`;
+      btn.disabled = true;
+      setTimeout(() => {
+        const panel = document.getElementById('mtab-analysis');
+        panel.innerHTML = `
+          <div class="card mb-3">
+            <div class="card-header"><div class="card-title"><i data-lucide="bar-chart-2"></i> 会议健康度</div></div>
+            <div class="grid-3">
+              <div><div class="metric-value" style="font-size: 22px;">82</div><div class="text-secondary" style="font-size: 12px;">讨论聚焦度</div></div>
+              <div><div class="metric-value" style="font-size: 22px;">7</div><div class="text-secondary" style="font-size: 12px;">行动项</div></div>
+              <div><div class="metric-value" style="font-size: 22px;">2</div><div class="text-secondary" style="font-size: 12px;">未解决分歧</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="trending-up"></i> 趋势洞察</div></div>
+            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+              近 4 次会议中，「向量索引」与「fallback 策略」被提及 11 次，是当前项目最大阻塞点。建议将这两项拆分为独立专项跟踪，并在 7 月 8 日前安排一次技术攻坚会。
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+      }, 1600);
+    }
+
+    // Chip interactions (visual only)
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const group = chip.closest('.chip-group');
+        if (group) group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.toggle('active');
+      });
+    });
+
+    // Keyboard shortcut for search
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('.search-box input').focus();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,3928 @@
+<!--
+  openclaw · 全页面高保真设计原型 v1
+  ─────────────────────────────────────
+  设计方向：方向 C · Stripe 设计团队
+  视觉系统：温暖深炭黑底 + 琥珀金 accent #c9a86c
+
+  包含页面：
+  1. 今日工作驾驶舱（Dashboard）
+  2. 日报计划（Daily）
+  3. 项目列表（Projects）
+  4. 项目详情（Project Detail · 6 Tab）
+  5. 工作流（Workflow）
+  6. 会议助手（Meeting Assistant）
+  7. Hermes Agent 对话（Agent Chat）
+  8. 快速搜索（Quick Search）
+  9. 员工目录（Employee Directory）
+  10. 团队看板（Team Kanban）
+  11. 工具台（Tools）
+
+  技术约束：
+  - 单文件 HTML，内联 CSS/JS
+  - 字体：DM Sans + JetBrains Mono + 系统中文字体栈
+  - 图标：Lucide via CDN
+  - 无 emoji、无紫渐变、无 SVG 手绘人物
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>openclaw · 全页面高保真原型 v1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      /* Stripe-inspired warm dark palette */
+      --bg-root: #0d0d0f;
+      --bg-surface: #131316;
+      --bg-elevated: #1a1a1e;
+      --bg-hover: #212125;
+      --bg-active: #2a2a2f;
+      --border-subtle: #242429;
+      --border-strong: #33333a;
+      --text-primary: #f2f2f5;
+      --text-secondary: #9b9ba3;
+      --text-tertiary: #6b6b74;
+      --accent: #c9a86c;
+      --accent-hover: #d9bc86;
+      --accent-soft: rgba(201, 168, 108, 0.12);
+      --success: #6a9e7f;
+      --success-soft: rgba(106, 158, 127, 0.12);
+      --warning: #c9a35c;
+      --warning-soft: rgba(201, 163, 92, 0.12);
+      --error: #c97b6d;
+      --error-soft: rgba(201, 123, 109, 0.12);
+      --info: #7a9fc9;
+      --info-soft: rgba(122, 159, 201, 0.12);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
+      --transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
+      --transition-base: 180ms cubic-bezier(0.25, 0.1, 0.25, 1);
+      --transition-slow: 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+      --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      --font-display: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg-root);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-wrap: pretty;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #404047; }
+
+    /* Layout */
+    .app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 14px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a88a52 100%);
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-mark svg { width: 16px; height: 16px; color: #0d0d0f; }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .brand-beta {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 2px;
+    }
+
+    .nav-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      padding: 12px 10px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 10px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--bg-active);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .nav-item svg {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      stroke-width: 1.8;
+    }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+    }
+
+    .user-card {
+      margin: 14px 12px 0;
+      padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .user-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-hover);
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      flex-shrink: 0;
+    }
+
+    .avatar-lg {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+
+    .user-info { overflow: hidden; }
+    .user-name { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .user-role { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+    /* Main area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg-root);
+    }
+
+    .topbar {
+      height: 60px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(13, 13, 15, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 320px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+
+    .search-box:hover, .search-box:focus-within {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .search-box svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .search-box input {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      outline: none;
+      width: 100%;
+    }
+
+    .search-box input::placeholder { color: var(--text-tertiary); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .icon-btn svg { width: 17px; height: 17px; }
+
+    .icon-btn .dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      background: var(--error);
+      border-radius: 50%;
+      border: 2px solid var(--bg-root);
+    }
+
+    /* Page content */
+    .page {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    .page.active { display: block; }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title-group h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .page-subtitle {
+      margin-top: 6px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .btn svg { width: 15px; height: 15px; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d0d0f;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 0 rgba(255,255,255,0.12) inset, var(--shadow-md);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+    .btn-danger {
+      background: var(--error-soft);
+      color: var(--error);
+      border-color: rgba(201, 123, 109, 0.25);
+    }
+
+    .btn-danger:hover { background: rgba(201, 123, 109, 0.18); }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      transition: all var(--transition-base);
+    }
+
+    .card-hover:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .card-title svg { width: 15px; height: 15px; color: var(--accent); }
+
+    /* Metric cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      transition: all var(--transition-base);
+      cursor: default;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .metric-delta {
+      font-size: 12px;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .metric-delta.up { color: var(--success); }
+    .metric-delta.down { color: var(--error); }
+    .metric-delta.neutral { color: var(--text-secondary); }
+
+    /* Grid layouts */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+    /* Lists */
+    .list { display: flex; flex-direction: column; gap: 8px; }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .list-item:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-subtle);
+    }
+
+    .list-item.active {
+      background: var(--bg-active);
+      border-color: var(--border-strong);
+    }
+
+    .list-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .list-icon svg { width: 16px; height: 16px; }
+
+    .list-content { flex: 1; min-width: 0; }
+    .list-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .list-meta { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+
+    .list-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .status-success { background: var(--success-soft); color: var(--success); }
+    .status-warning { background: var(--warning-soft); color: var(--warning); }
+    .status-error { background: var(--error-soft); color: var(--error); }
+    .status-info { background: var(--info-soft); color: var(--info); }
+    .status-neutral { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+
+    /* Tags */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+    }
+
+    .tag-accent { background: var(--accent-soft); color: var(--accent); border-color: rgba(201, 168, 108, 0.22); }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 6px;
+      background: var(--bg-hover);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all var(--transition-fast);
+    }
+
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent); border-color: var(--accent); }
+
+    /* Project cards */
+    .project-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .project-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .project-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .project-name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+    .project-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 3px;
+    }
+
+    .project-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Task list */
+    .task-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .task-row:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-subtle);
+    }
+
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      transition: all var(--transition-fast);
+    }
+
+    .checkbox:hover { border-color: var(--accent); }
+    .checkbox.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox svg { width: 10px; height: 10px; color: #0d0d0f; display: none; }
+    .checkbox.checked svg { display: block; }
+
+    .task-title { font-weight: 500; color: var(--text-primary); }
+    .task-title.done { text-decoration: line-through; color: var(--text-tertiary); }
+    .task-priority {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .priority-p0 { background: var(--error-soft); color: var(--error); }
+    .priority-p1 { background: var(--warning-soft); color: var(--warning); }
+    .priority-p2 { background: var(--info-soft); color: var(--info); }
+
+    /* Empty state */
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--text-secondary);
+      gap: 12px;
+    }
+
+    .empty-state svg { width: 40px; height: 40px; color: var(--text-tertiary); }
+    .empty-state h3 { margin: 0; color: var(--text-primary); font-size: 15px; }
+    .empty-state p { margin: 0; font-size: 13px; max-width: 280px; }
+
+    /* Error state */
+    .error-banner {
+      background: var(--error-soft);
+      border: 1px solid rgba(201, 123, 109, 0.25);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--error);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .error-banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 13, 15, 0.7);
+      backdrop-filter: blur(2px);
+      border-radius: inherit;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-strong);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: var(--border-subtle);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 18px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 3px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-strong);
+    }
+
+    .timeline-item.completed .timeline-dot { border-color: var(--accent); background: var(--accent); }
+    .timeline-item.active .timeline-dot { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+    .timeline-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .timeline-date { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Chips / filters */
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+    .chip.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(201, 168, 108, 0.25); }
+
+    /* Inline code / mono */
+    .mono { font-family: var(--font-mono); }
+
+    /* Utilities */
+    .text-secondary { color: var(--text-secondary); }
+    .text-tertiary { color: var(--text-tertiary); }
+    .mb-0 { margin-bottom: 0; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .relative { position: relative; }
+    .w-full { width: 100%; }
+    .h-3 { height: 12px; }
+    .h-4 { height: 16px; }
+    .h-24 { height: 96px; }
+
+    /* Daily layout */
+    .daily-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+
+    .input-area {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    textarea, input[type="text"], input[type="search"] {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font: inherit;
+      resize: vertical;
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    textarea:focus, input[type="text"]:focus, input[type="search"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    textarea::placeholder, input::placeholder { color: var(--text-tertiary); }
+
+    .import-source {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin-bottom: 8px;
+    }
+
+    .import-source:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .import-source svg { width: 15px; height: 15px; color: var(--accent); }
+    .import-source-title { font-weight: 600; font-size: 12px; color: var(--text-primary); }
+    .import-source-desc { font-size: 11px; color: var(--text-secondary); }
+
+    /* Meeting assistant */
+    .meeting-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 160px); }
+
+    .recording-list {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .recording-list-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .recording-items { flex: 1; overflow-y: auto; }
+
+    .recording-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .recording-item:hover { background: var(--bg-elevated); }
+    .recording-item.active { background: var(--bg-active); }
+
+    .recording-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .recording-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: flex; gap: 10px; }
+
+    .meeting-detail {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .meeting-detail-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .meeting-detail-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .transcript-line {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .speaker {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .transcript-time { font-size: 11px; color: var(--text-tertiary); margin-bottom: 2px; }
+    .transcript-text { color: var(--text-primary); line-height: 1.6; }
+
+    /* Workflow */
+    .workflow-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; height: calc(100vh - 160px); }
+
+    .workflow-trigger {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .workflow-history {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .workflow-history-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .workflow-history-items { flex: 1; overflow-y: auto; }
+
+    .workflow-history-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .workflow-history-item:hover { background: var(--bg-elevated); }
+    .workflow-history-item.active { background: var(--bg-active); }
+
+    .workflow-result {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .workflow-result-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .result-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .result-card h4 {
+      margin: 0 0 10px 0;
+      font-size: 13px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-card p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .result-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .result-card code {
+      font-family: var(--font-mono);
+      background: var(--bg-hover);
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Agent Chat */
+    .agent-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; height: calc(100vh - 160px); }
+
+    .agent-sidebar {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .agent-sidebar-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-conversations { flex: 1; overflow-y: auto; }
+
+    .agent-conversation {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .agent-conversation:hover { background: var(--bg-elevated); }
+    .agent-conversation.active { background: var(--bg-active); }
+
+    .agent-conversation-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .agent-conversation-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+    .agent-chat {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .agent-chat-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .agent-message {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+    }
+
+    .agent-message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .agent-message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .agent-message-avatar.bot {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .agent-message-avatar.user {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+    }
+
+    .agent-message-bubble {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .agent-message.user .agent-message-bubble {
+      background: var(--accent-soft);
+      border-color: rgba(201, 168, 108, 0.22);
+    }
+
+    .agent-message-time {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    .agent-tool-call {
+      background: var(--bg-root);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .agent-tool-call-header {
+      padding: 8px 12px;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .agent-tool-call-header svg { width: 14px; height: 14px; color: var(--accent); }
+
+    .agent-tool-call-body {
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      display: none;
+    }
+
+    .agent-tool-call.expanded .agent-tool-call-body { display: block; }
+
+    .agent-chat-input {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 10px;
+    }
+
+    .agent-chat-input input {
+      flex: 1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font: inherit;
+      outline: none;
+    }
+
+    .agent-chat-input input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .agent-chat-input input::placeholder { color: var(--text-tertiary); }
+
+    /* Quick Search */
+    .quicksearch-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; height: calc(100vh - 160px); }
+
+    .quicksearch-list {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .quicksearch-items { flex: 1; overflow-y: auto; }
+
+    .quicksearch-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quicksearch-item:hover { background: var(--bg-elevated); }
+    .quicksearch-item.active { background: var(--bg-active); }
+
+    .quicksearch-item-title { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+    .quicksearch-item-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+    .quicksearch-detail {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .quicksearch-detail-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .stream-text::after {
+      content: "▋";
+      color: var(--accent);
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Employee Directory */
+    .employee-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    .employee-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-align: center;
+    }
+
+    .employee-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .employee-card .avatar {
+      margin: 0 auto 12px;
+      width: 56px;
+      height: 56px;
+      font-size: 18px;
+    }
+
+    .employee-name { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+    .employee-role { color: var(--text-secondary); font-size: 12px; margin-top: 4px; }
+    .employee-dept { color: var(--text-tertiary); font-size: 11px; margin-top: 2px; }
+    .employee-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--success);
+      background: var(--success-soft);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .employee-status.away { color: var(--warning); background: var(--warning-soft); }
+    .employee-status.busy { color: var(--error); background: var(--error-soft); }
+
+    .employee-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Team Kanban */
+    .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    .kanban-column {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 320px;
+    }
+
+    .kanban-column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .kanban-count {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      background: var(--bg-elevated);
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    .kanban-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .kanban-card:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+
+    .kanban-card-title { font-weight: 600; color: var(--text-primary); font-size: 12px; }
+    .kanban-card-meta { color: var(--text-secondary); font-size: 11px; margin-top: 6px; }
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .schedule-table th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-subtle);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    .schedule-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .schedule-table tr:hover td { background: var(--bg-elevated); }
+
+    /* Tools */
+    .tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    .tool-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tool-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .tool-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+    }
+
+    .tool-icon svg { width: 20px; height: 20px; }
+
+    .tool-name { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+    .tool-desc { color: var(--text-secondary); font-size: 12px; line-height: 1.6; flex: 1; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 13, 15, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+      animation: modalIn 180ms ease-out;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+
+    .modal-body { padding: 20px; }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 200;
+    }
+
+    .toast {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-primary);
+      animation: toastIn 180ms ease-out;
+      min-width: 260px;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .toast.success svg { color: var(--success); }
+    .toast.error svg { color: var(--error); }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .metrics-row { grid-template-columns: repeat(2, 1fr); }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-5 { grid-template-columns: repeat(3, 1fr); }
+      .employee-grid { grid-template-columns: repeat(2, 1fr); }
+      .tools-grid { grid-template-columns: repeat(2, 1fr); }
+      .kanban-board { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 64px; }
+      .brand { padding: 0 18px 22px; justify-content: center; }
+      .brand-name, .brand-beta, .nav-item span, .nav-label, .user-info { display: none; }
+      .nav-item { justify-content: center; padding: 12px; }
+      .nav-item.active::before { left: -12px; }
+      .user-card { justify-content: center; padding: 10px; }
+      .grid-2, .grid-3, .daily-layout, .meeting-layout, .workflow-layout, .agent-layout, .quicksearch-layout { grid-template-columns: 1fr; }
+      .metrics-row { grid-template-columns: 1fr; }
+      .grid-4, .grid-5 { grid-template-columns: 1fr; }
+      .employee-grid { grid-template-columns: 1fr; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .kanban-board { grid-template-columns: 1fr; }
+      .search-box { width: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <i data-lucide="hexagon"></i>
+        </div>
+        <div>
+          <span class="brand-name">openclaw</span>
+          <span class="brand-beta">v1</span>
+        </div>
+      </div>
+
+      <nav class="nav-section">
+        <div class="nav-label">工作区</div>
+        <div class="nav-item active" data-page="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>今日驾驶舱</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="nav-item" data-page="daily">
+          <i data-lucide="calendar-check"></i>
+          <span>日报计划</span>
+        </div>
+        <div class="nav-item" data-page="projects">
+          <i data-lucide="layers"></i>
+          <span>项目列表</span>
+        </div>
+        <div class="nav-item" data-page="project">
+          <i data-lucide="clipboard-list"></i>
+          <span>项目详情</span>
+        </div>
+        <div class="nav-item" data-page="workflow">
+          <i data-lucide="zap"></i>
+          <span>工作流</span>
+        </div>
+        <div class="nav-item" data-page="meeting">
+          <i data-lucide="mic"></i>
+          <span>会议助手</span>
+        </div>
+
+        <div class="nav-label" style="margin-top: 10px;">智能体</div>
+        <div class="nav-item" data-page="agent">
+          <i data-lucide="bot"></i>
+          <span>Hermes Agent</span>
+        </div>
+        <div class="nav-item" data-page="quicksearch">
+          <i data-lucide="search"></i>
+          <span>快速搜索</span>
+        </div>
+
+        <div class="nav-label" style="margin-top: 10px;">团队</div>
+        <div class="nav-item" data-page="employees">
+          <i data-lucide="users"></i>
+          <span>员工目录</span>
+        </div>
+        <div class="nav-item" data-page="kanban">
+          <i data-lucide="columns-3"></i>
+          <span>团队看板</span>
+        </div>
+
+        <div class="nav-label" style="margin-top: 10px;">工具台</div>
+        <div class="nav-item" data-page="tools" data-tool="auto-order">
+          <i data-lucide="shopping-cart"></i>
+          <span>自动下单</span>
+        </div>
+        <div class="nav-item" data-page="chat-analyzer" data-tool="chat-analyzer">
+          <i data-lucide="message-square-text"></i>
+          <span>聊天记录分析</span>
+        </div>
+      </nav>
+
+      <div class="user-card">
+        <div class="avatar">LZ</div>
+        <div class="user-info">
+          <div class="user-name">林 哲</div>
+          <div class="user-role">项目总监 · 产品研发中心</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="search-box">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="搜索项目、任务、会议、知识库…" />
+          <span class="mono text-tertiary" style="font-size: 11px;">⌘K</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" title="通知" onclick="showToast('success', '暂无新通知')">
+            <i data-lucide="bell"></i>
+            <span class="dot"></span>
+          </button>
+          <button class="icon-btn" title="帮助" onclick="showToast('info', '帮助中心即将上线')">
+            <i data-lucide="help-circle"></i>
+          </button>
+          <button class="icon-btn" title="设置" onclick="showToast('info', '设置面板开发中')">
+            <i data-lucide="settings"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page: Dashboard -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>今日工作驾驶舱</h1>
+            <div class="page-subtitle">2026 年 7 月 2 日 · 周四 · AI 助手已于 08:32 完成晨间同步</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" onclick="syncData(this)">
+              <i data-lucide="refresh-cw"></i>
+              同步数据
+            </button>
+            <button class="btn btn-primary" onclick="goTo('daily')">
+              <i data-lucide="plus"></i>
+              生成日报
+            </button>
+          </div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="video"></i> 今日会议</div>
+            <div class="metric-value">3</div>
+            <div class="metric-delta up">下一场 14:00 · 架构评审</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="check-square"></i> 待办任务</div>
+            <div class="metric-value">12</div>
+            <div class="metric-delta down">2 项已逾期 · 需关注</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="alert-triangle"></i> 风险项目</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">1 个进度偏差 · 1 个资源冲突</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label"><i data-lucide="heart-pulse"></i> 项目健康度</div>
+            <div class="metric-value">87<span style="font-size: 16px; color: var(--text-secondary);">%</span></div>
+            <div class="metric-delta up">较上周 +4%</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="video"></i> 今日会议</div>
+              <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;" onclick="goTo('meeting')">查看全部</button>
+            </div>
+            <div class="list">
+              <div class="list-item active">
+                <div class="list-icon" style="color: var(--accent);">
+                  <i data-lucide="users"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">AI 客服知识库重构 · 架构评审</div>
+                  <div class="list-meta">14:00 · 腾讯会议 · 参与人 7</div>
+                </div>
+                <span class="list-status status-warning">待开始</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="briefcase"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">Q3 产品路线图对齐</div>
+                  <div class="list-meta">10:00 · 已结束 · 待分析</div>
+                </div>
+                <span class="list-status status-info">转写中</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="git-branch"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">研发周会 · 第 27 期</div>
+                  <div class="list-meta">周一 09:30 · 已完成纪要</div>
+                </div>
+                <span class="list-status status-success">已同步</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="check-square"></i> 今日任务</div>
+              <div class="chip-group">
+                <span class="chip active">全部</span>
+                <span class="chip">P0</span>
+                <span class="chip">已逾期</span>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-icon" style="color: var(--error);">
+                  <i data-lucide="flag"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">确认检索模块的 fallback 策略</div>
+                  <div class="list-meta">AI 客服知识库重构 · 逾期 1 天</div>
+                </div>
+                <span class="list-status status-error">P0</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon" style="color: var(--warning);">
+                  <i data-lucide="message-square"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">整理 Q3 路线图会议纪要</div>
+                  <div class="list-meta">来自会议 · 今日 18:00 截止</div>
+                </div>
+                <span class="list-status status-warning">P1</span>
+              </div>
+              <div class="list-item">
+                <div class="list-icon">
+                  <i data-lucide="file-text"></i>
+                </div>
+                <div class="list-content">
+                  <div class="list-title">输出 API 网关压测报告</div>
+                  <div class="list-meta">统一接入平台 · 今日 20:00 截止</div>
+                </div>
+                <span class="list-status status-neutral">P2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 20px;">
+          <div class="card card-hover" onclick="goTo('projects')">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="heart-pulse"></i> 项目健康度</div>
+              <span class="tag tag-accent">实时</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+              <span style="font-size: 32px; font-weight: 700; font-family: var(--font-display);">87%</span>
+              <span style="color: var(--success); font-size: 12px; font-weight: 600;">↑ 4%</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-fill" style="width: 87%;"></div></div>
+            <div class="text-secondary mt-2" style="font-size: 12px;">18 个执行中项目 · 2 个需关注</div>
+          </div>
+
+          <div class="card card-hover" onclick="goTo('agent')">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="bot"></i> AI 待分析</div>
+              <span class="tag">3 条</span>
+            </div>
+            <div class="list-meta mb-3">以下会话包含潜在任务或决策，建议让 Hermes 分析：</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;">
+                <i data-lucide="message-circle" style="width: 13px; height: 13px;"></i>
+                飞书群 · 架构方案讨论（126 条）
+              </div>
+              <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;">
+                <i data-lucide="mail" style="width: 13px; height: 13px;"></i>
+                邮件 · 客户需求变更确认
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="zap"></i> 快捷操作</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;" onclick="goTo('daily')">
+                <span class="flex items-center gap-2"><i data-lucide="calendar"></i> 生成今日日报</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;" onclick="goTo('meeting')">
+                <span class="flex items-center gap-2"><i data-lucide="mic"></i> 分析最新会议</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn btn-secondary justify-between" style="justify-content: space-between;" onclick="goTo('workflow')">
+                <span class="flex items-center gap-2"><i data-lucide="scan"></i> 扫描项目风险</span>
+                <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Projects -->
+      <section class="page" id="page-projects">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>项目列表</h1>
+            <div class="page-subtitle">管理全部项目进度、阶段、风险与同步状态</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="filter"></i>
+              筛选
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="plus"></i>
+              新建项目
+            </button>
+          </div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">总项目</div>
+            <div class="metric-value">24</div>
+            <div class="metric-delta up">较上月 +3</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">执行中</div>
+            <div class="metric-value">18</div>
+            <div class="metric-delta up">占总数 75%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">招募中</div>
+            <div class="metric-value">4</div>
+            <div class="metric-delta neutral">等待资源到位</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">高风险</div>
+            <div class="metric-value">2</div>
+            <div class="metric-delta down">需本周内处理</div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div class="search-box" style="width: 280px;">
+              <i data-lucide="search"></i>
+              <input type="text" placeholder="搜索项目名称、ID、负责人…" />
+            </div>
+            <div class="chip-group">
+              <span class="chip active">全部阶段</span>
+              <span class="chip">需求分析</span>
+              <span class="chip">开发中</span>
+              <span class="chip">测试验收</span>
+              <span class="chip">已上线</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-4" id="projects-grid">
+          <!-- Generated by JS -->
+        </div>
+      </section>
+
+      <!-- Page: Project Detail -->
+      <section class="page" id="page-project">
+        <div class="page-header">
+          <div class="page-title-group">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+              <h1 style="margin: 0;">AI 客服知识库重构</h1>
+              <span class="tag tag-accent">开发中</span>
+              <span class="tag" style="background: var(--error-soft); color: var(--error); border-color: rgba(201, 123, 109, 0.22);">高风险</span>
+            </div>
+            <div class="page-subtitle">
+              <span class="mono">PROJ-2026-0084</span> · 负责人 林哲 · 2026.05.12 - 2026.08.30
+            </div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" onclick="syncData(this)">
+              <i data-lucide="refresh-cw"></i>
+              同步知识库
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="git-pull-request"></i>
+              创建任务
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="overview">概览</div>
+          <div class="tab" data-tab="requirements">需求</div>
+          <div class="tab" data-tab="tasks">任务</div>
+          <div class="tab" data-tab="members">成员</div>
+          <div class="tab" data-tab="deliverables">交付</div>
+          <div class="tab" data-tab="logs">日志</div>
+        </div>
+
+        <div id="tab-overview" class="tab-panel active">
+          <div class="grid-4 mb-4">
+            <div class="card">
+              <div class="metric-label">整体进度</div>
+              <div class="metric-value">62<span style="font-size: 16px; color: var(--text-secondary);">%</span></div>
+              <div class="progress-wrap"><div class="progress-fill" style="width: 62%;"></div></div>
+            </div>
+            <div class="card">
+              <div class="metric-label">剩余任务</div>
+              <div class="metric-value">18</div>
+              <div class="metric-delta down">5 项已逾期</div>
+            </div>
+            <div class="card">
+              <div class="metric-label">风险数</div>
+              <div class="metric-value">3</div>
+              <div class="metric-delta down">2 个高优先级</div>
+            </div>
+            <div class="card">
+              <div class="metric-label">最后同步</div>
+              <div class="metric-value" style="font-size: 20px; margin-top: 4px;">08:32</div>
+              <div class="metric-delta up">今日 · 来源 飞书文档</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i data-lucide="book-open"></i> 知识库摘要</div>
+                <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看原文</button>
+              </div>
+              <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.7;">
+                <p style="margin: 0 0 12px 0;">本项目旨在将现有 FAQ 与工单数据迁移至向量检索引擎，并引入 LLM 生成式回答能力。关键约束包括：</p>
+                <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary);">
+                  <li>回答准确率需 ≥ 92%，拒答率控制在 8% 以内。</li>
+                  <li>检索延迟 P99 必须低于 280ms。</li>
+                  <li>需与现有客服工作台保持 SSO 与权限体系一致。</li>
+                </ul>
+              </div>
+              <div class="mt-3" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="tag">向量检索</span>
+                <span class="tag">LLM</span>
+                <span class="tag">客服中台</span>
+                <span class="tag">SSO</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i data-lucide="route"></i> 阶段时间线</div>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item completed">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">需求确认 & 可行性评估</div>
+                  <div class="timeline-date">2026.05.12 - 2026.05.30 · 已完成</div>
+                </div>
+                <div class="timeline-item completed">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">方案设计 & 技术评审</div>
+                  <div class="timeline-date">2026.06.01 - 2026.06.20 · 已完成</div>
+                </div>
+                <div class="timeline-item active">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">核心开发 & 集成测试</div>
+                  <div class="timeline-date">2026.06.23 - 2026.08.10 · 进行中</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">灰度发布 & 效果验收</div>
+                  <div class="timeline-date">2026.08.11 - 2026.08.30 · 未开始</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="lightbulb"></i> AI 行动建议</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="alert-circle"></i>
+                <div>
+                  <div class="import-source-title">处理逾期任务</div>
+                  <div class="import-source-desc">5 项任务已逾期，建议立即召开 15 分钟站会对齐阻塞点。</div>
+                </div>
+              </div>
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="file-input"></i>
+                <div>
+                  <div class="import-source-title">同步会议纪要</div>
+                  <div class="import-source-desc">上周架构评审纪要含 3 条待确认决策，可导入为项目任务。</div>
+                </div>
+              </div>
+              <div class="import-source" style="margin: 0;">
+                <i data-lucide="users"></i>
+                <div>
+                  <div class="import-source-title">资源冲突预警</div>
+                  <div class="import-source-desc">后端工程师王磊本周负载 112%，建议调整任务排期。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-requirements" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="book-open"></i> 需求列表</div></div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-001 · 支持多轮对话上下文保持</div><div class="list-meta">优先级 P0 · 产品经理 陈思</div></div>
+                <span class="list-status status-success">已评审</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-002 · 检索结果可解释性与引用溯源</div><div class="list-meta">优先级 P0 · 产品经理 陈思</div></div>
+                <span class="list-status status-success">已评审</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-003 · 人工接管与反馈闭环</div><div class="list-meta">优先级 P1 · 产品经理 陈思</div></div>
+                <span class="list-status status-warning">待细化</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">REQ-004 · 拒答策略与兜底话术配置</div><div class="list-meta">优先级 P1 · 产品经理 陈思</div></div>
+                <span class="list-status status-info">评审中</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-tasks" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="check-square"></i> 任务看板</div>
+              <div class="chip-group">
+                <span class="chip active">全部</span>
+                <span class="chip">P0</span>
+                <span class="chip">P1</span>
+                <span class="chip">已逾期</span>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">完成向量索引构建脚本</div><div class="list-meta">负责人 王磊 · 截止 2026.07.01 · 已逾期</div></div>
+                <span class="list-status status-error">P0</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">设计 fallback 兜底策略</div><div class="list-meta">负责人 李明 · 截止 2026.07.05</div></div>
+                <span class="list-status status-warning">P1</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">接入客服工作台 SSO</div><div class="list-meta">负责人 张薇 · 截止 2026.07.08</div></div>
+                <span class="list-status status-neutral">P2</span>
+              </div>
+              <div class="list-item">
+                <div class="list-content"><div class="list-title">撰写向量检索压测方案</div><div class="list-meta">负责人 王磊 · 截止 2026.07.06</div></div>
+                <span class="list-status status-warning">P1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-members" class="tab-panel" style="display: none;">
+          <div class="grid-3">
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar">LZ</div><div><div class="list-title">林哲</div><div class="list-meta">项目负责人 · 产品研发中心</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--info-soft); color: var(--info);">CS</div><div><div class="list-title">陈思</div><div class="list-meta">产品经理 · 产品研发中心</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--success-soft); color: var(--success);">WL</div><div><div class="list-title">王磊</div><div class="list-meta">技术负责人 · 后端架构组</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--warning-soft); color: var(--warning);">LM</div><div><div class="list-title">李明</div><div class="list-meta">算法工程师 · AI 平台组</div></div></div></div>
+            <div class="card"><div class="flex items-center gap-3"><div class="avatar" style="background: var(--error-soft); color: var(--error);">ZW</div><div><div class="list-title">张薇</div><div class="list-meta">前端工程师 · 前端架构组</div></div></div></div>
+          </div>
+        </div>
+
+        <div id="tab-deliverables" class="tab-panel" style="display: none;">
+          <div class="card empty-state" style="min-height: 240px;">
+            <i data-lucide="package"></i>
+            <h3>暂无交付物</h3>
+            <p>当前阶段尚未产生可交付文档。可在任务完成后由负责人上传。</p>
+          </div>
+        </div>
+
+        <div id="tab-logs" class="tab-panel" style="display: none;">
+          <div class="card">
+            <div class="timeline">
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">林哲 同步了飞书文档</div><div class="timeline-date">2026.07.02 08:32</div></div>
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">Hermes 识别到 3 条风险并推送预警</div><div class="timeline-date">2026.07.01 21:15</div></div>
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">王磊 更新了任务状态：向量索引构建脚本 → 进行中</div><div class="timeline-date">2026.07.01 16:40</div></div>
+              <div class="timeline-item completed"><div class="timeline-dot"></div><div class="timeline-title">陈思 上传了 PRD v2.1</div><div class="timeline-date">2026.06.30 14:22</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Daily -->
+      <section class="page" id="page-daily">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>日报计划</h1>
+            <div class="page-subtitle">输入今日目标与背景，让 AI 生成可执行的任务清单</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">历史日报</button>
+            <button class="btn btn-primary" id="btn-generate-daily" onclick="generateDaily()">
+              <i data-lucide="sparkles"></i>
+              AI 生成今日计划
+            </button>
+          </div>
+        </div>
+
+        <div class="daily-layout">
+          <div class="input-area">
+            <label class="input-label">今日目标 / 背景</label>
+            <textarea rows="6" placeholder="例如：今天需要完成 AI 客服知识库重构的 fallback 策略评审，并同步 Q3 路线图给团队…"></textarea>
+
+            <label class="input-label mt-3">从其他来源导入</label>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="video"></i>
+              <div>
+                <div class="import-source-title">从会议导入待办</div>
+                <div class="import-source-desc">Q3 产品路线图对齐 · 3 条待确认</div>
+              </div>
+              <div class="checkbox" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="message-circle"></i>
+              <div>
+                <div class="import-source-title">从聊天导入行动项</div>
+                <div class="import-source-desc">飞书群 · 架构方案讨论 · 2 条</div>
+              </div>
+              <div class="checkbox" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+            <div class="import-source" onclick="toggleImport(this)">
+              <i data-lucide="history"></i>
+              <div>
+                <div class="import-source-title">继承昨日未完成</div>
+                <div class="import-source-desc">2 项任务未关闭 · 建议优先处理</div>
+              </div>
+              <div class="checkbox checked" style="margin-left: auto;"><i data-lucide="check"></i></div>
+            </div>
+
+            <div class="error-banner mt-3" id="daily-error" style="display: none;">
+              <i data-lucide="alert-circle"></i>
+              <span>生成失败：无法连接到 Hermes Agent，请检查网络后重试。</span>
+            </div>
+
+            <div class="card mt-3" style="padding: 12px;">
+              <div class="flex items-center gap-2" style="color: var(--warning); font-size: 12px;">
+                <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                <span>昨日有 2 项任务未关闭，已自动加入今日计划。</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="position: relative;">
+            <div class="loading-overlay" id="daily-loading">
+              <div class="spinner"></div>
+              <span style="color: var(--text-secondary); font-size: 13px;">Hermes 正在分析上下文…</span>
+            </div>
+
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="list-checks"></i> 今日任务</div>
+              <div class="chip-group">
+                <span class="chip active">全部</span>
+                <span class="chip">P0</span>
+                <span class="chip">会议</span>
+                <span class="chip">个人</span>
+              </div>
+            </div>
+
+            <div class="list" id="daily-task-list">
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox checked"><i data-lucide="check"></i></div>
+                <div class="task-title done">回复客户关于 SSO 时序的确认邮件</div>
+                <span class="task-priority priority-p2">P2</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">09:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">准备 AI 客服知识库重构 · 架构评审材料</div>
+                <span class="task-priority priority-p0">P0</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">14:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">整理 Q3 产品路线图会议纪要并同步团队</div>
+                <span class="task-priority priority-p1">P1</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">18:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">与王磊对齐向量索引逾期任务的补救方案</div>
+                <span class="task-priority priority-p0">P0</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">16:00</span>
+              </div>
+              <div class="task-row" onclick="toggleTask(this)">
+                <div class="checkbox"><i data-lucide="check"></i></div>
+                <div class="task-title">输出 API 网关压测报告初稿</div>
+                <span class="task-priority priority-p1">P1</span>
+                <span class="text-tertiary mono" style="font-size: 11px;">20:00</span>
+              </div>
+            </div>
+
+            <div class="mt-3" style="padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+              <button class="btn btn-ghost" style="width: 100%;" onclick="showToast('info', '添加任务功能开发中')">
+                <i data-lucide="plus"></i>
+                添加任务
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Meeting Assistant -->
+      <section class="page" id="page-meeting">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>会议助手</h1>
+            <div class="page-subtitle">录音、转写、纪要、待办一站式管理</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="upload"></i>
+              上传录音
+            </button>
+            <button class="btn btn-primary" onclick="showToast('info', '会议录制功能开发中')">
+              <i data-lucide="mic"></i>
+              开始新会议
+            </button>
+          </div>
+        </div>
+
+        <div class="meeting-layout">
+          <div class="recording-list">
+            <div class="recording-list-header">最近录音</div>
+            <div class="recording-items">
+              <div class="recording-item active" onclick="selectRecording(this, 'q3')">
+                <div class="recording-title">Q3 产品路线图对齐</div>
+                <div class="recording-meta"><span>2026.07.02</span><span>48 分钟</span><span class="status-success">已生成</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'review')">
+                <div class="recording-title">AI 客服知识库重构 · 架构评审</div>
+                <div class="recording-meta"><span>2026.06.30</span><span>62 分钟</span><span class="status-info">转写中</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'weekly')">
+                <div class="recording-title">研发周会 · 第 27 期</div>
+                <div class="recording-meta"><span>2026.06.29</span><span>35 分钟</span><span class="status-success">已生成</span></div>
+              </div>
+              <div class="recording-item" onclick="selectRecording(this, 'client')">
+                <div class="recording-title">客户需求变更沟通</div>
+                <div class="recording-meta"><span>2026.06.28</span><span>28 分钟</span><span class="status-warning">待分析</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meeting-detail">
+            <div class="meeting-detail-header">
+              <div>
+                <div style="font-weight: 700; font-size: 15px;">Q3 产品路线图对齐</div>
+                <div class="text-secondary mt-1" style="font-size: 12px;">2026.07.02 10:00 · 48 分钟 · 7 人参与</div>
+              </div>
+              <div class="page-actions">
+                <button class="btn btn-secondary" onclick="syncTodos(this)">
+                  <i data-lucide="arrow-right-left"></i>
+                  同步待办到日报
+                </button>
+                <button class="btn btn-primary">
+                  <i data-lucide="download"></i>
+                  下载音频
+                </button>
+              </div>
+            </div>
+
+            <div class="meeting-detail-body">
+              <div class="tabs">
+                <div class="tab active" data-mtab="summary">摘要</div>
+                <div class="tab" data-mtab="todos">待办</div>
+                <div class="tab" data-mtab="transcript">原文</div>
+                <div class="tab" data-mtab="analysis">深度分析</div>
+              </div>
+
+              <div id="mtab-summary" class="mtab-panel active">
+                <div class="card mb-3">
+                  <div class="card-header"><div class="card-title"><i data-lucide="file-text"></i> 会议纪要</div></div>
+                  <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                    <p style="margin: 0 0 12px;">本次会议对齐了 Q3 产品路线图，重点讨论了 AI 客服知识库重构、统一接入平台与数据看板三个项目的资源排期与里程碑。</p>
+                    <p style="margin: 0 0 12px;">关键决策：AI 客服知识库重构的上线时间保持不变（8 月 30 日），但需增加一次中期风险评审；统一接入平台延后 2 周进入测试。</p>
+                    <p style="margin: 0;">下步行动：由林哲整理会议纪要并同步全员，陈思更新 PRD，王磊评估 fallback 策略。</p>
+                  </div>
+                </div>
+
+                <div class="grid-2">
+                  <div class="card">
+                    <div class="card-header"><div class="card-title"><i data-lucide="check-square"></i> 关键决策</div></div>
+                    <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                      <li>8 月 30 日上线时间不变。</li>
+                      <li>统一接入平台测试阶段延后 2 周。</li>
+                      <li>新增 7 月 15 日中期风险评审会。</li>
+                    </ul>
+                  </div>
+                  <div class="card">
+                    <div class="card-header"><div class="card-title"><i data-lucide="alert-circle"></i> 风险提示</div></div>
+                    <div style="color: var(--warning); font-size: 13px; line-height: 1.7;">
+                      王磊本周负载 112%，向量索引任务已逾期。建议重新分配任务或调整截止日期，否则可能影响 8 月 30 日上线。
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-todos" class="mtab-panel" style="display: none;">
+                <div class="card">
+                  <div class="card-header"><div class="card-title"><i data-lucide="list-checks"></i> 会议待办</div></div>
+                  <div class="list" id="meeting-todos">
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">林哲整理会议纪要并同步全员</div>
+                      <span class="task-priority priority-p1">P1</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">今日</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">陈思更新 Q3 路线图 PRD</div>
+                      <span class="task-priority priority-p1">P1</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.04</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">王磊评估 fallback 策略可行性</div>
+                      <span class="task-priority priority-p0">P0</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.03</span>
+                    </div>
+                    <div class="task-row" onclick="toggleTask(this)">
+                      <div class="checkbox"><i data-lucide="check"></i></div>
+                      <div class="task-title">预约 7 月 15 日中期风险评审会</div>
+                      <span class="task-priority priority-p2">P2</span>
+                      <span class="text-tertiary mono" style="font-size: 11px;">07.05</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-transcript" class="mtab-panel" style="display: none;">
+                <div class="card">
+                  <div class="transcript-line">
+                    <div class="speaker">LZ</div>
+                    <div>
+                      <div class="transcript-time">10:02 · 林哲</div>
+                      <div class="transcript-text">我们先确认一下 Q3 的三个核心项目。第一个，AI 客服知识库重构，目前进度 62%，但已经有 5 项任务逾期。</div>
+                    </div>
+                  </div>
+                  <div class="transcript-line">
+                    <div class="speaker" style="color: var(--accent);">WL</div>
+                    <div>
+                      <div class="transcript-time">10:04 · 王磊</div>
+                      <div class="transcript-text">向量索引这块主要是数据清洗脚本卡在第三方接口限流上，我已经在协调加 quota，预计明天能恢复。</div>
+                    </div>
+                  </div>
+                  <div class="transcript-line">
+                    <div class="speaker" style="color: var(--info);">CS</div>
+                    <div>
+                      <div class="transcript-time">10:07 · 陈思</div>
+                      <div class="transcript-text">从需求侧看，8 月 30 日上线是业务方已经承诺给客户的时间，不建议后移。我们可以砍掉 P1 需求 fallback 的精细化配置，先保证主路径可用。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mtab-analysis" class="mtab-panel" style="display: none;">
+                <div class="card empty-state" style="min-height: 280px;">
+                  <i data-lucide="bar-chart-2"></i>
+                  <h3>深度分析生成中</h3>
+                  <p>Hermes 正在交叉比对会议纪要、任务状态与项目历史数据，预计需要 30 秒。</p>
+                  <button class="btn btn-secondary mt-3" onclick="startAnalysis(this)">
+                    <i data-lucide="sparkles"></i>
+                    立即生成
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Workflow -->
+      <section class="page" id="page-workflow">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>工作流</h1>
+            <div class="page-subtitle">触发 AIHub 工作流，获取项目综合分析与执行建议</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="book-open"></i>
+              工作流文档
+            </button>
+          </div>
+        </div>
+
+        <div class="workflow-layout">
+          <div class="workflow-trigger">
+            <div>
+              <label class="input-label">项目 ID</label>
+              <input type="text" id="workflow-proid" value="PROJ-2026-0084" placeholder="输入项目 ID" />
+            </div>
+            <div>
+              <label class="input-label">询问内容</label>
+              <textarea rows="6" id="workflow-ask" placeholder="例如：分析当前项目风险并给出下周行动建议…">分析当前项目的主要风险，并给出未来两周的可执行建议。</textarea>
+            </div>
+            <div>
+              <label class="input-label">工作流类型</label>
+              <div class="chip-group">
+                <span class="chip active">风险分析</span>
+                <span class="chip">进度诊断</span>
+                <span class="chip">任务拆解</span>
+                <span class="chip">会议纪要</span>
+              </div>
+            </div>
+            <button class="btn btn-primary w-full" id="btn-run-workflow" onclick="runWorkflow()">
+              <i data-lucide="play"></i>
+              运行工作流
+            </button>
+
+            <div class="error-banner" id="workflow-error" style="display: none;">
+              <i data-lucide="alert-circle"></i>
+              <span>运行失败：项目 ID 不存在或无权访问。</span>
+            </div>
+          </div>
+
+          <div class="workflow-result">
+            <div class="meeting-detail-header">
+              <div>
+                <div style="font-weight: 700; font-size: 15px;">分析结果</div>
+                <div class="text-secondary mt-1" style="font-size: 12px;">AI 客服知识库重构 · 风险分析 · 2026.07.02 08:45</div>
+              </div>
+              <div class="page-actions">
+                <button class="btn btn-secondary" onclick="showToast('success', '结果已复制到剪贴板')">
+                  <i data-lucide="copy"></i>
+                  复制
+                </button>
+                <button class="btn btn-primary" onclick="showToast('success', '已同步到项目日志')">
+                  <i data-lucide="save"></i>
+                  保存到项目
+                </button>
+              </div>
+            </div>
+
+            <div class="workflow-result-body" id="workflow-result-body">
+              <div class="result-card">
+                <h4><i data-lucide="alert-triangle"></i> 风险概览</h4>
+                <p>当前项目识别到 3 个主要风险，其中 2 个为高优先级。最突出的阻塞点是向量索引构建脚本因第三方接口限流而逾期。</p>
+              </div>
+              <div class="result-card">
+                <h4><i data-lucide="list-checks"></i> 关键问题</h4>
+                <ul>
+                  <li><code>PROJ-2026-0084-T12</code> 向量索引构建脚本逾期 1 天，影响下游集成测试。</li>
+                  <li>后端工程师王磊本周负载 112%，存在资源冲突。</li>
+                  <li>fallback 兜底策略尚未评审，可能导致上线前需求范围蔓延。</li>
+                </ul>
+              </div>
+              <div class="result-card">
+                <h4><i data-lucide="zap"></i> 行动建议</h4>
+                <ul>
+                  <li>今日 16:00 前召开 15 分钟站会，对齐向量索引阻塞点。</li>
+                  <li>将 fallback 配置需求从 P0 降级为 P1，优先保证主路径可用。</li>
+                  <li>为王磊分配 1 名 backup，降低单点资源冲突风险。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Agent Chat -->
+      <section class="page" id="page-agent">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>Hermes Agent 对话</h1>
+            <div class="page-subtitle">让 AI 执行复杂查询、跨项目分析与自动化操作</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="sliders-horizontal"></i>
+              能力配置
+            </button>
+            <button class="btn btn-primary" onclick="newAgentChat()">
+              <i data-lucide="plus"></i>
+              新会话
+            </button>
+          </div>
+        </div>
+
+        <div class="agent-layout">
+          <div class="agent-sidebar">
+            <div class="agent-sidebar-header">
+              <span style="font-weight: 700; font-size: 13px;">会话列表</span>
+              <span class="tag">8</span>
+            </div>
+            <div class="agent-conversations">
+              <div class="agent-conversation active">
+                <div class="agent-conversation-title">分析 AI 客服项目风险</div>
+                <div class="agent-conversation-meta">3 条消息 · 今日 08:45</div>
+              </div>
+              <div class="agent-conversation">
+                <div class="agent-conversation-title">Q3 路线图中资源冲突</div>
+                <div class="agent-conversation-meta">5 条消息 · 昨日 17:20</div>
+              </div>
+              <div class="agent-conversation">
+                <div class="agent-conversation-title">整理本周会议纪要</div>
+                <div class="agent-conversation-meta">2 条消息 · 周一 09:10</div>
+              </div>
+              <div class="agent-conversation">
+                <div class="agent-conversation-title">查询统一接入平台进度</div>
+                <div class="agent-conversation-meta">4 条消息 · 2026.06.28</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="agent-chat">
+            <div class="agent-chat-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="agent-message-avatar bot" style="width: 28px; height: 28px; font-size: 10px;">H</div>
+                <div>
+                  <div style="font-weight: 700; font-size: 14px;">分析 AI 客服项目风险</div>
+                  <div class="text-secondary" style="font-size: 11px;">Hermes Agent · 已启用项目分析、任务查询工具</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;" onclick="showToast('info', '会话设置开发中')">
+                <i data-lucide="settings-2"></i>
+                设置
+              </button>
+            </div>
+
+            <div class="agent-chat-body" id="agent-chat-body">
+              <div class="agent-message user">
+                <div class="agent-message-avatar user">LZ</div>
+                <div>
+                  <div class="agent-message-bubble">帮我分析一下 AI 客服知识库重构项目当前的主要风险，以及接下来两周应该优先处理哪些事情。</div>
+                  <div class="agent-message-time">08:42</div>
+                </div>
+              </div>
+
+              <div class="agent-message">
+                <div class="agent-message-avatar bot">H</div>
+                <div>
+                  <div class="agent-message-bubble">
+                    已完成对 <span class="mono">PROJ-2026-0084</span> 的扫描。当前项目健康度 62%，存在 3 个需要关注的风险点：
+                    <br /><br />
+                    1. <strong>向量索引构建脚本逾期</strong>：T12 任务已逾期 1 天，阻塞下游集成测试。根因是第三方数据接口限流。<br />
+                    2. <strong>资源冲突</strong>：王磊本周负载 112%，同时负责 T12、T15 两个关键任务。<br />
+                    3. <strong>需求范围蔓延风险</strong>：fallback 兜底策略配置尚未评审，可能挤压上线时间。<br /><br />
+                    建议优先召开站会对齐阻塞点，并考虑将 fallback 配置降级为 P1。
+                  </div>
+                  <div class="agent-tool-call expanded">
+                    <div class="agent-tool-call-header" onclick="toggleToolCall(this)">
+                      <i data-lucide="chevron-down"></i>
+                      <span>工具调用：project_risk_scan</span>
+                      <span class="mono text-tertiary" style="margin-left: auto; font-size: 11px;">耗时 1.2s</span>
+                    </div>
+                    <div class="agent-tool-call-body">
+                      {<br />
+                      &nbsp;&nbsp;"project_id": "PROJ-2026-0084",<br />
+                      &nbsp;&nbsp;"scan_depth": "deep",<br />
+                      &nbsp;&nbsp;"risks_found": 3,<br />
+                      &nbsp;&nbsp;"confidence": 0.91<br />
+                      }
+                    </div>
+                  </div>
+                  <div class="agent-message-time">08:45</div>
+                </div>
+              </div>
+
+              <div class="agent-message user">
+                <div class="agent-message-avatar user">LZ</div>
+                <div>
+                  <div class="agent-message-bubble">把这些建议生成一份待办，同步到我的日报里。</div>
+                  <div class="agent-message-time">08:46</div>
+                </div>
+              </div>
+
+              <div class="agent-message">
+                <div class="agent-message-avatar bot">H</div>
+                <div>
+                  <div class="agent-message-bubble">
+                    已生成 3 条待办并准备同步到日报：
+                    <ul style="margin: 8px 0 0 0; padding-left: 18px;">
+                      <li>召开 15 分钟站会对齐向量索引阻塞点（P0）</li>
+                      <li>与王磊确认负载情况并协调 backup（P1）</li>
+                      <li>将 fallback 兜底策略从 P0 降级为 P1（P1）</li>
+                    </ul>
+                  </div>
+                  <div class="agent-message-time">08:46</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-chat-input">
+              <input type="text" id="agent-input" placeholder="输入消息，让 Hermes 帮你处理…" onkeypress="handleAgentInput(event)" />
+              <button class="btn btn-primary" onclick="sendAgentMessage()">
+                <i data-lucide="send"></i>
+                发送
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Quick Search -->
+      <section class="page" id="page-quicksearch">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>快速搜索</h1>
+            <div class="page-subtitle">轻量 AI 搜索，快速定位项目、任务、知识与决策</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="history"></i>
+              搜索历史
+            </button>
+          </div>
+        </div>
+
+        <div class="quicksearch-layout">
+          <div class="quicksearch-list">
+            <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-subtle);">
+              <div class="search-box w-full" style="width: 100%;">
+                <i data-lucide="search"></i>
+                <input type="search" placeholder="输入问题开始搜索…" />
+              </div>
+            </div>
+            <div class="quicksearch-items">
+              <div class="quicksearch-item active">
+                <div class="quicksearch-item-title">Q3 路线图有哪些关键决策？</div>
+                <div class="quicksearch-item-meta">来自 2 个会议 · 3 条来源</div>
+              </div>
+              <div class="quicksearch-item">
+                <div class="quicksearch-item-title">AI 客服项目当前风险</div>
+                <div class="quicksearch-item-meta">来自 1 个项目 · 5 条任务</div>
+              </div>
+              <div class="quicksearch-item">
+                <div class="quicksearch-item-title">王磊本周负责哪些任务？</div>
+                <div class="quicksearch-item-meta">来自成员看板 · 4 条任务</div>
+              </div>
+              <div class="quicksearch-item">
+                <div class="quicksearch-item-title">SSO 接入的技术方案</div>
+                <div class="quicksearch-item-meta">来自知识库 · 2 篇文档</div>
+              </div>
+              <div class="quicksearch-item">
+                <div class="quicksearch-item-title">客户最近的需求变更</div>
+                <div class="quicksearch-item-meta">来自邮件 · 1 封邮件</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quicksearch-detail">
+            <div class="meeting-detail-header">
+              <div>
+                <div style="font-weight: 700; font-size: 15px;">Q3 路线图有哪些关键决策？</div>
+                <div class="text-secondary mt-1" style="font-size: 12px;">基于 2 次会议、3 篇文档生成 · 2026.07.02 08:50</div>
+              </div>
+              <div class="page-actions">
+                <button class="btn btn-secondary" onclick="showToast('success', '已复制')">
+                  <i data-lucide="copy"></i>
+                  复制
+                </button>
+                <button class="btn btn-primary" onclick="showToast('success', '已分享到项目')">
+                  <i data-lucide="share-2"></i>
+                  分享
+                </button>
+              </div>
+            </div>
+
+            <div class="quicksearch-detail-body">
+              <div class="card mb-3">
+                <div class="card-header"><div class="card-title"><i data-lucide="sparkles"></i> AI 回答</div></div>
+                <div style="color: var(--text-primary); font-size: 14px; line-height: 1.8;">
+                  <p class="stream-text" style="margin: 0;">根据 Q3 产品路线图对齐会议与相关文档，关键决策包括：</p>
+                  <ul style="margin: 12px 0 0 0; padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                    <li>AI 客服知识库重构上线时间保持不变（8 月 30 日），但新增 7 月 15 日中期风险评审会。</li>
+                    <li>统一接入平台测试阶段延后 2 周，以释放后端资源支持知识库重构。</li>
+                    <li>数据看板 v2.0 需求冻结，优先保障核心指标与性能。</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header"><div class="card-title"><i data-lucide="link"></i> 参考来源</div></div>
+                <div class="list">
+                  <div class="list-item">
+                    <div class="list-icon"><i data-lucide="video"></i></div>
+                    <div class="list-content">
+                      <div class="list-title">Q3 产品路线图对齐 · 会议纪要</div>
+                      <div class="list-meta">2026.07.02 · 关键决策段落</div>
+                    </div>
+                    <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看</button>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-icon"><i data-lucide="file-text"></i></div>
+                    <div class="list-content">
+                      <div class="list-title">Q3 产品路线图 PRD v2.1</div>
+                      <div class="list-meta">产品研发中心 · 2026.06.30</div>
+                    </div>
+                    <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看</button>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-icon"><i data-lucide="message-circle"></i></div>
+                    <div class="list-content">
+                      <div class="list-title">飞书群 · 架构方案讨论</div>
+                      <div class="list-meta">126 条消息 · 决策相关内容 8 条</div>
+                    </div>
+                    <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">查看</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Page: Employee Directory -->
+      <section class="page" id="page-employees">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>员工目录</h1>
+            <div class="page-subtitle">查看团队成员、状态与负载，快速找到对的人</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="download"></i>
+              导出
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="plus"></i>
+              添加成员
+            </button>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div class="search-box" style="width: 280px;">
+              <i data-lucide="search"></i>
+              <input type="text" placeholder="搜索姓名、部门、职位…" />
+            </div>
+            <div class="chip-group">
+              <span class="chip active">全部</span>
+              <span class="chip">产品</span>
+              <span class="chip">研发</span>
+              <span class="chip">设计</span>
+              <span class="chip">在线</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="employee-grid" id="employee-grid">
+          <!-- Generated by JS -->
+        </div>
+      </section>
+
+      <!-- Page: Team Kanban -->
+      <section class="page" id="page-kanban">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>团队看板</h1>
+            <div class="page-subtitle">团队工作周期排期表与任务流动视图</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" onclick="showToast('info', '甘特图视图开发中')">
+              <i data-lucide="gantt-chart"></i>
+              甘特图
+            </button>
+            <button class="btn btn-primary">
+              <i data-lucide="plus"></i>
+              新建排期
+            </button>
+          </div>
+        </div>
+
+        <div class="kanban-board" style="margin-bottom: 24px;">
+          <div class="kanban-column">
+            <div class="kanban-column-header">
+              <span>待处理</span>
+              <span class="kanban-count">4</span>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">确认 fallback 策略边界</div>
+              <div class="kanban-card-meta">AI 客服 · 林哲 · P0</div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">更新数据看板指标口径</div>
+              <div class="kanban-card-meta">数据看板 · 陈思 · P1</div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">客户成功访谈提纲</div>
+              <div class="kanban-card-meta">销售线索 · 张薇 · P2</div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">
+              <span>进行中</span>
+              <span class="kanban-count">3</span>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">向量索引构建脚本</div>
+              <div class="kanban-card-meta">AI 客服 · 王磊 · P0 · 逾期</div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">统一接入平台接口联调</div>
+              <div class="kanban-card-meta">接入平台 · 李明 · P1</div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">
+              <span>评审中</span>
+              <span class="kanban-count">2</span>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Q3 路线图 PRD v2.1</div>
+              <div class="kanban-card-meta">产品研发中心 · 陈思 · P1</div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">API 网关压测报告</div>
+              <div class="kanban-card-meta">接入平台 · 王磊 · P1</div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <div class="kanban-column-header">
+              <span>已完成</span>
+              <span class="kanban-count">5</span>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">客服工作台 SSO 方案</div>
+              <div class="kanban-card-meta">AI 客服 · 张薇 · P0</div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">研发周会 · 第 27 期纪要</div>
+              <div class="kanban-card-meta">会议助手 · Hermes · P2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="calendar-days"></i> 工作周期排期表</div>
+            <div class="chip-group">
+              <span class="chip active">本周</span>
+              <span class="chip">下周</span>
+              <span class="chip">本月</span>
+            </div>
+          </div>
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>成员</th>
+                <th>周一</th>
+                <th>周二</th>
+                <th>周三</th>
+                <th>周四</th>
+                <th>周五</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="width: 24px; height: 24px; font-size: 10px;">LZ</div><span>林哲</span></div></td>
+                <td>周会主持</td>
+                <td>客户沟通</td>
+                <td>方案评审</td>
+                <td class="tag tag-accent" style="display: inline-flex; margin: 10px 0;">架构评审 14:00</td>
+                <td>周报汇总</td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="width: 24px; height: 24px; font-size: 10px; background: var(--success-soft); color: var(--success);">WL</div><span>王磊</span></div></td>
+                <td>向量索引</td>
+                <td>向量索引</td>
+                <td>接口限流协调</td>
+                <td>架构评审 14:00</td>
+                <td>压测报告</td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="width: 24px; height: 24px; font-size: 10px; background: var(--info-soft); color: var(--info);">CS</div><span>陈思</span></div></td>
+                <td>PRD 评审</td>
+                <td>PRD 更新</td>
+                <td>需求澄清</td>
+                <td>路线图同步</td>
+                <td>用户访谈</td>
+              </tr>
+              <tr>
+                <td><div class="flex items-center gap-2"><div class="avatar" style="width: 24px; height: 24px; font-size: 10px; background: var(--warning-soft); color: var(--warning);">LM</div><span>李明</span></div></td>
+                <td>接口联调</td>
+                <td>接口联调</td>
+                <td>单元测试</td>
+                <td>代码评审</td>
+                <td>文档整理</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Page: Tools -->
+      <section class="page" id="page-tools">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>工具台</h1>
+            <div class="page-subtitle">常用工具与能力入口，一键直达</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary">
+              <i data-lucide="grid-3x3"></i>
+              管理工具
+            </button>
+          </div>
+        </div>
+
+        <div class="tools-grid">
+          <div class="tool-card" onclick="showToast('info', '项目分析工具')">
+            <div class="tool-icon"><i data-lucide="bar-chart-2"></i></div>
+            <div class="tool-name">项目健康扫描</div>
+            <div class="tool-desc">基于多维度数据评估项目风险与健康度，生成可执行建议。</div>
+            <span class="tag tag-accent">常用</span>
+          </div>
+          <div class="tool-card" onclick="goTo('workflow')">
+            <div class="tool-icon"><i data-lucide="zap"></i></div>
+            <div class="tool-name">AIHub 工作流</div>
+            <div class="tool-desc">触发自定义 AI 工作流，完成进度诊断、任务拆解、会议纪要等。</div>
+            <span class="tag">智能体</span>
+          </div>
+          <div class="tool-card" onclick="goTo('meeting')">
+            <div class="tool-icon"><i data-lucide="mic"></i></div>
+            <div class="tool-name">会议助手</div>
+            <div class="tool-desc">录音转写、会议纪要、待办提取与同步，一站式会议管理。</div>
+            <span class="tag">效率</span>
+          </div>
+          <div class="tool-card" onclick="goTo('agent')">
+            <div class="tool-icon"><i data-lucide="bot"></i></div>
+            <div class="tool-name">Hermes Agent</div>
+            <div class="tool-desc">与 AI 对话，完成跨项目查询、复杂分析与自动化操作。</div>
+            <span class="tag tag-accent">推荐</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '自动下单模块')">
+            <div class="tool-icon"><i data-lucide="shopping-cart"></i></div>
+            <div class="tool-name">自动下单</div>
+            <div class="tool-desc">自动化下单与采购流程，减少重复操作，沉淀字段映射与执行记录。</div>
+            <span class="tag">采购</span>
+          </div>
+          <div class="tool-card" onclick="goTo('quicksearch')">
+            <div class="tool-icon"><i data-lucide="search"></i></div>
+            <div class="tool-name">快速搜索</div>
+            <div class="tool-desc">跨项目、任务、会议与知识库的统一快速搜索入口。</div>
+            <span class="tag">搜索</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '聊天记录分析模块')">
+            <div class="tool-icon"><i data-lucide="message-square-text"></i></div>
+            <div class="tool-name">聊天记录分析</div>
+            <div class="tool-desc">分析聊天记录，提取关键信息、待办事项、风险信号与决策点。</div>
+            <span class="tag">分析</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '文档助手')">
+            <div class="tool-icon"><i data-lucide="file-text"></i></div>
+            <div class="tool-name">文档助手</div>
+            <div class="tool-desc">基于知识库生成摘要、回答文档问题、提取关键决策与待办。</div>
+            <span class="tag">知识库</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '代码评审助手')">
+            <div class="tool-icon"><i data-lucide="code"></i></div>
+            <div class="tool-name">代码评审助手</div>
+            <div class="tool-desc">辅助代码评审，识别潜在风险点、性能问题与安全漏洞。</div>
+            <span class="tag">研发</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '排期冲突检测')">
+            <div class="tool-icon"><i data-lucide="calendar-clock"></i></div>
+            <div class="tool-name">排期冲突检测</div>
+            <div class="tool-desc">扫描成员负载与任务排期，识别资源冲突与过载风险。</div>
+            <span class="tag">团队</span>
+          </div>
+          <div class="tool-card" onclick="showToast('info', '需求优先级评估')">
+            <div class="tool-icon"><i data-lucide="scale"></i></div>
+            <div class="tool-name">需求优先级评估</div>
+            <div class="tool-desc">根据业务价值、技术成本与风险，辅助评估需求优先级。</div>
+            <span class="tag">产品</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal: Employee Detail -->
+  <div class="modal-backdrop" id="employee-modal" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>成员详情</h3>
+        <button class="icon-btn" onclick="closeModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="employee-modal-body">
+        <!-- Generated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">关闭</button>
+        <button class="btn btn-primary" onclick="showToast('success', '已发起会话')">
+          <i data-lucide="message-circle"></i>
+          发送消息
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    const realData = {
+      syncTime: '2026-06-29 11:12',
+      source: '本地文件夹数据快照',
+      project: {
+        id: '137372',
+        code: 'EFS',
+        name: 'AI改编游戏',
+        status: '正常',
+        phase: '筹备期',
+        deadline: '2026-08-09',
+        vp: '金伟华',
+        overview: '面向非专业用户的AI游戏改编平台，基于横版闯关游戏模板 + 熟人社交场景',
+        mvpGoal: '上线H5端MVP，实现自然语言改编主角/敌人形象、关卡场景、数值、BGM等',
+        progress: 77.67,
+        delayRate: '0%'
+      },
+      taskStats: {
+        document: 22,
+        notify: 2,
+        total: 24
+      },
+      tasks: [
+        { title: '输出AI改编游戏典型用户使用情景、用户路径与核心需求清单', owner: '陈锐（若恒）', due: '2026-07-09', priority: 'P1' },
+        { title: '设计 AI 改编流程调度看板的信息结构和交互原型', owner: '陈锐', due: '2026-07-16', priority: 'P1' },
+        { title: '【AI改编游戏项目】漏斗池处理提醒', owner: 'AI负责人139', due: '2026-07-06', priority: 'P2' }
+      ],
+      stages: [
+        { name: '用户改编前端', target: '用户输入主题即可生成可玩游戏版本', progress: 100, status: '已完成' },
+        { name: '游戏模板完善', target: '复刻三国志/恐龙快打，完善横版闯关基础功能', progress: 33, status: '进行中' },
+        { name: 'AI驱动改编流程', target: 'AI调度整个改编流程（输入→理解→参数→调度→生产→拼装）', progress: 100, status: '已完成' }
+      ],
+      weeklyVersions: [
+        { week: '2026-06-01', plan: '设计三国志完整体验流程，评估模板能力不足', progress: 0, completion: '计划延后，需继续推进' },
+        { week: '2026-05-25', plan: '平台部署到外网，运行体验和使用', progress: 100, completion: '已产出PC端版本，可完整体验改编流程；下一步Web平台部署' }
+      ],
+      stakeholders: [
+        { id: 'JWH', name: '金伟华', role: '分管VP/最终审批人', dept: '项目治理', status: 'busy', tasks: 1 },
+        { id: 'CR', name: '陈锐', role: '高级产品设计师', dept: '产品设计', status: 'online', tasks: 8 },
+        { id: 'HSH', name: '何松航', role: '研发主程序员', dept: '研发', status: 'away', tasks: 4 }
+      ],
+      risks: [
+        { level: 'low', description: '暂无重大问题', mitigation: '正常推进' }
+      ],
+      meetings: [
+        {
+          title: '2026-07-06 游浠 11:00-11:29',
+          date: '2026-07-06',
+          duration: '29 分钟',
+          status: '已生成',
+          summary: '会议讨论了新生产线的问题，包括颗粒卡住和角色串台问题；同时讨论模型选择、测试线和正式线冲突，以及教育内容生产自动化愿景。',
+          todos: ['排查新生产线颗粒卡住和角色串台问题', '确认数据是否混杂并进行清理', '优化测试线和正式线的人员调用问题']
+        },
+        {
+          title: '2026-07-03 游浠的会议 14:01-14:45',
+          date: '2026-07-03',
+          duration: '44 分钟',
+          status: '已生成',
+          summary: '会议讨论直播赛道和开播日期交互调整、树状选择规则表、学习计划制定、直播计划与学习计划映射关系等内容。',
+          todos: ['补全交互设计细节', '提供直播计划与学习计划的映射关系表格', '确认美术史资源的更新逻辑和在线更新功能需求']
+        },
+        {
+          title: '2026-06-09 美术史澄清会 15:03-15:12',
+          date: '2026-06-09',
+          duration: '9 分钟',
+          status: '已生成',
+          summary: '会议讨论手机桌面美术室组件需求，每天更新画作视频封面，点击后进入产品观看；同时讨论地图显示美术馆名称的问题。',
+          todos: ['评估并开发iOS和安卓版本的美术室桌面组件', '调研地图显示美术馆名称的问题', '处理iOS包的打包工作']
+        }
+      ],
+      chatStats: {
+        groups: 145,
+        records: 11217,
+        mentions: 134
+      }
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[ch]);
+    }
+
+    // Project data
+    const projects = [
+      { id: realData.project.id, name: realData.project.name, stage: realData.project.phase, progress: realData.project.progress, risk: 'low', days: 45, sync: realData.syncTime },
+      ...realData.stages.map((stage, index) => ({
+        id: `${realData.project.code}-STAGE-${index + 1}`,
+        name: stage.name,
+        stage: stage.status,
+        progress: stage.progress,
+        risk: stage.progress < 50 ? 'medium' : 'low',
+        days: index === 1 ? 45 : 0,
+        sync: realData.syncTime
+      }))
+    ];
+
+    const stageStyles = {
+      '需求分析': 'status-info',
+      '开发中': 'status-warning',
+      '测试中': 'status-info',
+      '已上线': 'status-success',
+      '招募中': 'status-neutral',
+      '筹备期': 'status-info',
+      '已完成': 'status-success',
+      '进行中': 'status-warning'
+    };
+
+    const riskStyles = {
+      'high': { cls: 'status-error', label: '高风险' },
+      'medium': { cls: 'status-warning', label: '中风险' },
+      'low': { cls: 'status-success', label: '低风险' }
+    };
+
+    function renderProjects() {
+      const grid = document.getElementById('projects-grid');
+      grid.innerHTML = projects.map(p => `
+        <div class="project-card" onclick="goTo('project')">
+          <div class="project-card-header">
+            <div>
+              <div class="project-name">${p.name}</div>
+              <div class="project-id mono">${p.id}</div>
+            </div>
+            <span class="list-status ${stageStyles[p.stage]}">${p.stage}</span>
+          </div>
+          <div class="project-meta-row">
+            <span>进度</span>
+            <span class="mono" style="font-weight: 600; color: var(--text-primary);">${p.progress}%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width: ${p.progress}%"></div></div>
+          <div class="project-meta-row" style="margin-top: 6px;">
+            <span>截止剩余</span>
+            <span class="mono">${p.days} 天</span>
+          </div>
+          <div class="project-meta-row" style="margin-top: 4px;">
+            <span>风险</span>
+            <span class="list-status ${riskStyles[p.risk].cls}">${riskStyles[p.risk].label}</span>
+          </div>
+          <div class="project-meta-row" style="margin-top: 4px;">
+            <span>最后同步</span>
+            <span>${p.sync}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderProjects();
+
+    // Employee data
+    const employees = realData.stakeholders.map(person => ({
+      ...person,
+      email: `${person.id.toLowerCase()}@openclaw.local`
+    }));
+
+    const statusLabels = {
+      online: { label: '在线', cls: '' },
+      away: { label: '离开', cls: 'away' },
+      busy: { label: '忙碌', cls: 'busy' }
+    };
+
+    function renderEmployees() {
+      const grid = document.getElementById('employee-grid');
+      grid.innerHTML = employees.map(e => {
+        const s = statusLabels[e.status];
+        return `
+          <div class="employee-card" onclick="openEmployeeModal('${e.id}')">
+            <div class="avatar">${e.id}</div>
+            <div class="employee-name">${e.name}</div>
+            <div class="employee-role">${e.role}</div>
+            <div class="employee-dept">${e.dept}</div>
+            <div class="employee-status ${s.cls}">
+              <span class="employee-status-dot"></span>
+              ${s.label}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderEmployees();
+
+    function setMetric(sectionId, index, value, delta) {
+      const card = document.querySelectorAll(`#${sectionId} .metrics-row .metric-card`)[index];
+      if (!card) return;
+      const valueEl = card.querySelector('.metric-value');
+      const deltaEl = card.querySelector('.metric-delta');
+      if (valueEl) valueEl.innerHTML = value;
+      if (deltaEl) deltaEl.textContent = delta;
+    }
+
+    function renderRealDashboard() {
+      const subtitle = document.querySelector('#page-dashboard .page-subtitle');
+      if (subtitle) subtitle.textContent = `${realData.syncTime} · ${realData.source} · 项目 ${realData.project.name}`;
+
+      setMetric('page-dashboard', 0, String(realData.meetings.length), `最新：${realData.meetings[0].title}`);
+      setMetric('page-dashboard', 1, String(realData.taskStats.total), `${realData.taskStats.document} 项事务 · ${realData.taskStats.notify} 项知照`);
+      setMetric('page-dashboard', 2, String(realData.risks.length), realData.risks[0]?.description || '暂无重大风险');
+      setMetric('page-dashboard', 3, `${realData.project.progress}<span style="font-size: 16px; color: var(--text-secondary);">%</span>`, `延期率 ${realData.project.delayRate}`);
+
+      const cards = document.querySelectorAll('#page-dashboard .grid-2 .card');
+      const meetingList = cards[0]?.querySelector('.list');
+      if (meetingList) {
+        meetingList.innerHTML = realData.meetings.map((meeting, index) => `
+          <div class="list-item ${index === 0 ? 'active' : ''}">
+            <div class="list-icon" style="color: ${index === 0 ? 'var(--accent)' : 'var(--text-secondary)'};">
+              <i data-lucide="mic"></i>
+            </div>
+            <div class="list-content">
+              <div class="list-title">${escapeHtml(meeting.title)}</div>
+              <div class="list-meta">${escapeHtml(meeting.date)} · ${escapeHtml(meeting.duration)} · ${escapeHtml(meeting.status)}</div>
+            </div>
+            <span class="list-status status-success">已生成</span>
+          </div>
+        `).join('');
+      }
+
+      const taskList = cards[1]?.querySelector('.list');
+      if (taskList) {
+        taskList.innerHTML = realData.tasks.map((task, index) => `
+          <div class="list-item">
+            <div class="list-icon" style="color: ${index === 0 ? 'var(--warning)' : 'var(--text-secondary)'};">
+              <i data-lucide="flag"></i>
+            </div>
+            <div class="list-content">
+              <div class="list-title">${escapeHtml(task.title)}</div>
+              <div class="list-meta">${escapeHtml(task.owner)} · 截止 ${escapeHtml(task.due)}</div>
+            </div>
+            <span class="list-status ${task.priority === 'P1' ? 'status-warning' : 'status-info'}">${escapeHtml(task.priority)}</span>
+          </div>
+        `).join('');
+      }
+
+      const healthCard = document.querySelector('#page-dashboard .grid-3 .card:first-child');
+      if (healthCard) {
+        const value = healthCard.querySelector('span[style*="font-size: 32px"]');
+        const progress = healthCard.querySelector('.progress-fill');
+        const meta = healthCard.querySelector('.text-secondary.mt-2');
+        if (value) value.textContent = `${realData.project.progress}%`;
+        if (progress) progress.style.width = `${realData.project.progress}%`;
+        if (meta) meta.textContent = `${realData.project.name} · ${realData.project.phase} · ${realData.project.status}`;
+      }
+
+      const aiCard = document.querySelector('#page-dashboard .grid-3 .card:nth-child(2)');
+      if (aiCard) {
+        const tag = aiCard.querySelector('.tag');
+        const meta = aiCard.querySelector('.list-meta');
+        const rows = aiCard.querySelector('div[style*="flex-direction: column"]');
+        if (tag) tag.textContent = `${realData.chatStats.mentions} 条`;
+        if (meta) meta.textContent = '本地聊天数据只展示聚合统计，未发布原始聊天内容：';
+        if (rows) {
+          rows.innerHTML = `
+            <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;"><i data-lucide="message-circle" style="width: 13px; height: 13px;"></i>${realData.chatStats.groups} 个会话/群组</div>
+            <div class="flex items-center gap-2 text-secondary" style="font-size: 12px;"><i data-lucide="database" style="width: 13px; height: 13px;"></i>${realData.chatStats.records} 条记录 · ${realData.chatStats.mentions} 条提及</div>
+          `;
+        }
+      }
+    }
+
+    function renderRealProjectSummary() {
+      const subtitle = document.querySelector('#page-projects .page-subtitle');
+      if (subtitle) subtitle.textContent = `${realData.project.name} · ${realData.project.overview}`;
+      setMetric('page-projects', 0, String(projects.length), `${realData.project.code} · 外部ID ${realData.project.id}`);
+      setMetric('page-projects', 1, String(realData.stages.filter(s => s.status === '进行中').length), `当前阶段：${realData.project.phase}`);
+      setMetric('page-projects', 2, String(realData.stages.filter(s => s.status === '已完成').length), '已完成阶段目标');
+      setMetric('page-projects', 3, String(realData.risks.length), realData.risks[0]?.description || '暂无重大风险');
+    }
+
+    function renderRealProjectDetail() {
+      const titleGroup = document.querySelector('#page-project .page-title-group');
+      if (titleGroup) {
+        titleGroup.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h1 style="margin: 0;">${escapeHtml(realData.project.name)}</h1>
+            <span class="tag tag-accent">${escapeHtml(realData.project.phase)}</span>
+            <span class="tag" style="background: var(--success-soft); color: var(--success); border-color: rgba(106, 158, 127, 0.22);">${escapeHtml(realData.project.status)}</span>
+          </div>
+          <div class="page-subtitle">
+            <span class="mono">${escapeHtml(realData.project.code)} / ${escapeHtml(realData.project.id)}</span> · VP ${escapeHtml(realData.project.vp)} · 截止 ${escapeHtml(realData.project.deadline)}
+          </div>
+        `;
+      }
+
+      const overviewCards = document.querySelectorAll('#tab-overview .grid-4.mb-4 .card');
+      if (overviewCards[0]) {
+        overviewCards[0].querySelector('.metric-value').innerHTML = `${realData.project.progress}<span style="font-size: 16px; color: var(--text-secondary);">%</span>`;
+        overviewCards[0].querySelector('.progress-fill').style.width = `${realData.project.progress}%`;
+      }
+      if (overviewCards[1]) {
+        overviewCards[1].querySelector('.metric-value').textContent = realData.taskStats.total;
+        overviewCards[1].querySelector('.metric-delta').textContent = `${realData.taskStats.document} 项事务 · ${realData.taskStats.notify} 项知照`;
+      }
+      if (overviewCards[2]) {
+        overviewCards[2].querySelector('.metric-value').textContent = realData.risks.length;
+        overviewCards[2].querySelector('.metric-delta').textContent = realData.risks[0]?.description || '暂无重大问题';
+      }
+      if (overviewCards[3]) {
+        overviewCards[3].querySelector('.metric-value').textContent = realData.syncTime.slice(11);
+        overviewCards[3].querySelector('.metric-delta').textContent = '本地文件 · workflow-inbox';
+      }
+
+      const kbCard = document.querySelector('#tab-overview .grid-2 .card:first-child');
+      if (kbCard) {
+        const body = kbCard.querySelector('div[style*="line-height: 1.7"]');
+        const tags = kbCard.querySelector('.mt-3');
+        if (body) {
+          body.innerHTML = `
+            <p style="margin: 0 0 12px 0;">${escapeHtml(realData.project.overview)}</p>
+            <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary);">
+              <li>MVP 目标：${escapeHtml(realData.project.mvpGoal)}</li>
+              <li>当前进度：${realData.project.progress}%；延期率：${escapeHtml(realData.project.delayRate)}</li>
+              <li>阶段目标：${realData.stages.map(s => `${escapeHtml(s.name)} ${s.progress}%`).join('；')}</li>
+            </ul>
+          `;
+        }
+        if (tags) {
+          tags.innerHTML = `
+            <span class="tag">AI改编</span>
+            <span class="tag">横版闯关</span>
+            <span class="tag">自然语言</span>
+            <span class="tag">熟人社交</span>
+          `;
+        }
+      }
+
+      const timeline = document.querySelector('#tab-overview .timeline');
+      if (timeline) {
+        timeline.innerHTML = realData.stages.map(stage => `
+          <div class="timeline-item ${stage.status === '已完成' ? 'completed' : stage.status === '进行中' ? 'active' : ''}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-title">${escapeHtml(stage.name)}</div>
+            <div class="timeline-date">${escapeHtml(stage.target)} · ${stage.progress}% · ${escapeHtml(stage.status)}</div>
+          </div>
+        `).join('');
+      }
+
+      const advice = document.querySelector('#tab-overview .card.mt-3 > div:last-child');
+      if (advice) {
+        advice.innerHTML = `
+          <div class="import-source" style="margin: 0;">
+            <i data-lucide="target"></i>
+            <div>
+              <div class="import-source-title">优先收口模板能力</div>
+              <div class="import-source-desc">「游戏模板完善」当前 ${realData.stages[1].progress}%，是本轮最需要跟进的阶段。</div>
+            </div>
+          </div>
+          <div class="import-source" style="margin: 0;">
+            <i data-lucide="list-checks"></i>
+            <div>
+              <div class="import-source-title">清理待办池</div>
+              <div class="import-source-desc">当前共有 ${realData.taskStats.total} 项待办，建议优先处理执行人和截止时间明确的 P1 项。</div>
+            </div>
+          </div>
+          <div class="import-source" style="margin: 0;">
+            <i data-lucide="mic"></i>
+            <div>
+              <div class="import-source-title">同步近期会议结论</div>
+              <div class="import-source-desc">已读取 ${realData.meetings.length} 份会议纪要，可把生产线和数据混杂问题纳入项目日志。</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function renderRealMeetings() {
+      const list = document.querySelector('#page-meeting .recording-items');
+      if (list) {
+        list.innerHTML = realData.meetings.map((meeting, index) => `
+          <div class="recording-item ${index === 0 ? 'active' : ''}" onclick="selectRealRecording(this, ${index})">
+            <div class="recording-title">${escapeHtml(meeting.title)}</div>
+            <div class="recording-meta"><span>${escapeHtml(meeting.date)}</span><span>${escapeHtml(meeting.duration)}</span><span class="status-success">${escapeHtml(meeting.status)}</span></div>
+          </div>
+        `).join('');
+      }
+      selectRealRecording(document.querySelector('#page-meeting .recording-item'), 0);
+    }
+
+    function selectRealRecording(el, index) {
+      const meeting = realData.meetings[index] || realData.meetings[0];
+      if (!meeting) return;
+      document.querySelectorAll('.recording-item').forEach(i => i.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const header = document.querySelector('#page-meeting .meeting-detail-header > div:first-child');
+      if (header) {
+        header.innerHTML = `
+          <div style="font-weight: 700; font-size: 15px;">${escapeHtml(meeting.title)}</div>
+          <div class="text-secondary mt-1" style="font-size: 12px;">${escapeHtml(meeting.date)} · ${escapeHtml(meeting.duration)} · 来源：data/meetings</div>
+        `;
+      }
+
+      const summary = document.querySelector('#mtab-summary .card:first-child > div:last-child');
+      if (summary) {
+        summary.innerHTML = `<p style="margin: 0;">${escapeHtml(meeting.summary)}</p>`;
+      }
+
+      const decisionList = document.querySelector('#mtab-summary .grid-2 .card:first-child ul');
+      if (decisionList) {
+        decisionList.innerHTML = meeting.todos.map(todo => `<li>${escapeHtml(todo)}</li>`).join('');
+      }
+
+      const riskBox = document.querySelector('#mtab-summary .grid-2 .card:nth-child(2) > div:last-child');
+      if (riskBox) {
+        riskBox.textContent = realData.project.name + ' 当前风险记录：' + (realData.risks[0]?.description || '暂无重大问题') + '。';
+      }
+
+      const todos = document.getElementById('meeting-todos');
+      if (todos) {
+        todos.innerHTML = meeting.todos.map((todo, idx) => `
+          <div class="task-row" onclick="toggleTask(this)">
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <div class="task-title">${escapeHtml(todo)}</div>
+            <span class="task-priority ${idx === 0 ? 'priority-p0' : 'priority-p1'}">${idx === 0 ? 'P0' : 'P1'}</span>
+            <span class="text-tertiary mono" style="font-size: 11px;">${escapeHtml(meeting.date)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderRealAgentAndWorkflow() {
+      const workflowProid = document.getElementById('workflow-proid');
+      if (workflowProid) workflowProid.value = realData.project.id;
+
+      const workflowAsk = document.getElementById('workflow-ask');
+      if (workflowAsk) workflowAsk.value = `分析${realData.project.name}当前阶段目标、待办和风险，并给出未来两周建议。`;
+
+      const conversations = document.querySelectorAll('.agent-conversation');
+      const titles = ['分析 AI改编游戏项目风险', '梳理阶段目标完成度', '整理近期会议待办', '查看聊天记录聚合统计'];
+      conversations.forEach((item, index) => {
+        const title = item.querySelector('.agent-conversation-title');
+        const meta = item.querySelector('.agent-conversation-meta');
+        if (title) title.textContent = titles[index] || title.textContent;
+        if (meta) meta.textContent = index === 0 ? `${realData.taskStats.total} 条待办 · ${realData.syncTime}` : meta.textContent;
+      });
+
+      const chatHeader = document.querySelector('.agent-chat-header div div[style*="font-weight"]');
+      if (chatHeader) chatHeader.textContent = '分析 AI改编游戏项目风险';
+
+      const firstUser = document.querySelector('#agent-chat-body .agent-message.user .agent-message-bubble');
+      if (firstUser) firstUser.textContent = `帮我分析一下 ${realData.project.name} 当前的主要风险，以及接下来两周应该优先处理哪些事情。`;
+
+      const firstBot = document.querySelector('#agent-chat-body .agent-message:not(.user) .agent-message-bubble');
+      if (firstBot) {
+        firstBot.innerHTML = `
+          已读取本地项目快照 <span class="mono">${realData.project.id}</span>。当前进度 ${realData.project.progress}%，阶段为「${escapeHtml(realData.project.phase)}」，延期率 ${escapeHtml(realData.project.delayRate)}。
+          <br /><br />
+          1. <strong>阶段目标</strong>：${realData.stages.map(s => `${escapeHtml(s.name)} ${s.progress}%`).join('；')}。<br />
+          2. <strong>待办池</strong>：事务 ${realData.taskStats.document} 项，知照 ${realData.taskStats.notify} 项，总计 ${realData.taskStats.total} 项。<br />
+          3. <strong>风险记录</strong>：${escapeHtml(realData.risks[0]?.description || '暂无重大问题')}。<br /><br />
+          建议优先收口「游戏模板完善」阶段，并把近期会议中提到的生产线问题、数据混杂问题纳入风险跟踪。
+        `;
+      }
+    }
+
+    function applyRealDataSnapshot() {
+      renderRealDashboard();
+      renderRealProjectSummary();
+      renderRealProjectDetail();
+      renderRealMeetings();
+      renderRealAgentAndWorkflow();
+      lucide.createIcons();
+    }
+
+    applyRealDataSnapshot();
+
+    function openEmployeeModal(id) {
+      const e = employees.find(x => x.id === id);
+      if (!e) return;
+      const s = statusLabels[e.status];
+      document.getElementById('employee-modal-body').innerHTML = `
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+          <div class="avatar avatar-lg">${e.id}</div>
+          <div>
+            <div style="font-size: 18px; font-weight: 700;">${e.name}</div>
+            <div class="text-secondary" style="font-size: 13px; margin-top: 2px;">${e.role} · ${e.dept}</div>
+            <div class="employee-status ${s.cls}" style="margin-top: 8px;">
+              <span class="employee-status-dot"></span>
+              ${s.label}
+            </div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div class="result-card" style="margin: 0;">
+            <div class="text-tertiary" style="font-size: 11px; margin-bottom: 4px;">邮箱</div>
+            <div class="mono" style="font-size: 13px; color: var(--text-primary);">${e.email}</div>
+          </div>
+          <div class="result-card" style="margin: 0;">
+            <div class="text-tertiary" style="font-size: 11px; margin-bottom: 4px;">当前任务</div>
+            <div style="font-size: 13px; color: var(--text-primary);">${e.tasks} 项</div>
+          </div>
+        </div>
+        <div class="result-card" style="margin: 0;">
+          <div class="text-tertiary" style="font-size: 11px; margin-bottom: 8px;">近期参与项目</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span class="tag">AI 客服知识库重构</span>
+            <span class="tag">Q3 路线图</span>
+            <span class="tag">统一接入平台</span>
+          </div>
+        </div>
+      `;
+      document.getElementById('employee-modal').classList.add('show');
+      lucide.createIcons();
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('employee-modal').classList.remove('show');
+    }
+
+    // Navigation
+    function goTo(pageId, sourceEl) {
+      const targetPageId = pageId === 'chat-analyzer' || pageId === 'auto-order' ? 'tools' : pageId;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+      (sourceEl || document.querySelector(`.nav-item[data-page="${pageId}"]`))?.classList.add('active');
+      document.getElementById(`page-${targetPageId}`)?.classList.add('active');
+      window.scrollTo(0, 0);
+      lucide.createIcons();
+    }
+
+    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+      item.addEventListener('click', () => goTo(item.dataset.page, item));
+    });
+
+    // Project detail tabs
+    document.querySelectorAll('#page-project .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#page-project .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#page-project .tab-panel').forEach(p => p.style.display = 'none');
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).style.display = 'block';
+      });
+    });
+
+    // Meeting tabs
+    document.querySelectorAll('[data-mtab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('[data-mtab]').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mtab-panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        tab.classList.add('active');
+        const panel = document.getElementById(`mtab-${tab.dataset.mtab}`);
+        panel.style.display = 'block';
+        panel.classList.add('active');
+      });
+    });
+
+    // Checkbox interactions
+    function toggleTask(row) {
+      const cb = row.querySelector('.checkbox');
+      const title = row.querySelector('.task-title');
+      cb.classList.toggle('checked');
+      title.classList.toggle('done');
+    }
+
+    function toggleImport(el) {
+      const cb = el.querySelector('.checkbox');
+      cb.classList.toggle('checked');
+    }
+
+    // Daily generation loading + error demo
+    function generateDaily() {
+      const btn = document.getElementById('btn-generate-daily');
+      const overlay = document.getElementById('daily-loading');
+      const error = document.getElementById('daily-error');
+      error.style.display = 'none';
+      overlay.classList.add('show');
+      btn.disabled = true;
+
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        btn.disabled = false;
+        // Demo: show error state once, then success on retry
+        if (!window._dailyGenerated) {
+          error.style.display = 'flex';
+          window._dailyGenerated = true;
+        } else {
+          const list = document.getElementById('daily-task-list');
+          const newTask = document.createElement('div');
+          newTask.className = 'task-row';
+          newTask.onclick = function() { toggleTask(this); };
+          newTask.innerHTML = `
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <div class="task-title">[AI 生成] 审阅 Q3 路线图资源冲突表</div>
+            <span class="task-priority priority-p1">P1</span>
+            <span class="text-tertiary mono" style="font-size: 11px;">今日</span>
+          `;
+          list.appendChild(newTask);
+          lucide.createIcons();
+          showToast('success', '已生成 1 条新任务');
+        }
+      }, 1400);
+    }
+
+    // Recording selection
+    function selectRecording(el, key) {
+      document.querySelectorAll('.recording-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Sync todos demo
+    function syncTodos(btn) {
+      if (!btn) btn = event.currentTarget;
+      const original = btn.innerHTML;
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 同步中…`;
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = `<i data-lucide="check"></i> 已同步 4 条待办`;
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+        lucide.createIcons();
+        showToast('success', '会议待办已同步到日报');
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.add('btn-secondary');
+          btn.classList.remove('btn-primary');
+          btn.disabled = false;
+          lucide.createIcons();
+        }, 2000);
+      }, 1200);
+    }
+
+    // Analysis demo
+    function startAnalysis(btn) {
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 分析中…`;
+      btn.disabled = true;
+      setTimeout(() => {
+        const panel = document.getElementById('mtab-analysis');
+        panel.innerHTML = `
+          <div class="card mb-3">
+            <div class="card-header"><div class="card-title"><i data-lucide="bar-chart-2"></i> 会议健康度</div></div>
+            <div class="grid-3">
+              <div><div class="metric-value" style="font-size: 22px;">82</div><div class="text-secondary" style="font-size: 12px;">讨论聚焦度</div></div>
+              <div><div class="metric-value" style="font-size: 22px;">7</div><div class="text-secondary" style="font-size: 12px;">行动项</div></div>
+              <div><div class="metric-value" style="font-size: 22px;">2</div><div class="text-secondary" style="font-size: 12px;">未解决分歧</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="trending-up"></i> 趋势洞察</div></div>
+            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+              近 4 次会议中，「向量索引」与「fallback 策略」被提及 11 次，是当前项目最大阻塞点。建议将这两项拆分为独立专项跟踪，并在 7 月 8 日前安排一次技术攻坚会。
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+      }, 1600);
+    }
+
+    // Workflow run demo
+    function runWorkflow() {
+      const btn = document.getElementById('btn-run-workflow');
+      const error = document.getElementById('workflow-error');
+      const body = document.getElementById('workflow-result-body');
+      const proid = document.getElementById('workflow-proid').value.trim();
+      error.style.display = 'none';
+
+      if (!proid) {
+        error.style.display = 'flex';
+        return;
+      }
+
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 运行中…`;
+      btn.disabled = true;
+
+      body.innerHTML = `
+        <div class="card empty-state" style="min-height: 280px;">
+          <div class="spinner" style="width: 32px; height: 32px;"></div>
+          <h3>Hermes 正在分析</h3>
+          <p>正在读取项目数据、任务状态与历史日志，预计需要 10-20 秒。</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        btn.innerHTML = `<i data-lucide="play"></i> 运行工作流`;
+        btn.disabled = false;
+        lucide.createIcons();
+        body.innerHTML = `
+          <div class="result-card">
+            <h4><i data-lucide="alert-triangle"></i> 风险概览</h4>
+            <p>针对 <span class="mono">${proid}</span> 的分析已完成。当前项目识别到 3 个主要风险，其中 2 个为高优先级。</p>
+          </div>
+          <div class="result-card">
+            <h4><i data-lucide="list-checks"></i> 关键问题</h4>
+            <ul>
+              <li>向量索引构建脚本因第三方接口限流而逾期。</li>
+              <li>后端工程师王磊本周负载 112%，存在资源冲突。</li>
+              <li>fallback 兜底策略尚未评审，可能导致需求范围蔓延。</li>
+            </ul>
+          </div>
+          <div class="result-card">
+            <h4><i data-lucide="zap"></i> 行动建议</h4>
+            <ul>
+              <li>今日召开站会对齐向量索引阻塞点。</li>
+              <li>将 fallback 配置从 P0 降级为 P1，优先保证主路径可用。</li>
+              <li>为王磊分配 backup，降低单点资源冲突风险。</li>
+            </ul>
+          </div>
+        `;
+        lucide.createIcons();
+        showToast('success', '工作流运行完成');
+      }, 1600);
+    }
+
+    // Agent chat interactions
+    function toggleToolCall(header) {
+      const toolCall = header.closest('.agent-tool-call');
+      toolCall.classList.toggle('expanded');
+      const icon = header.querySelector('[data-lucide="chevron-down"]');
+      if (icon) {
+        icon.style.transform = toolCall.classList.contains('expanded') ? 'rotate(0deg)' : 'rotate(-90deg)';
+      }
+    }
+
+    function handleAgentInput(e) {
+      if (e.key === 'Enter') sendAgentMessage();
+    }
+
+    function sendAgentMessage() {
+      const input = document.getElementById('agent-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const body = document.getElementById('agent-chat-body');
+      const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+      body.insertAdjacentHTML('beforeend', `
+        <div class="agent-message user">
+          <div class="agent-message-avatar user">LZ</div>
+          <div>
+            <div class="agent-message-bubble">${text}</div>
+            <div class="agent-message-time">${time}</div>
+          </div>
+        </div>
+      `);
+      input.value = '';
+
+      setTimeout(() => {
+        body.insertAdjacentHTML('beforeend', `
+          <div class="agent-message">
+            <div class="agent-message-avatar bot">H</div>
+            <div>
+              <div class="agent-message-bubble">已收到。我正在处理你的请求，稍后将给出分析结果与建议。</div>
+              <div class="agent-message-time">${time}</div>
+            </div>
+          </div>
+        `);
+        body.scrollTop = body.scrollHeight;
+        lucide.createIcons();
+      }, 600);
+
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function newAgentChat() {
+      const body = document.getElementById('agent-chat-body');
+      body.innerHTML = `
+        <div class="card empty-state" style="min-height: 280px; background: transparent; border: none;">
+          <i data-lucide="bot"></i>
+          <h3>新会话</h3>
+          <p>输入你的问题，Hermes 将基于项目数据与知识库为你解答。</p>
+        </div>
+      `;
+      lucide.createIcons();
+      showToast('success', '新会话已创建');
+    }
+
+    // Sync data demo
+    function syncData(btn) {
+      const original = btn.innerHTML;
+      btn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 1.5px;"></div> 同步中…`;
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        lucide.createIcons();
+        showToast('success', '数据同步完成');
+      }, 1200);
+    }
+
+    // Toast notifications
+    function showToast(type, message) {
+      const container = document.getElementById('toast-container');
+      const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info';
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i data-lucide="${icon}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => toast.remove(), 180);
+      }, 3000);
+    }
+
+    // Chip interactions (visual only)
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const group = chip.closest('.chip-group');
+        if (group) group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.toggle('active');
+      });
+    });
+
+    // Agent conversation selection
+    document.querySelectorAll('.agent-conversation').forEach(conv => {
+      conv.addEventListener('click', () => {
+        document.querySelectorAll('.agent-conversation').forEach(c => c.classList.remove('active'));
+        conv.classList.add('active');
+      });
+    });
+
+    // Quick search item selection
+    document.querySelectorAll('.quicksearch-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.quicksearch-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // Keyboard shortcut for search
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('.search-box input').focus();
+      }
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

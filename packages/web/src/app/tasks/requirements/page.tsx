@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import { RequirementDetail } from "@/components/requirements/RequirementDetail";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || (process.env.NODE_ENV === "production" ? "/a/openclaw" : "http://localhost:3001");
 
 interface Requirement {
   id: string;
@@ -48,14 +49,18 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   done:        { label: "已完成", variant: "default" },
 };
 
-export default function RequirementsPage() {
+function RequirementsPageContent() {
+  const searchParams = useSearchParams();
+  const projectParam = searchParams?.get("project");
+  const reqIdParam = searchParams?.get("reqId");
+
   const [list, setList] = useState<Requirement[]>([]);
   const [versions, setVersions] = useState<VersionBrief[]>([]);
   const [projects, setProjects] = useState<ProjectBrief[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(reqIdParam ?? null);
   const [filterVersion, setFilterVersion] = useState<string>("all");
-  const [filterProject, setFilterProject] = useState<string>("all");
+  const [filterProject, setFilterProject] = useState<string>(projectParam ?? "all");
 
   const fetchList = useCallback(async () => {
     try {
@@ -78,6 +83,12 @@ export default function RequirementsPage() {
   }, []);
 
   useEffect(() => { fetchList(); }, [fetchList]);
+
+  // 监听 URL 参数变化（从项目页跳转回来时）
+  useEffect(() => {
+    if (projectParam) setFilterProject(projectParam);
+    if (reqIdParam) setEditingId(reqIdParam);
+  }, [projectParam, reqIdParam]);
 
   const versionMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -271,5 +282,13 @@ export default function RequirementsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function RequirementsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+      <RequirementsPageContent />
+    </Suspense>
   );
 }

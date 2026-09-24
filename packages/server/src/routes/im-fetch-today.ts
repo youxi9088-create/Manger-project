@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import * as db from "../services/db.js";
 import { U9ApiClient } from "../services/u9-api.js";
-import { readEnvFileContent, persistEnvVar } from "../utils/env.js";
+import { readEnvFileContent } from "../utils/env.js";
+import { ensureU9Configuration } from "./im-u9.js";
 
 const router = Router();
 
@@ -21,23 +22,12 @@ router.post("/api/im/fetch-today", async (req, res) => {
   };
 
   try {
+    const configuredDirectory = await ensureU9Configuration();
     const envContent = readEnvFileContent();
     const authId = envContent.match(/^U9_API_AUTH_ID=(.*)/m)?.[1]?.trim();
     const authKey = envContent.match(/^U9_API_AUTH_KEY=(.*)/m)?.[1]?.trim();
     const appId = envContent.match(/^U9_SDP_APP_ID=(.*)/m)?.[1]?.trim();
-    let convIds = (envContent.match(/^U9_CONVERSATIONS=(.*)/m)?.[1]?.trim() || '').split(',').filter(Boolean);
-
-    // 自动修复空 U9_CONVERSATIONS
-    if (convIds.length === 0) {
-      const nameMatches = envContent.match(/^U9_CONVERSATION_NAMES_([^=]+)=/gm);
-      if (nameMatches && nameMatches.length > 0) {
-        convIds = nameMatches.map(m => m.replace('U9_CONVERSATION_NAMES_', '').replace('=', ''));
-        const recoveredValue = convIds.join(',');
-        persistEnvVar('U9_CONVERSATIONS', recoveredValue);
-        process.env.U9_CONVERSATIONS = recoveredValue;
-        send('log', { message: `自动修复：恢复了 ${convIds.length} 个会话 ID` });
-      }
-    }
+    const convIds = configuredDirectory.sessions.map((session) => session.id);
 
     if (!authId || !authKey || !appId) {
       send('error', { message: '99U API 未配置，请先在设置中完成自动配置' });
@@ -67,11 +57,7 @@ router.post("/api/im/fetch-today", async (req, res) => {
     }
 
     // 读取会话名称
-    const convNames: Record<string, string> = {};
-    for (const cid of convIds) {
-      const nameMatch = envContent.match(new RegExp(`U9_CONVERSATION_NAMES_${cid}=(.*)`, 'm'));
-      if (nameMatch) convNames[cid] = nameMatch[1].trim();
-    }
+    const convNames = Object.fromEntries(configuredDirectory.sessions.map((session) => [session.id, session.name]));
 
     send('log', { message: `开始抓取 ${convIds.length} 个会话的当天记录...` });
 
@@ -90,50 +76,51 @@ router.post("/api/im/fetch-today", async (req, res) => {
     let totalSkipped = 0;
     const failedConvs: string[] = [];
 
-    for (let i = 0; i < convIds.length; i++) {
-      const convId = convIds[i].trim();
+    // FN 网关约 30 秒会结束请求；串行遍历数百个会话会稳定触发 504。
+    // 采用有限并发，单个会话失败只记录该会话，不拖垮整批采集。
+    let completed = 0;
+    const workerCount = Math.min(12, convIds.length);
+    let nextIndex = 0;
+    const processConversation = async (convId: string) => {
       const convName = convNames[convId] || `会话${convId.slice(-6)}`;
-
-      send('progress', { current: i + 1, total: convIds.length, conversation: convName });
-
       try {
         const messages = await u9Client.getAllMessages(convId, { maxMessages: 500, beginTime: dayStartStr, endTime: dayEndStr, myName });
-
-        if (messages.length === 0) {
-          send('log', { message: `${convName}: 今日无消息` });
-          continue;
+        if (messages.length > 0) {
+          const dbRecords: db.DbChatRecord[] = messages.map(msg => ({
+            id: uuidv4(), source_id: targetSourceId,
+            im_message_id: String(msg.msg_id || ''),
+            sender_name: String(msg.sender_name || ''),
+            sender_id: String(msg.sender_id || ''),
+            group_name: convName || '', group_id: String(convId),
+            content: String(msg.content || ''),
+            message_type: String(msg.msg_type || 'text'),
+            timestamp: String(msg.create_time || new Date().toISOString()),
+            is_mentioned: msg.is_mentioned ? 1 : 0,
+            raw_data: JSON.stringify(msg),
+            synced_at: new Date().toISOString(),
+          }));
+          const result = db.importChatRecords(dbRecords);
+          totalImported += result.inserted;
+          totalSkipped += result.skipped;
+          if (result.inserted > 0) send('log', { message: `${convName}: 新增 ${result.inserted} 条` });
         }
-
-        const dbRecords: db.DbChatRecord[] = messages.map(msg => ({
-          id: uuidv4(), source_id: targetSourceId,
-          im_message_id: String(msg.msg_id || ''),
-          sender_name: String(msg.sender_name || ''),
-          sender_id: String(msg.sender_id || ''),
-          group_name: convName || '', group_id: String(convId),
-          content: String(msg.content || ''),
-          message_type: String(msg.msg_type || 'text'),
-          timestamp: String(msg.create_time || new Date().toISOString()),
-          is_mentioned: msg.is_mentioned ? 1 : 0,
-          raw_data: JSON.stringify(msg),
-          synced_at: new Date().toISOString(),
-        }));
-
-        const result = db.importChatRecords(dbRecords);
-        totalImported += result.inserted;
-        totalSkipped += result.skipped;
-
-        if (result.inserted > 0) send('log', { message: `${convName}: 新增 ${result.inserted} 条` });
-        await new Promise(resolve => setTimeout(resolve, 300));
       } catch (error: any) {
         const errMsg = error?.message || '未知错误';
-        if (errMsg.includes('UC/AUTH_TOKEN_EXPIRED')) {
-          send('error', { message: '99U 授权已过期，请到「设置」重新自动配置' });
-          res.end(); return;
-        }
         failedConvs.push(convName);
         send('log', { message: `${convName}: 失败 - ${errMsg}` });
+      } finally {
+        completed += 1;
+        send('progress', { current: completed, total: convIds.length, conversation: convName });
       }
-    }
+    };
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= convIds.length) return;
+        await processConversation(convIds[index].trim());
+      }
+    });
+    await Promise.all(workers);
 
     if (targetSourceId) db.updateImSource(targetSourceId, { last_sync_at: new Date().toISOString() });
 

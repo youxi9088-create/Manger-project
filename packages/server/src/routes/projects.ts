@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import fs from 'fs';
+import path from 'path';
 console.log('[DEBUG] Loading projects.ts at', new Date().toISOString());
 import {
   getProjects,
@@ -13,6 +14,9 @@ import {
   updateProject,
   syncProjectStatus,
   syncAllProjectStatuses,
+  syncProjectInfoFromWorkflow,
+  syncKnowledgeBaseForProjectInfo,
+  getProjectInfoFiles,
   DbProject,
 } from '../services/db.js';
 import dbInstance from '../services/db.js';
@@ -378,6 +382,44 @@ router.post('/api/projects/:id/sync', (req, res) => {
   }
 });
 
+// POST /api/projects/:id/sync-info - 从工作流项目信息同步
+router.post('/api/projects/:id/sync-info', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await syncProjectInfoFromWorkflow(id);
+    if (!result.success) {
+      res.status(400).json({ success: false, error: result.message, proid: result.proid });
+      return;
+    }
+
+    // 同步到知识库
+    if (result.proid) {
+      try {
+        const infoFiles = getProjectInfoFiles({ proid: result.proid, limit: 1 });
+        const infoFile = infoFiles[0];
+        const infoContent = infoFile?.content || result.message;
+        let infoStructured: Record<string, any> = {};
+        let infoTodoList: string | undefined;
+        try {
+          const meta = infoFile?.metadata ? JSON.parse(infoFile.metadata) : {};
+          infoStructured = meta.structured_data || {};
+          infoTodoList = meta.todo_list_text;
+        } catch {
+          infoStructured = {};
+        }
+        const kbResult = syncKnowledgeBaseForProjectInfo(result.proid, infoContent, infoStructured, infoTodoList);
+        (result as any).knowledge_base_sync = kbResult;
+      } catch (kbErr: any) {
+        (result as any).knowledge_base_sync = { success: false, message: kbErr?.message };
+      }
+    }
+
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e?.message || '同步失败' });
+  }
+});
+
 // POST /api/projects/sync-all - 批量同步所有活跃项目
 router.post('/api/projects/sync-all', (req, res) => {
   try {
@@ -399,6 +441,7 @@ router.post('/api/projects/sync-all', (req, res) => {
 export default router;
 
 // GET /api/projects/:id/knowledge-base - 读取项目关联的知识库文件
+// 如果数据库记录的文件（如旧飞书 project-data-*.md）已被删除，自动回退到同目录最新的 project-report-*.md
 router.get('/api/projects/:id/knowledge-base', (req, res) => {
   try {
     const { id } = req.params;
@@ -424,13 +467,26 @@ router.get('/api/projects/:id/knowledge-base', (req, res) => {
       kbPath = 'C:/' + kbPath.substring(3);
     }
 
-    if (!fs.existsSync(kbPath)) {
-      res.status(404).json({ error: '知识库文件不存在: ' + kbPath });
-      return;
+    let readPath = kbPath;
+    if (!fs.existsSync(readPath)) {
+      const dir = path.dirname(readPath);
+      if (!fs.existsSync(dir)) {
+        res.status(404).json({ error: '知识库目录不存在: ' + dir });
+        return;
+      }
+      const reportFiles = fs.readdirSync(dir)
+        .filter((f: string) => f.startsWith('project-report-') && f.endsWith('.md'))
+        .sort()
+        .reverse();
+      if (reportFiles.length === 0) {
+        res.status(404).json({ error: '知识库文件不存在: ' + kbPath });
+        return;
+      }
+      readPath = path.join(dir, reportFiles[0]);
     }
 
-    const content = fs.readFileSync(kbPath, 'utf-8');
-    res.json({ success: true, data: { content, path: kbPath } });
+    const content = fs.readFileSync(readPath, 'utf-8');
+    res.json({ success: true, data: { content, path: readPath } });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || '读取知识库失败' });
   }
