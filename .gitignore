@@ -24,6 +24,7 @@ deploy/**/fn-deploy*.log
 
 # Data (keep structure, ignore content)
 data/chat.db
+data/chat.db-*
 data/meetings/*.mp3
 data/auth/*.json
 data/uploads/
