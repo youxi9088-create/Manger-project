@@ -1391,7 +1391,7 @@ export function getProjectStats(projectId) {
         const deadlineDate = new Date(project.deadline);
         const today = new Date();
         daysRemaining = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        isDelayed = daysRemaining < 0 && done < total;
+        isDelayed = daysRemaining < 0 && (total === 0 || done < total);
     }
     return {
         task_total: total,
