@@ -21,8 +21,7 @@ import {
   RISK_STYLES,
   oc,
 } from "@/app/projects/_lib/styles";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 function fmtDateFull(iso: string): string {
   if (!iso) return "--";
@@ -38,6 +37,15 @@ export interface ProjectDetail {
   title: string;
   type: string;
   current_phase: string;
+  status?: string;
+  applicant?: string | null;
+  project_leader?: string | null;
+  department?: string | null;
+  project_type?: string | null;
+  demand_source?: string | null;
+  demand_date?: string | null;
+  raw_requirement?: string | null;
+  ai_generated_content?: string | null;
   phase_status: string;
   risk_level: string;
   risk_reason: string | null;
@@ -93,7 +101,7 @@ export default function ProjectHeader({
     setKbLoading(true);
     try {
       const r = await fetch(
-        `${API_BASE}/api/projects/${project.id}/kb-summary?t=${Date.now()}`
+        projectApi(`/api/projects/${project.id}/kb-summary?t=${Date.now()}`)
       );
       const j = await r.json();
       if (j.success) setKbSummary(j.data);

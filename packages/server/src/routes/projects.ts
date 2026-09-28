@@ -119,6 +119,7 @@ router.post('/api/projects/:id/transition', (req, res) => {
       approve: 'approved',
       start_planning: 'planning',
       lock_plan: 'plan_locked',
+      recruiting: 'recruiting',
       start_execution: 'executing',
       submit_delivery: 'delivering',
       start_review: 'reviewing',

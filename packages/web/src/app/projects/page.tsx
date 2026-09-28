@@ -30,8 +30,7 @@ import {
   RISK_STYLES,
   oc,
 } from "@/app/projects/_lib/styles";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 interface Project {
   id: string;
@@ -211,7 +210,7 @@ export default function ProjectsPage() {
       if (search) params.set("search", search);
       if (phaseFilter !== "all") params.set("phase", phaseFilter);
 
-      const resp = await fetch(`${API_BASE}/api/projects?${params}`);
+      const resp = await fetch(projectApi(`/api/projects?${params}`));
       const json = await resp.json();
       if (json.success) {
         setProjects(json.data || json.projects || []);
@@ -232,7 +231,7 @@ export default function ProjectsPage() {
     setSyncingAll(true);
     setSyncMsg(null);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/sync-all`, {
+      const resp = await fetch(projectApi("/api/projects/sync-all"), {
         method: "POST",
       });
       const json = await resp.json();

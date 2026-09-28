@@ -31,8 +31,7 @@ import {
   PHASE_STYLES,
   oc,
 } from "@/app/projects/_lib/styles";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 interface KbStageObjective {
   name?: string;
@@ -121,6 +120,16 @@ function fmtDate(iso: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
+function parseInitiationContent(value: string | null | undefined): Record<string, any> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 interface ProjectStats {
   task_total: number;
   task_done: number;
@@ -176,8 +185,8 @@ export default function OverviewTab({
     setLoading(true);
     try {
       const [statsResp, logsResp] = await Promise.all([
-        fetch(`${API_BASE}/api/projects/${projectId}`),
-        fetch(`${API_BASE}/api/projects/${projectId}/phase-progress`),
+        fetch(projectApi(`/api/projects/${projectId}`)),
+        fetch(projectApi(`/api/projects/${projectId}/phase-progress`)),
       ]);
       const statsJson = await statsResp.json();
       const logsJson = await logsResp.json();
@@ -196,7 +205,7 @@ export default function OverviewTab({
     setKbSummaryLoading(true);
     try {
       const resp = await fetch(
-        `${API_BASE}/api/projects/${projectId}/kb-summary?t=${Date.now()}`
+        projectApi(`/api/projects/${projectId}/kb-summary?t=${Date.now()}`)
       );
       const json = await resp.json();
       if (json.success) {
@@ -214,7 +223,7 @@ export default function OverviewTab({
     setKbLoading(true);
     try {
       const resp = await fetch(
-        `${API_BASE}/api/projects/${projectId}/knowledge-base`
+        projectApi(`/api/projects/${projectId}/knowledge-base`)
       );
       const json = await resp.json();
       if (json.success) {
@@ -231,14 +240,14 @@ export default function OverviewTab({
   const handleTransition = async (action: string) => {
     setTransitioning(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/transition`, {
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/transition`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
       const json = await resp.json();
       if (json.success) {
-        const refresh = await fetch(`${API_BASE}/api/projects/${projectId}`);
+        const refresh = await fetch(projectApi(`/api/projects/${projectId}`));
         const refreshed = await refresh.json();
         if (refreshed.success) onProjectUpdate(refreshed.data.project);
       }
@@ -316,6 +325,15 @@ export default function OverviewTab({
     { key: "execution", label: "执行", status: phaseStatus.execution || 0 },
     { key: "delivery", label: "交付", status: phaseStatus.delivery || 0 },
   ];
+  const initiationContent = parseInitiationContent(project.ai_generated_content);
+  const projectOverview = initiationContent?.project_overview;
+  const projectBrief = project.raw_requirement ||
+    (typeof project.ai_generated_content === "string" && !initiationContent
+      ? project.ai_generated_content
+      : projectOverview?.requirement || initiationContent?.why_do_it?.[0] || "");
+  const expectedEffects = Array.isArray(initiationContent?.expected_effect)
+    ? initiationContent.expected_effect
+    : [];
 
   return (
     <div className="space-y-4">
@@ -455,6 +473,44 @@ export default function OverviewTab({
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* 立项信息：没有知识库时也必须能看到项目自身的真实内容 */}
+      <Card className={cardSurface}>
+        <CardHeader>
+          <CardTitle className="text-[13px] font-semibold text-[var(--oc-text-primary)] flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[var(--oc-accent)]" />
+            项目基本信息
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div><div className="text-xs text-[var(--oc-text-secondary)]">申请人</div><div className="mt-1 font-medium">{project.applicant || "未填写"}</div></div>
+            <div><div className="text-xs text-[var(--oc-text-secondary)]">项目负责人</div><div className="mt-1 font-medium">{project.project_leader || "未填写"}</div></div>
+            <div><div className="text-xs text-[var(--oc-text-secondary)]">项目类型</div><div className="mt-1 font-medium">{project.project_type || (project.type === "quick_validation" ? "快速验证" : "预立项转正式")}</div></div>
+            <div><div className="text-xs text-[var(--oc-text-secondary)]">需求来源</div><div className="mt-1 font-medium">{project.demand_source || "未填写"}</div></div>
+          </div>
+          {projectBrief && (
+            <>
+              <Separator className="bg-[var(--oc-border-subtle)]" />
+              <div>
+                <div className="text-xs text-[var(--oc-text-secondary)] mb-1.5">立项说明</div>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--oc-text-secondary)]">{projectBrief}</p>
+              </div>
+            </>
+          )}
+          {expectedEffects.length > 0 && (
+            <div>
+              <div className="text-xs text-[var(--oc-text-secondary)] mb-1.5">预期效果</div>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--oc-text-secondary)]">
+                {expectedEffects.map((effect: unknown, index: number) => <li key={index}>{String(effect)}</li>)}
+              </ul>
+            </div>
+          )}
+          {!projectBrief && expectedEffects.length === 0 && (
+            <p className="text-sm text-[var(--oc-text-tertiary)]">暂无立项说明，项目详情仍可通过需求、任务、成员和交付标签查看关联数据。</p>
+          )}
         </CardContent>
       </Card>
 

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, FileText, Loader2 } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 const PHASE_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -45,7 +44,7 @@ export default function LogsTab({ projectId }: LogsTabProps) {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}`);
+      const resp = await fetch(projectApi(`/api/projects/${projectId}`));
       const json = await resp.json();
       if (json.success) {
         setLogs(json.data.phase_logs || []);

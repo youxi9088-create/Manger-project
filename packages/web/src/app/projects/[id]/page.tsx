@@ -18,8 +18,7 @@ import MembersTab from "./tabs/MembersTab";
 import DeliveryTab from "./tabs/DeliveryTab";
 import LogsTab from "./tabs/LogsTab";
 import { tabsListOc, tabsTriggerOc } from "@/app/projects/_lib/styles";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -47,7 +46,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const loadProject = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${id}`);
+      const resp = await fetch(projectApi(`/api/projects/${id}`));
       const json = await resp.json();
       if (json.success) {
         setProject(json.data.project);
@@ -67,7 +66,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
     setSyncing(true);
     setSyncMsg(null);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${id}/sync`, {
+      const resp = await fetch(projectApi(`/api/projects/${id}/sync`), {
         method: "POST",
       });
       const json = await resp.json();
@@ -89,7 +88,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
     setSyncingInfo(true);
     setSyncInfoMsg(null);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${id}/sync-info`, {
+      const resp = await fetch(projectApi(`/api/projects/${id}/sync-info`), {
         method: "POST",
       });
       const json = await resp.json();

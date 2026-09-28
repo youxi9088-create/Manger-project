@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Package, CheckCircle, Clock, AlertTriangle, Loader2, ArrowRight, RotateCcw } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 interface Version {
   id: string;
@@ -74,7 +73,7 @@ export default function DeliveryTab({ projectId }: DeliveryTabProps) {
   const loadVersions = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/deliveries`);
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/deliveries`));
       const json = await resp.json();
       if (json.success) {
         setVersions(json.data || []);
@@ -94,7 +93,7 @@ export default function DeliveryTab({ projectId }: DeliveryTabProps) {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/deliveries`, {
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/deliveries`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName, expected_release_date: newDate || null }),
@@ -124,7 +123,7 @@ export default function DeliveryTab({ projectId }: DeliveryTabProps) {
     if (!next) return;
     setAdvancing(version.id);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/deliveries/${version.id}`, {
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/deliveries/${version.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
@@ -143,7 +142,7 @@ export default function DeliveryTab({ projectId }: DeliveryTabProps) {
   const handleDelay = async (version: Version) => {
     setAdvancing(version.id);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/deliveries/${version.id}`, {
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/deliveries/${version.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "delayed" }),

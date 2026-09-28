@@ -1,24 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, Target, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, RefreshCw, Target, ChevronDown, ChevronUp } from "lucide-react";
+import { projectApi } from "@/app/projects/_lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
-
-interface KbWeeklyVersion {
-  time?: string;
-  week?: string;
-  plan: string;
-  importance?: string;
-  progress: string;
-  completion?: string;
+interface RequirementAnalysis {
+  name?: string;
+  description?: string;
+  priority?: string;
 }
 
-interface KbSummary {
-  weekly_versions?: KbWeeklyVersion[];
+interface Requirement {
+  id: string;
+  title: string | null;
+  raw_input: string | null;
+  ai_analysis: string | null;
+  status: string;
+  computed_status?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RequirementsTabProps {
@@ -26,116 +29,149 @@ interface RequirementsTabProps {
   kbRefreshKey?: number;
 }
 
-function parseProgress(val: string): number {
-  const n = parseFloat(String(val).replace('%', ''));
-  return isNaN(n) ? 0 : Math.min(100, Math.max(0, n));
+const STATUS_LABELS: Record<string, string> = {
+  pending: "待分析",
+  draft: "草稿",
+  analyzed: "已分析",
+  tasked: "已拆解任务",
+  in_progress: "执行中",
+  done: "已完成",
+};
+
+function parseAnalysis(value: string | null): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
-function fmtDate(iso: string): string {
-  if (!iso) return '--';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
+function fmtDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("zh-CN");
 }
 
 export default function RequirementsTab({ projectId, kbRefreshKey = 0 }: RequirementsTabProps) {
-  const [kbSummary, setKbSummary] = useState<KbSummary | null>(null);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const loadKbSummary = async () => {
+  const loadRequirements = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/kb-summary?t=${Date.now()}`);
-      const json = await resp.json();
-      if (json.success) {
-        setKbSummary(json.data);
-      }
-    } catch (e) {
-      console.error("加载知识库需求失败:", e);
+      const response = await fetch(projectApi(`/api/projects/${projectId}/requirements`));
+      const json = await response.json();
+      if (json.success) setRequirements(json.data || []);
+    } catch (error) {
+      console.error("加载项目需求失败:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadKbSummary();
+    loadRequirements();
   }, [projectId, kbRefreshKey]);
 
-  const versions = kbSummary?.weekly_versions || [];
-  const completedCount = versions.filter(v => parseProgress(v.progress) >= 100).length;
+  const stats = useMemo(() => ({
+    total: requirements.length,
+    active: requirements.filter((item) => ["tasked", "in_progress"].includes(item.computed_status || item.status)).length,
+    done: requirements.filter((item) => (item.computed_status || item.status) === "done").length,
+  }), [requirements]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">周版本需求 ({versions.length})</h2>
-          <p className="text-xs text-muted-foreground">来自工作流同步的 weekly_versions 数据</p>
+          <h2 className="text-lg font-semibold">项目需求 ({stats.total})</h2>
+          <p className="text-xs text-muted-foreground">来自需求分析表的真实记录，不再把周计划混作需求</p>
         </div>
-        <Button size="sm" variant="outline" onClick={loadKbSummary} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "刷新"}
+        <Button size="sm" variant="outline" onClick={loadRequirements} disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          刷新
         </Button>
       </div>
 
+      <div className="grid grid-cols-3 gap-3">
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">需求总数</div><div className="mt-1 text-xl font-semibold">{stats.total}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">已拆解/执行</div><div className="mt-1 text-xl font-semibold">{stats.active}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">已完成</div><div className="mt-1 text-xl font-semibold">{stats.done}</div></CardContent></Card>
+      </div>
+
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground">加载中...</div>
-      ) : versions.length === 0 ? (
+        <div className="py-10 text-center text-muted-foreground">加载中...</div>
+      ) : requirements.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center text-muted-foreground">
-            <Target className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p>暂无周版本需求数据</p>
-            <p className="text-xs mt-1">请先在「工作流输出」页面触发项目信息查询</p>
+            <Target className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+            <p>暂无项目需求</p>
+            <p className="mt-1 text-xs">当前项目还没有关联需求分析记录</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              已完成 {completedCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-4 w-4 text-amber-500" />
-              进行中 {versions.length - completedCount}
-            </span>
-          </div>
-          {versions.map((v, idx) => {
-            const progress = parseProgress(v.progress);
-            const isDone = progress >= 100;
+          {requirements.map((requirement) => {
+            const status = requirement.computed_status || requirement.status;
+            const analysis = parseAnalysis(requirement.ai_analysis);
+            const features = Array.isArray(analysis?.features) ? analysis.features as RequirementAnalysis[] : [];
+            const expanded = expandedId === requirement.id;
             return (
-              <Card key={idx} className={isDone ? "border-green-200/50" : undefined}>
+              <Card key={requirement.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{v.plan || "(无标题)"}</span>
-                        {v.importance && (
-                          <Badge variant="outline" className="text-xs">{v.importance}</Badge>
-                        )}
-                        <Badge variant={isDone ? "default" : "secondary"} className="text-xs">
-                          {v.progress || "0%"}
-                        </Badge>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-medium">{requirement.title || "未命名需求"}</h3>
+                        <Badge variant="secondary" className="text-xs">{STATUS_LABELS[status] || status}</Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        {(v.time || v.week) && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {fmtDate(v.time || v.week || "")}
-                          </span>
-                        )}
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="font-mono">{requirement.id}</span>
+                        <span>创建于 {fmtDate(requirement.created_at)}</span>
+                        {features.length > 0 && <span>{features.length} 项功能分析</span>}
                       </div>
-                      {v.completion && (
-                        <div className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4 bg-muted/40 rounded p-2">
-                          {v.completion}
+                    </div>
+                    {analysis && (
+                      <Button size="sm" variant="ghost" onClick={() => setExpandedId(expanded ? null : requirement.id)}>
+                        {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {expanded ? "收起" : "查看分析"}
+                      </Button>
+                    )}
+                  </div>
+
+                  {requirement.raw_input && (
+                    <div className="mt-3 rounded-md bg-muted/40 p-3 text-sm whitespace-pre-wrap text-muted-foreground">
+                      {requirement.raw_input}
+                    </div>
+                  )}
+
+                  {expanded && analysis && (
+                    <div className="mt-3 space-y-3 border-t pt-3">
+                      {typeof analysis.summary === "string" && <p className="text-sm text-muted-foreground">{analysis.summary}</p>}
+                      {features.length > 0 && (
+                        <div className="grid gap-2 md:grid-cols-2">
+                          {features.map((feature, index) => (
+                            <div key={`${requirement.id}-feature-${index}`} className="rounded-md border p-3">
+                              <div className="flex items-center justify-between gap-2 text-sm font-medium">
+                                <span>{feature.name || `功能 ${index + 1}`}</span>
+                                {feature.priority && <Badge variant="outline" className="text-[10px]">{feature.priority}</Badge>}
+                              </div>
+                              {feature.description && <p className="mt-1 text-xs text-muted-foreground">{feature.description}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {Array.isArray(analysis.user_stories) && (
+                        <div>
+                          <div className="text-sm font-medium">用户故事</div>
+                          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                            {(analysis.user_stories as unknown[]).map((story, index) => <li key={index}>{String(story)}</li>)}
+                          </ul>
                         </div>
                       )}
                     </div>
-                  </div>
-                  <div className="mt-3 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${isDone ? "bg-green-500" : "bg-primary"}`}
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             );

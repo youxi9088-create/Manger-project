@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Users, UserPlus, Loader2, X, CheckSquare } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_SERVER_API || "http://localhost:3001";
+import { projectApi } from "@/app/projects/_lib/api";
 
 interface Member {
   id: string;
@@ -66,9 +65,9 @@ export default function MembersTab({ projectId }: MembersTabProps) {
     setLoading(true);
     try {
       const [membersResp, tasksResp, reqResp] = await Promise.all([
-        fetch(`${API_BASE}/api/projects/${projectId}/members`),
-        fetch(`${API_BASE}/api/projects/${projectId}/tasks`),
-        fetch(`${API_BASE}/api/projects/${projectId}/requirements`),
+        fetch(projectApi(`/api/projects/${projectId}/members`)),
+        fetch(projectApi(`/api/projects/${projectId}/tasks`)),
+        fetch(projectApi(`/api/projects/${projectId}/requirements`)),
       ]);
       const membersJson = await membersResp.json();
       const tasksJson = await tasksResp.json();
@@ -85,7 +84,7 @@ export default function MembersTab({ projectId }: MembersTabProps) {
 
   const loadEmployees = async () => {
     try {
-      const resp = await fetch(`${API_BASE}/api/employees`);
+      const resp = await fetch(projectApi("/api/employees"));
       const json = await resp.json();
       if (json.success) setAllEmployees(json.data || []);
     } catch (e) {
@@ -100,7 +99,7 @@ export default function MembersTab({ projectId }: MembersTabProps) {
   const handleAddMember = async (employeeId: string) => {
     setAdding(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/projects/${projectId}/members`, {
+      const resp = await fetch(projectApi(`/api/projects/${projectId}/members`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ employee_id: employeeId, role: "member" }),
@@ -121,7 +120,7 @@ export default function MembersTab({ projectId }: MembersTabProps) {
     if (!taskTitle.trim() || !taskReqId) return;
     setAssigning(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/dev-tasks`, {
+      const resp = await fetch(projectApi("/api/dev-tasks"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -213,7 +212,7 @@ export default function MembersTab({ projectId }: MembersTabProps) {
                         onClick={() => {
                           setAssignOpen(member.employee_id);
                           if (requirements.length === 0) {
-                            fetch(`${API_BASE}/api/projects/${projectId}/requirements`)
+                              fetch(projectApi(`/api/projects/${projectId}/requirements`))
                               .then(r => r.json())
                               .then(j => { if (j.success) setRequirements(j.data || []); });
                           }
