@@ -207,9 +207,14 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     const readSelectedProject = () => {
-      setSelectedProjectId(
-        new URLSearchParams(window.location.search).get("project")
+      const queryProjectId = new URLSearchParams(window.location.search).get(
+        "project"
       );
+      const pathMatch = window.location.pathname.match(/\/projects\/([^/]+)\/?$/);
+      const pathProjectId = pathMatch?.[1]
+        ? decodeURIComponent(pathMatch[1])
+        : null;
+      setSelectedProjectId(queryProjectId || pathProjectId);
     };
     readSelectedProject();
     window.addEventListener("popstate", readSelectedProject);
