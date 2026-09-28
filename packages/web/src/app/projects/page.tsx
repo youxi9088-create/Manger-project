@@ -31,6 +31,7 @@ import {
   oc,
 } from "@/app/projects/_lib/styles";
 import { projectApi } from "@/app/projects/_lib/api";
+import ProjectDetailView from "./ProjectDetailView";
 
 interface Project {
   id: string;
@@ -124,7 +125,7 @@ function ProjectCard({ project }: { project: Project }) {
   const sync = formatSyncLabel(project.last_synced_at);
 
   return (
-    <Link href={`/projects/${project.id}`}>
+    <a href={`?project=${encodeURIComponent(project.id)}`}>
       <Card className={cardInteractive}>
         <CardContent className="p-[18px] flex flex-col gap-3.5">
           {/* Header */}
@@ -190,11 +191,12 @@ function ProjectCard({ project }: { project: Project }) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </a>
   );
 }
 
 export default function ProjectsPage() {
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -202,6 +204,17 @@ export default function ProjectsPage() {
   const [total, setTotal] = useState(0);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const readSelectedProject = () => {
+      setSelectedProjectId(
+        new URLSearchParams(window.location.search).get("project")
+      );
+    };
+    readSelectedProject();
+    window.addEventListener("popstate", readSelectedProject);
+    return () => window.removeEventListener("popstate", readSelectedProject);
+  }, []);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -262,6 +275,10 @@ export default function ProjectsPage() {
     const highRisk = projects.filter((p) => p.risk_level === "high").length;
     return { total, executing, recruiting, highRisk };
   }, [projects, total]);
+
+  if (selectedProjectId) {
+    return <ProjectDetailView projectId={selectedProjectId} />;
+  }
 
   return (
     <div className="p-7 space-y-6">
